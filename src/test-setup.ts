@@ -1,0 +1,37 @@
+import { beforeEach, vi } from 'vitest';
+
+// Mock console methods during tests to avoid noise
+beforeEach(() => {
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+});
+
+// Global test utilities
+export const createMockResponse = (data: unknown) => {
+  return new Response(JSON.stringify(data), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+};
+
+export const createMockStreamResponse = (chunks: string[]) => {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    start(controller) {
+      for (const chunk of chunks) {
+        controller.enqueue(encoder.encode(chunk));
+      }
+      controller.close();
+    },
+  });
+  
+  return new Response(stream, {
+    status: 200,
+    headers: { 'Content-Type': 'application/x-ndjson' },
+  });
+};
+
+export const mockFetch = vi.fn();
+
+// Set up global fetch mock
+globalThis.fetch = mockFetch;
