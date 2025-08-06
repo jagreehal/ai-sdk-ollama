@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 2025-08-04
+## [0.1.0] - 2025-08-06
 
 ### Added
 
@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Node.js 22+ support
   - Clean, organized codebase structure
 - 🧪 **Quality Assurance**
-  - 113 comprehensive tests (unit + integration)
+  - Tests (unit + integration)
   - Full TypeScript coverage
   - Linting with ESLint + Prettier
   - Automated testing with Vitest
@@ -50,6 +50,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Dual parameter demonstrations
   - Model capabilities and validation examples
   - Comprehensive README with AI SDK v5+ compatibility
+- 🖼️ **Image Processing Support**: Complete implementation of AI SDK v5 image handling with Ollama
+  - Support for image URLs, base64 encoded images, and multiple images
+  - Full integration with vision models like LLaVA and bakllava
+  - Streaming support with images
+  - Mixed content types (text + image + text)
 
 ### Technical Details
 
@@ -62,31 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Supported Models
 
 - **Chat Models**: llama3.2, llama3.1, mistral, phi4-mini, qwen2.5, codellama, and all Ollama chat models
-- **Vision Models**: llama3.2-vision, llava, minicpm-v
+- **Vision Models**: llava, bakllava, llama3.2-vision, minicpm-v
 - **Embedding Models**: nomic-embed-text, all-minilm, mxbai-embed-large, and all Ollama embedding models
 
-## [0.1.1] - 2025-01-07
-
-### Fixed
-
-- 🔧 **Streaming Implementation**: Fixed text part ID consistency in streaming (was generating new UUIDs for each chunk)
-- 🔧 **Build Errors**: Fixed `created_at` Date object conversion to string for JSONValue compatibility
-- 🔧 **TypeScript Linting**: Removed all `any` types for better type safety
-- 🔧 **Documentation**: Updated README.md and examples to explicitly mention AI SDK v5+ compatibility
-
-### Improved
-
-- 📚 **Documentation**: Enhanced README.md with AI SDK v5+ requirements and installation instructions
-- 🧪 **Testing**: All 113 tests now passing with comprehensive coverage
-- 🚀 **Examples**: Verified all 8 examples working correctly with proper error handling
-- 🎯 **Developer Experience**: Improved error messages and model suggestions
-
-### Technical Improvements
-
-- **Streaming Reliability**: Consistent text part IDs prevent "text part not found" errors
-- **Type Safety**: Enhanced TypeScript implementation with strict typing
-- **Error Handling**: Better error messages with actionable suggestions
-- **Build Process**: All builds now pass successfully (CJS, ESM, and DTS)
-
-[0.1.1]: https://github.com/jagreehal/ai-sdk-ollama/releases/tag/v0.1.1
 [0.1.0]: https://github.com/jagreehal/ai-sdk-ollama/releases/tag/v0.1.0

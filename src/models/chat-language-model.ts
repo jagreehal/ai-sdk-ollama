@@ -224,7 +224,9 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
         providerMetadata: {
           ollama: {
             model: response.model,
-            created_at: response.created_at,
+            created_at: response.created_at
+              ? new Date(response.created_at).toISOString()
+              : undefined,
             total_duration: response.total_duration,
             load_duration: response.load_duration,
             eval_duration: response.eval_duration,
@@ -285,7 +287,6 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
         totalTokens: 0,
       };
       let finishReason: LanguageModelV2FinishReason = 'unknown';
-      const textId = crypto.randomUUID(); // Consistent ID for text streaming
 
       const transformStream = new TransformStream<
         ChatResponse,
@@ -327,7 +328,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
             } else if (chunk.message.content) {
               controller.enqueue({
                 type: 'text-delta',
-                id: textId, // Use consistent ID for text streaming
+                id: crypto.randomUUID(), // Generate unique ID for each text chunk
                 delta: chunk.message.content,
               });
             }

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { OllamaChatLanguageModel } from './chat-language-model';
 import { OllamaChatSettings } from '../provider';
 import { LanguageModelV2CallOptions } from '@ai-sdk/provider';
-import { Ollama } from 'ollama';
+import { Ollama, AbortableAsyncIterator, ChatResponse } from 'ollama';
 
 // Mock Ollama client
 const mockOllamaClient = {
@@ -54,6 +54,8 @@ describe('OllamaChatLanguageModel', () => {
   describe('doGenerate', () => {
     it('should handle simple text generation', async () => {
       const mockResponse = {
+        model: 'llama3.2',
+        created_at: new Date(),
         message: {
           role: 'assistant',
           content: 'Hello, world!',
@@ -71,9 +73,7 @@ describe('OllamaChatLanguageModel', () => {
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
       const options: LanguageModelV2CallOptions = {
-        inputFormat: 'prompt',
-        prompt: [{ role: 'user', content: 'Hello' }],
-        maxRetries: 0,
+        prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
       };
 
       const result = await model.doGenerate(options);
@@ -96,6 +96,8 @@ describe('OllamaChatLanguageModel', () => {
 
     it('should handle generation with options', async () => {
       const mockResponse = {
+        model: 'llama3.2',
+        created_at: new Date(),
         message: {
           role: 'assistant',
           content: 'Response with options',
@@ -104,20 +106,22 @@ describe('OllamaChatLanguageModel', () => {
         done_reason: 'stop',
         eval_count: 15,
         prompt_eval_count: 8,
+        total_duration: 1_000_000_000,
+        load_duration: 100_000_000,
+        prompt_eval_duration: 200_000_000,
+        eval_duration: 700_000_000,
       };
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
       const options: LanguageModelV2CallOptions = {
-        inputFormat: 'prompt',
-        prompt: [{ role: 'user', content: 'Test' }],
+        prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
         temperature: 0.7,
         maxOutputTokens: 100,
         topP: 0.9,
         topK: 50,
         seed: 42,
         stopSequences: ['STOP'],
-        maxRetries: 0,
       };
 
       const result = await model.doGenerate(options);
@@ -142,6 +146,8 @@ describe('OllamaChatLanguageModel', () => {
 
     it('should handle JSON response format', async () => {
       const mockResponse = {
+        model: 'llama3.2',
+        created_at: new Date(),
         message: {
           role: 'assistant',
           content: '{"name": "John", "age": 30}',
@@ -150,15 +156,19 @@ describe('OllamaChatLanguageModel', () => {
         done_reason: 'stop',
         eval_count: 20,
         prompt_eval_count: 10,
+        total_duration: 1_000_000_000,
+        load_duration: 100_000_000,
+        prompt_eval_duration: 200_000_000,
+        eval_duration: 700_000_000,
       };
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
       const options: LanguageModelV2CallOptions = {
-        inputFormat: 'prompt',
-        prompt: [{ role: 'user', content: 'Generate JSON' }],
+        prompt: [
+          { role: 'user', content: [{ type: 'text', text: 'Generate JSON' }] },
+        ],
         responseFormat: { type: 'json' },
-        maxRetries: 0,
       };
 
       const result = await model.doGenerate(options);
@@ -177,6 +187,8 @@ describe('OllamaChatLanguageModel', () => {
 
     it('should handle tool calling with supported models', async () => {
       const mockResponse = {
+        model: 'llama3.2',
+        created_at: new Date(),
         message: {
           role: 'assistant',
           content: 'Response',
@@ -185,19 +197,22 @@ describe('OllamaChatLanguageModel', () => {
         done_reason: 'stop',
         eval_count: 10,
         prompt_eval_count: 5,
+        total_duration: 1_000_000_000,
+        load_duration: 100_000_000,
+        prompt_eval_duration: 200_000_000,
+        eval_duration: 700_000_000,
       };
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
       const options: LanguageModelV2CallOptions = {
-        inputFormat: 'prompt',
-        prompt: [{ role: 'user', content: 'Test' }],
+        prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
         tools: [
           {
             type: 'function',
             name: 'test_tool',
             description: 'A test tool',
-            parameters: {
+            inputSchema: {
               type: 'object',
               properties: {
                 param: { type: 'string' },
@@ -205,7 +220,6 @@ describe('OllamaChatLanguageModel', () => {
             },
           },
         ],
-        maxRetries: 0,
       };
 
       const result = await model.doGenerate(options);
@@ -224,7 +238,7 @@ describe('OllamaChatLanguageModel', () => {
               }),
             }),
           ]),
-        })
+        }),
       );
     });
 
@@ -237,14 +251,18 @@ describe('OllamaChatLanguageModel', () => {
       );
 
       const options: LanguageModelV2CallOptions = {
-        inputFormat: 'prompt',
-        prompt: [{ role: 'user', content: 'Test with tools' }],
+        prompt: [
+          {
+            role: 'user',
+            content: [{ type: 'text', text: 'Test with tools' }],
+          },
+        ],
         tools: [
           {
             type: 'function',
             name: 'test_tool',
             description: 'A test tool',
-            parameters: {
+            inputSchema: {
               type: 'object',
               properties: {
                 param: { type: 'string' },
@@ -252,14 +270,13 @@ describe('OllamaChatLanguageModel', () => {
             },
           },
         ],
-        maxRetries: 0,
       };
 
       // Should throw error for unsupported tool calling
       await expect(unsupportedModel.doGenerate(options)).rejects.toThrow(
-        /does not support tool calling/
+        /does not support tool calling/,
       );
-      
+
       // Verify Ollama.chat was NOT called (error thrown before)
       expect(vi.mocked(mockOllamaClient.chat)).not.toHaveBeenCalled();
     });
@@ -269,9 +286,7 @@ describe('OllamaChatLanguageModel', () => {
       vi.mocked(mockOllamaClient.chat).mockRejectedValueOnce(error);
 
       const options: LanguageModelV2CallOptions = {
-        inputFormat: 'prompt',
-        prompt: [{ role: 'user', content: 'Hello' }],
-        maxRetries: 0,
+        prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
       };
 
       await expect(model.doGenerate(options)).rejects.toThrow(
@@ -281,6 +296,8 @@ describe('OllamaChatLanguageModel', () => {
 
     it('should handle length finish reason', async () => {
       const mockResponse = {
+        model: 'llama3.2',
+        created_at: new Date(),
         message: {
           role: 'assistant',
           content: 'Truncated response',
@@ -289,14 +306,21 @@ describe('OllamaChatLanguageModel', () => {
         done_reason: 'length',
         eval_count: 100,
         prompt_eval_count: 10,
+        total_duration: 1_000_000_000,
+        load_duration: 100_000_000,
+        prompt_eval_duration: 200_000_000,
+        eval_duration: 700_000_000,
       };
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
       const options: LanguageModelV2CallOptions = {
-        inputFormat: 'prompt',
-        prompt: [{ role: 'user', content: 'Write a long story' }],
-        maxRetries: 0,
+        prompt: [
+          {
+            role: 'user',
+            content: [{ type: 'text', text: 'Write a long story' }],
+          },
+        ],
       };
 
       const result = await model.doGenerate(options);
@@ -309,19 +333,43 @@ describe('OllamaChatLanguageModel', () => {
     it('should handle streaming responses', async () => {
       const mockStreamData = [
         {
+          model: 'llama3.2',
+          created_at: new Date(),
           message: { role: 'assistant', content: 'Hello' },
           done: false,
+          done_reason: '',
+          eval_count: 5,
+          prompt_eval_count: 3,
+          total_duration: 500_000_000,
+          load_duration: 50_000_000,
+          prompt_eval_duration: 100_000_000,
+          eval_duration: 350_000_000,
         },
         {
+          model: 'llama3.2',
+          created_at: new Date(),
           message: { role: 'assistant', content: ' world' },
           done: false,
+          done_reason: '',
+          eval_count: 10,
+          prompt_eval_count: 3,
+          total_duration: 800_000_000,
+          load_duration: 50_000_000,
+          prompt_eval_duration: 100_000_000,
+          eval_duration: 650_000_000,
         },
         {
+          model: 'llama3.2',
+          created_at: new Date(),
           message: { role: 'assistant', content: '!' },
           done: true,
           done_reason: 'stop',
           eval_count: 15,
           prompt_eval_count: 8,
+          total_duration: 1_000_000_000,
+          load_duration: 100_000_000,
+          prompt_eval_duration: 200_000_000,
+          eval_duration: 700_000_000,
         },
       ];
 
@@ -336,14 +384,14 @@ describe('OllamaChatLanguageModel', () => {
         }),
       };
 
-      vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(
-        mockAsyncIterable as AsyncIterable<ChatResponse>,
+      (
+        mockOllamaClient.chat as unknown as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(
+        mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
       );
 
       const options: LanguageModelV2CallOptions = {
-        inputFormat: 'prompt',
-        prompt: [{ role: 'user', content: 'Hello' }],
-        maxRetries: 0,
+        prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
       };
 
       const { stream } = await model.doStream(options);
@@ -378,7 +426,7 @@ describe('OllamaChatLanguageModel', () => {
         model: 'llama3.2',
         messages: [{ role: 'user', content: 'Hello' }],
         stream: true,
-        options: expect.any(Object),
+        options: expect.objectContaining({}),
       });
     });
 
@@ -387,9 +435,7 @@ describe('OllamaChatLanguageModel', () => {
       vi.mocked(mockOllamaClient.chat).mockRejectedValueOnce(error);
 
       const options: LanguageModelV2CallOptions = {
-        inputFormat: 'prompt',
-        prompt: [{ role: 'user', content: 'Hello' }],
-        maxRetries: 0,
+        prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
       };
 
       await expect(model.doStream(options)).rejects.toThrow('Stream error');
@@ -406,15 +452,15 @@ describe('OllamaChatLanguageModel', () => {
         }),
       };
 
-      vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(
-        mockAsyncIterable as AsyncIterable<ChatResponse>,
+      (
+        mockOllamaClient.chat as unknown as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(
+        mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
       );
 
       const options: LanguageModelV2CallOptions = {
-        inputFormat: 'prompt',
-        prompt: [{ role: 'user', content: 'Hello' }],
+        prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
         abortSignal: abortController.signal,
-        maxRetries: 0,
       };
 
       const { stream } = await model.doStream(options);
@@ -448,6 +494,8 @@ describe('OllamaChatLanguageModel', () => {
       );
 
       const mockResponse = {
+        model: 'custom-model',
+        created_at: new Date(),
         message: {
           role: 'assistant',
           content: 'Custom response',
@@ -456,14 +504,16 @@ describe('OllamaChatLanguageModel', () => {
         done_reason: 'stop',
         eval_count: 10,
         prompt_eval_count: 5,
+        total_duration: 1_000_000_000,
+        load_duration: 100_000_000,
+        prompt_eval_duration: 200_000_000,
+        eval_duration: 700_000_000,
       };
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
       const options: LanguageModelV2CallOptions = {
-        inputFormat: 'prompt',
-        prompt: [{ role: 'user', content: 'Test' }],
-        maxRetries: 0,
+        prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
       };
 
       await customModel.doGenerate(options);
@@ -487,7 +537,7 @@ describe('OllamaChatLanguageModel', () => {
       const settingsWithDefaults: OllamaChatSettings = {
         options: {
           temperature: 0.5, // Ollama option should win
-          top_k: 40,        // Ollama option should win
+          top_k: 40, // Ollama option should win
         },
       };
 
@@ -498,6 +548,8 @@ describe('OllamaChatLanguageModel', () => {
       );
 
       const mockResponse = {
+        model: 'test-model',
+        created_at: new Date(),
         message: {
           role: 'assistant',
           content: 'Response',
@@ -506,16 +558,18 @@ describe('OllamaChatLanguageModel', () => {
         done_reason: 'stop',
         eval_count: 10,
         prompt_eval_count: 5,
+        total_duration: 1_000_000_000,
+        load_duration: 100_000_000,
+        prompt_eval_duration: 200_000_000,
+        eval_duration: 700_000_000,
       };
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
       const options: LanguageModelV2CallOptions = {
-        inputFormat: 'prompt',
-        prompt: [{ role: 'user', content: 'Test' }],
+        prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
         temperature: 0.9, // Will be overridden by Ollama setting
-        topK: 60,        // Will be overridden by Ollama setting
-        maxRetries: 0,
+        topK: 60, // Will be overridden by Ollama setting
       };
 
       await modelWithDefaults.doGenerate(options);
@@ -526,7 +580,7 @@ describe('OllamaChatLanguageModel', () => {
         stream: false,
         options: expect.objectContaining({
           temperature: 0.5, // Ollama setting wins
-          top_k: 40,        // Ollama setting wins
+          top_k: 40, // Ollama setting wins
         }),
       });
     });

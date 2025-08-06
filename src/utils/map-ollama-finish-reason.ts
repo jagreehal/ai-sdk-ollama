@@ -4,7 +4,7 @@ export function mapOllamaFinishReason(
   reason?: string | null,
 ): LanguageModelV2FinishReason {
   if (!reason) return 'unknown';
-  
+
   switch (reason) {
     case 'stop': {
       return 'stop';

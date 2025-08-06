@@ -4,10 +4,10 @@ import { OllamaError } from './ollama-error';
 describe('OllamaError', () => {
   describe('constructor', () => {
     it('should create error with message', () => {
-      const error = new OllamaError({ 
-        message: 'Test error message' 
+      const error = new OllamaError({
+        message: 'Test error message',
       });
-      
+
       expect(error.message).toBe('Test error message');
       expect(error.name).toBe('OllamaError');
       expect(error.cause).toBeUndefined();
@@ -15,11 +15,11 @@ describe('OllamaError', () => {
 
     it('should create error with message and cause', () => {
       const cause = new Error('Original error');
-      const error = new OllamaError({ 
+      const error = new OllamaError({
         message: 'Wrapped error',
-        cause
+        cause,
       });
-      
+
       expect(error.message).toBe('Wrapped error');
       expect(error.name).toBe('OllamaError');
       expect(error.cause).toBe(cause);
@@ -27,11 +27,11 @@ describe('OllamaError', () => {
 
     it('should create error with non-Error cause', () => {
       const cause = { type: 'network', code: 500 };
-      const error = new OllamaError({ 
+      const error = new OllamaError({
         message: 'Network error',
-        cause
+        cause,
       });
-      
+
       expect(error.message).toBe('Network error');
       expect(error.cause).toBe(cause);
     });
@@ -51,7 +51,7 @@ describe('OllamaError', () => {
     it('should return false for non-error objects', () => {
       expect(OllamaError.isOllamaError({})).toBe(false);
       expect(OllamaError.isOllamaError(null)).toBe(false);
-      expect(OllamaError.isOllamaError()).toBe(false);
+      expect(OllamaError.isOllamaError(void 0)).toBe(false);
       expect(OllamaError.isOllamaError('string')).toBe(false);
       expect(OllamaError.isOllamaError(123)).toBe(false);
     });
@@ -60,7 +60,7 @@ describe('OllamaError', () => {
       const errorLike = {
         name: 'Error',
         message: 'Test',
-        stack: 'stack trace'
+        stack: 'stack trace',
       };
       expect(OllamaError.isOllamaError(errorLike)).toBe(false);
     });
@@ -82,27 +82,27 @@ describe('OllamaError', () => {
 
   describe('JSON serialization', () => {
     it('should have enumerable properties for serialization', () => {
-      const error = new OllamaError({ 
+      const error = new OllamaError({
         message: 'Test error',
-        cause: { code: 500 }
+        cause: { code: 500 },
       });
-      
+
       // Check that essential properties are accessible
       expect(error.message).toBe('Test error');
       expect(error.name).toBe('OllamaError');
       expect(error.cause).toEqual({ code: 500 });
-      
+
       // Test manual serialization (since Error doesn't serialize message by default)
       const manualSerialization = {
         name: error.name,
         message: error.message,
         cause: error.cause,
-        stack: error.stack
+        stack: error.stack,
       };
-      
+
       const serialized = JSON.stringify(manualSerialization);
       const parsed = JSON.parse(serialized);
-      
+
       expect(parsed.name).toBe('OllamaError');
       expect(parsed.message).toBe('Test error');
       expect(parsed.cause).toEqual({ code: 500 });
