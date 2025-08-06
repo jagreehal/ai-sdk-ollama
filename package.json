@@ -21,6 +21,9 @@
     "url": "git+https://github.com/jagreehal/ai-sdk-ollama.git"
   },
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist",
     "README.md",
@@ -40,7 +43,7 @@
     "test:edge": "vitest run --config vitest.edge.config.js",
     "check-format": "prettier --check .",
     "check-exports": "attw --pack . --ignore-rules false-esm no-resolution",
-    "local-release": "npm run ci && changeset version && changeset publish"
+    "local-release": "npm run ci && changeset version && changeset publish --access public"
   },
   "keywords": [
     "ai",
