@@ -5,22 +5,15 @@ export {
   type OllamaProviderSettings,
   type OllamaChatSettings,
   type OllamaEmbeddingSettings,
+  type OllamaProviderOptions,
+  type OllamaChatProviderOptions,
+  type OllamaEmbeddingProviderOptions,
 } from './provider';
 
 export { OllamaChatLanguageModel } from './models/chat-language-model';
+export type { OllamaChatConfig } from './models/chat-language-model';
 export { OllamaEmbeddingModel } from './models/embedding-model';
+export type { OllamaEmbeddingConfig } from './models/embedding-model';
 export { OllamaError } from './utils/ollama-error';
+export type { OllamaErrorData } from './utils/ollama-error';
 
-// Model capabilities and suggestions utilities (optional for advanced users)
-export {
-  getModelCapabilities,
-  getModelInfo,
-  modelSupports,
-  type ModelCapabilities,
-} from './utils/model-capabilities';
-export {
-  suggestModelsForFeatures,
-  getFeatureNotSupportedMessage,
-  type ModelSuggestion,
-} from './utils/model-suggestions';
-export { validateModel, getModelStatus } from './utils/validate-model';

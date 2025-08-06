@@ -151,7 +151,7 @@ const { text } = await generateText({
 
 ### Tool Calling Support
 
-Ollama supports tool calling with compatible models:
+Ollama supports tool calling with compatible models.
 
 ```typescript
 import { z } from 'zod';
@@ -162,7 +162,7 @@ const { text, toolCalls } = await generateText({
   tools: {
     getWeather: {
       description: 'Get current weather for a location',
-      parameters: z.object({
+      inputSchema: z.object({
         location: z.string().describe('City name'),
         unit: z.enum(['celsius', 'fahrenheit']).optional(),
       }),
@@ -175,28 +175,26 @@ const { text, toolCalls } = await generateText({
 });
 ```
 
-### Smart Model Intelligence
+> **Note on Tool Parameters**: Due to Zod version compatibility issues, tool schemas may not always convert properly. When this happens, Ollama may use different parameter names than defined in your schema. It's recommended to handle parameter variations in your tool's execute function (e.g., checking for both `location` and `city`).
 
-The provider automatically detects model capabilities and provides helpful suggestions:
+### Simple and Predictable
+
+The provider works the same way with any model - just try the features you need:
 
 ```typescript
-// The provider will automatically warn you if a model doesn't support tools
+// No capability checking required - just use any model
 const { text } = await generateText({
-  model: ollama('llama3'), // Older model without tool support
+  model: ollama('any-model'),
   prompt: 'What is the weather?',
   tools: {
     /* ... */
-  }, // This will throw a helpful error with suggestions
+  }, // If the model doesn't support tools, you'll get a clear error
 });
 
-// Get model recommendations for specific features
-import { suggestModelsForFeatures } from 'ai-sdk-ollama';
-
-const suggestions = suggestModelsForFeatures({
-  toolCalling: true,
-  performance: 'fast',
-});
-// Returns: [{ modelId: 'llama3.2', reason: 'Excellent tool calling...' }]
+// The provider is simple and predictable
+// - Try any feature with any model
+// - Get clear error messages if something doesn't work
+// - No hidden complexity or capability detection
 ```
 
 ## Advanced Features

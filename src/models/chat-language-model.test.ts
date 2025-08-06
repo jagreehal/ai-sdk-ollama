@@ -242,45 +242,6 @@ describe('OllamaChatLanguageModel', () => {
       );
     });
 
-    it('should throw error for unsupported models', async () => {
-      // Use a model that doesn't support tool calling
-      const unsupportedModel = new OllamaChatLanguageModel(
-        'llama3', // Legacy model without tool support
-        {},
-        { client: mockOllamaClient, provider: 'ollama' },
-      );
-
-      const options: LanguageModelV2CallOptions = {
-        prompt: [
-          {
-            role: 'user',
-            content: [{ type: 'text', text: 'Test with tools' }],
-          },
-        ],
-        tools: [
-          {
-            type: 'function',
-            name: 'test_tool',
-            description: 'A test tool',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                param: { type: 'string' },
-              },
-            },
-          },
-        ],
-      };
-
-      // Should throw error for unsupported tool calling
-      await expect(unsupportedModel.doGenerate(options)).rejects.toThrow(
-        /does not support tool calling/,
-      );
-
-      // Verify Ollama.chat was NOT called (error thrown before)
-      expect(vi.mocked(mockOllamaClient.chat)).not.toHaveBeenCalled();
-    });
-
     it('should handle errors properly', async () => {
       const error = new Error('Connection failed');
       vi.mocked(mockOllamaClient.chat).mockRejectedValueOnce(error);

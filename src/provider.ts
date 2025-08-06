@@ -7,7 +7,6 @@ import {
 import { Ollama } from 'ollama';
 import { OllamaChatLanguageModel } from './models/chat-language-model';
 import { OllamaEmbeddingModel } from './models/embedding-model';
-import { validateModel } from './utils/validate-model';
 
 export interface OllamaProviderSettings {
   /**
@@ -120,6 +119,36 @@ export interface OllamaEmbeddingSettings {
 }
 
 /**
+ * Options for configuring Ollama provider calls
+ */
+export interface OllamaProviderOptions {
+  /**
+   * Additional headers to include in requests
+   */
+  headers?: Record<string, string>;
+}
+
+/**
+ * Options for configuring Ollama chat model calls
+ */
+export interface OllamaChatProviderOptions extends OllamaProviderOptions {
+  /**
+   * Enable structured output mode for object generation
+   */
+  structuredOutputs?: boolean;
+}
+
+/**
+ * Options for configuring Ollama embedding model calls
+ */
+export interface OllamaEmbeddingProviderOptions extends OllamaProviderOptions {
+  /**
+   * Maximum number of embeddings to process in a single call
+   */
+  maxEmbeddingsPerCall?: number;
+}
+
+/**
  * Create an Ollama provider instance
  */
 export function createOllama(
@@ -135,9 +164,6 @@ export function createOllama(
     modelId: string,
     settings: OllamaChatSettings = {},
   ) => {
-    // Validate model and provide helpful feedback
-    validateModel(modelId);
-
     return new OllamaChatLanguageModel(modelId, settings, {
       client,
       provider: 'ollama',
