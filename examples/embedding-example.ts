@@ -23,11 +23,11 @@ async function testEmbedding() {
       ),
     );
     console.log(`Generated ${results.length} embeddings`);
-    results.forEach((result, i) => {
+    for (const [i, result] of results.entries()) {
       console.log(
         `  Text "${texts[i]}" -> ${result.embedding.length} dimensions`,
       );
-    });
+    }
   } catch (error) {
     console.error('Error:', error);
   }

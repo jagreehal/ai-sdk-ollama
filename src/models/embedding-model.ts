@@ -3,7 +3,7 @@ import { Ollama } from 'ollama';
 import { OllamaEmbeddingSettings } from '../provider';
 import { OllamaError } from '../utils/ollama-error';
 
-interface OllamaEmbeddingConfig {
+export interface OllamaEmbeddingConfig {
   client: Ollama;
   provider: string;
 }

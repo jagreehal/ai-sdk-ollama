@@ -60,7 +60,7 @@ async function main() {
           repeat_penalty: 1.1, // Penalize repetition
           repeat_last_n: 64, // Look-back for repetition
           mirostat: 2, // Mirostat sampling algorithm
-          mirostat_tau: 5.0, // Target entropy
+          mirostat_tau: 5, // Target entropy
           mirostat_eta: 0.1, // Learning rate
 
           // System options
@@ -141,7 +141,7 @@ async function main() {
 
           // The provider passes ALL options directly to Ollama
           // ensuring immediate compatibility with new features
-        } as any, // Using 'as any' to demonstrate future parameters
+        } as Record<string, unknown>, // Using type assertion to demonstrate future parameters
       }),
       prompt: 'What is the future of AI?',
       maxOutputTokens: 30,
