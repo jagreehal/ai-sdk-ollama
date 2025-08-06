@@ -13,9 +13,8 @@ import { OllamaChatSettings } from '../provider';
 import { convertToOllamaChatMessages } from '../utils/convert-to-ollama-messages';
 import { mapOllamaFinishReason } from '../utils/map-ollama-finish-reason';
 import { OllamaError } from '../utils/ollama-error';
-import { modelSupports } from '../utils/model-capabilities';
 
-interface OllamaChatConfig {
+export interface OllamaChatConfig {
   client: Ollama;
   provider: string;
 }
@@ -70,16 +69,6 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
 
     // Check for unsupported features and throw errors
     if (
-      tools &&
-      tools.length > 0 &&
-      !modelSupports(this.modelId, 'supportsToolCalling')
-    ) {
-      throw new Error(
-        `Model '${this.modelId}' does not support tool calling. Consider using models like llama3.2, llama3.1, mistral, qwen2.5, or command-r for tool calling features.`,
-      );
-    }
-
-    if (
       responseFormat?.type === 'json' &&
       responseFormat.schema &&
       !this.supportsStructuredOutputs
@@ -89,25 +78,59 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
       );
     }
 
-    if (
-      responseFormat?.type === 'json' &&
-      !modelSupports(this.modelId, 'supportsJsonMode')
-    ) {
-      throw new Error(
-        `Model '${this.modelId}' does not support JSON mode. Consider using models like llama3.2, mistral, or qwen2.5 for structured output support.`,
-      );
-    }
-
     // Convert AI SDK tools to Ollama format (error already thrown if unsupported)
     const ollamaTools: Tool[] | undefined = tools
       ? tools.map((tool): Tool => {
           if (tool.type === 'function') {
+            // The inputSchema from AI SDK should already be a JSON schema
+            // when tools are passed to providers
+            let jsonSchema: Record<string, unknown>;
+
+            // Check if we have a Zod schema (has parse method) or a JSON schema
+            if (tool.inputSchema && typeof tool.inputSchema === 'object') {
+              if (
+                'parse' in tool.inputSchema &&
+                typeof tool.inputSchema.parse === 'function'
+              ) {
+                // It's a Zod schema - we need to convert it
+                // For now, we'll use a basic fallback since zod-to-json-schema has version issues
+                console.warn(
+                  `Tool ${tool.name} is using a Zod schema directly. Schema conversion may not work properly due to Zod version mismatch.`,
+                );
+                jsonSchema = {
+                  type: 'object',
+                  properties: {},
+                  additionalProperties: false,
+                };
+              } else if (
+                'properties' in tool.inputSchema ||
+                'type' in tool.inputSchema
+              ) {
+                // It looks like a JSON schema already
+                jsonSchema = tool.inputSchema as Record<string, unknown>;
+              } else {
+                // Unknown schema format
+                jsonSchema = {
+                  type: 'object',
+                  properties: {},
+                  additionalProperties: false,
+                };
+              }
+            } else {
+              // No schema provided
+              jsonSchema = {
+                type: 'object',
+                properties: {},
+                additionalProperties: false,
+              };
+            }
+
             return {
               type: 'function',
               function: {
                 name: tool.name,
                 description: tool.description,
-                parameters: tool.inputSchema as Record<string, unknown>, // Ollama expects a specific schema format
+                parameters: jsonSchema,
               },
             };
           }
@@ -201,11 +224,13 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
 
       if (toolCalls && toolCalls.length > 0) {
         for (const toolCall of toolCalls) {
+          const toolInput = toolCall.function.arguments || {};
+
           content.push({
             type: 'tool-call',
             toolCallId: crypto.randomUUID(), // Ollama doesn't provide IDs
             toolName: toolCall.function.name,
-            input: JSON.stringify(toolCall.function.arguments || {}),
+            input: JSON.stringify(toolInput),
           });
         }
       }
@@ -293,6 +318,11 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
         LanguageModelV2StreamPart
       >({
         async transform(chunk: ChatResponse, controller) {
+          // Validate chunk
+          if (!chunk || typeof chunk !== 'object') {
+            return; // Skip invalid chunks
+          }
+
           // Regular chunk with content
           if (chunk.done) {
             // Final chunk with metadata
@@ -318,14 +348,19 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
               chunk.message.tool_calls.length > 0
             ) {
               for (const toolCall of chunk.message.tool_calls) {
+                const toolInput = toolCall.function.arguments || {};
+
                 controller.enqueue({
                   type: 'tool-call',
                   toolCallId: crypto.randomUUID(), // Ollama doesn't provide IDs
                   toolName: toolCall.function.name,
-                  input: JSON.stringify(toolCall.function.arguments || {}),
+                  input: JSON.stringify(toolInput),
                 });
               }
-            } else if (chunk.message.content) {
+            } else if (
+              chunk.message.content &&
+              typeof chunk.message.content === 'string'
+            ) {
               controller.enqueue({
                 type: 'text-delta',
                 id: crypto.randomUUID(), // Generate unique ID for each text chunk
@@ -341,7 +376,10 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
         async start(controller) {
           try {
             for await (const chunk of stream) {
-              controller.enqueue(chunk);
+              // Ensure chunk is valid before enqueuing
+              if (chunk && typeof chunk === 'object') {
+                controller.enqueue(chunk);
+              }
             }
             controller.close();
           } catch (error) {

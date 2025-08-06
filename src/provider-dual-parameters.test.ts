@@ -15,9 +15,11 @@ describe('Dual Parameter Support', () => {
     mockOllamaClient = {
       chat: vi.fn(),
       embed: vi.fn(),
-    } as any;
+    };
 
-    vi.mocked(Ollama).mockImplementation(() => mockOllamaClient as any);
+    vi.mocked(Ollama).mockImplementation(
+      () => mockOllamaClient as unknown as Ollama,
+    );
     provider = createOllama();
   });
 

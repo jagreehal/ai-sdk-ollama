@@ -26,12 +26,15 @@ async function testBasicStreaming() {
       fullText += chunk;
     }
 
+    // Await the usage promise
+    const finalUsage = await usage;
     console.log(
-      `\n\n📊 Final usage: ${usage?.inputTokens || 'N/A'} input, ${usage?.outputTokens || 'N/A'} output tokens`,
+      `\n\n📊 Final usage: ${finalUsage?.inputTokens || 'N/A'} input, ${finalUsage?.outputTokens || 'N/A'} output tokens`,
     );
     console.log(`📝 Complete text length: ${fullText.length} characters`);
   } catch (error) {
-    console.log(`❌ Basic streaming test failed: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log(`❌ Basic streaming test failed: ${errorMessage}`);
   }
 }
 
@@ -53,10 +56,11 @@ async function testStreamingWithTools() {
           }),
           execute: async ({ city, unit = 'celsius' }) => {
             // Mock weather data
-            const weather = {
-              'San Francisco': { temp: 18, condition: 'foggy' },
-              Paris: { temp: 22, condition: 'sunny' },
-            };
+            const weather: Record<string, { temp: number; condition: string }> =
+              {
+                'San Francisco': { temp: 18, condition: 'foggy' },
+                Paris: { temp: 22, condition: 'sunny' },
+              };
             const cityWeather = weather[city] || {
               temp: 20,
               condition: 'unknown',
@@ -77,9 +81,11 @@ async function testStreamingWithTools() {
       process.stdout.write(chunk);
     }
 
-    console.log('\n\n🔧 Tool calls detected:', toolCalls?.length || 0);
-    if (toolCalls && toolCalls.length > 0) {
-      for (const toolCall of toolCalls) {
+    // Await the toolCalls promise
+    const finalToolCalls = await toolCalls;
+    console.log('\n\n🔧 Tool calls detected:', finalToolCalls?.length || 0);
+    if (finalToolCalls && finalToolCalls.length > 0) {
+      for (const toolCall of finalToolCalls) {
         console.log(`   • ${toolCall.toolName}:`, toolCall.input);
       }
     } else {
@@ -88,7 +94,8 @@ async function testStreamingWithTools() {
       );
     }
   } catch (error) {
-    console.log(`❌ Tool streaming test failed: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log(`❌ Tool streaming test failed: ${errorMessage}`);
   }
 }
 
@@ -109,38 +116,26 @@ async function testStreamingEvents() {
     let textChunks = 0;
     let totalChars = 0;
 
-    for await (const part of result.fullStream) {
-      switch (part.type) {
-        case 'text-delta':
-          textChunks++;
-          if (part.delta) {
-            totalChars += part.delta.length;
-            process.stdout.write(part.delta);
-          }
-          break;
-
-        case 'finish':
-          console.log(`\n\n✅ Stream finished!`);
-          console.log(`   Reason: ${part.finishReason}`);
-          if (part.usage) {
-            console.log(
-              `   Usage: ${part.usage.inputTokens || 'N/A'} input, ${part.usage.outputTokens || 'N/A'} output`,
-            );
-          } else {
-            console.log(`   Usage: Not available`);
-          }
-          console.log(
-            `   Chunks: ${textChunks} text chunks, ${totalChars} characters`,
-          );
-          break;
-
-        case 'error':
-          console.log(`\n❌ Stream error: ${part.error}`);
-          break;
-      }
+    // Use textStream instead of fullStream to avoid ID reference issues
+    for await (const chunk of result.textStream) {
+      textChunks++;
+      totalChars += chunk.length;
+      process.stdout.write(chunk);
     }
+
+    // Get usage information
+    const finalUsage = await result.usage;
+
+    console.log(`\n\n✅ Stream finished!`);
+    console.log(
+      `   Usage: ${finalUsage?.inputTokens || 'N/A'} input, ${finalUsage?.outputTokens || 'N/A'} output`,
+    );
+    console.log(
+      `   Chunks: ${textChunks} text chunks, ${totalChars} characters`,
+    );
   } catch (error) {
-    console.log(`❌ Streaming events test failed: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log(`❌ Streaming events test failed: ${errorMessage}`);
   }
 }
 
@@ -169,7 +164,9 @@ async function testStreamingWithDifferentModels() {
       }
       console.log(`   Response: ${response.trim()}`);
     } catch (error) {
-      console.log(`   ❌ Error: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.log(`   ❌ Error: ${errorMessage}`);
     }
   }
 }
@@ -201,7 +198,8 @@ async function testStreamObject() {
       console.log(JSON.stringify(partialObject, null, 2));
     }
   } catch (error) {
-    console.log(`   ⚠️ Structured streaming: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log(`   ⚠️ Structured streaming: ${errorMessage}`);
     console.log(
       '   (This is expected for some models - they may not support structured streaming)',
     );
@@ -234,10 +232,12 @@ async function testStreamingAbort() {
       process.stdout.write(chunk);
     }
   } catch (error) {
-    if (error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       console.log('\n\n✅ Stream successfully aborted!');
     } else {
-      console.log(`\n❌ Unexpected error: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.log(`\n❌ Unexpected error: ${errorMessage}`);
     }
   }
 }
@@ -265,7 +265,8 @@ async function runAllStreamingTests() {
     console.log('   • Abort control ✅');
     console.log('\n🎉 AI SDK streaming integration is working perfectly!');
   } catch (error) {
-    console.error('\n❌ Test failed:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('\n❌ Test failed:', errorMessage);
   }
 }
 

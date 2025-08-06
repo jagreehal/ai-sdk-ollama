@@ -63,16 +63,18 @@ async function testStreamingWithRealTimeDisplay() {
 async function testStreamingWithDifferentModels() {
   console.log('\n\n🤖 Multi-Model Streaming Test\n');
 
-  const testPrompt = 'What is TypeScript in one sentence?';
+  const models = [
+    { name: 'llama3.2', prompt: 'What is TypeScript?' },
+    { name: 'qwen2.5-coder', prompt: 'What is TypeScript?' },
+    { name: 'phi4-mini', prompt: 'What is TypeScript?' },
+  ];
 
-  const models = ['llama3.2', 'qwen2.5-coder', 'phi4-mini'];
-
-  for (const modelName of models) {
-    console.log(`\n🔸 Testing ${modelName}:`);
+  for (const { name, prompt } of models) {
+    console.log(`\n🔸 Testing ${name}:`);
     try {
       const { textStream } = await streamText({
-        model: ollama(modelName),
-        prompt: testPrompt,
+        model: ollama(name),
+        prompt,
         maxOutputTokens: 50,
       });
 
@@ -80,12 +82,15 @@ async function testStreamingWithDifferentModels() {
       for await (const chunk of textStream) {
         response += chunk;
       }
-
       console.log(`   ✅ Response: ${response.trim()}`);
     } catch (error) {
-      console.log(`   ❌ Error: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.log(`   ❌ Error: ${errorMessage}`);
     }
   }
+
+  return true;
 }
 
 async function testStreamingWithTools() {
@@ -116,16 +121,28 @@ async function testStreamingWithTools() {
     let toolCallsFound = 0;
 
     for await (const part of result.fullStream) {
-      if (part.type === 'text-delta') {
-        process.stdout.write(part.delta);
-        textContent += part.delta;
-      } else if (part.type === 'tool-call') {
-        toolCallsFound++;
-        console.log(`\n🔧 [TOOL CALL] ${part.toolName} with args:`, part.args);
-      } else if (part.type === 'tool-result') {
-        console.log(`🔧 [TOOL RESULT]`, part.result);
-      } else if (part.type === 'finish') {
-        console.log(`\n\n✅ Stream finished: ${part.finishReason}`);
+      switch (part.type) {
+        case 'text-delta': {
+          process.stdout.write(part.text);
+          textContent += part.text;
+          break;
+        }
+        case 'tool-call': {
+          toolCallsFound++;
+          console.log(
+            `\n🔧 [TOOL CALL] ${part.toolName} with input:`,
+            part.input,
+          );
+          break;
+        }
+        case 'tool-result': {
+          console.log(`🔧 [TOOL RESULT]`, part.output);
+          break;
+        }
+        case 'finish': {
+          console.log(`\n\n✅ Stream finished: ${part.finishReason}`);
+          break;
+        }
       }
     }
 
@@ -136,7 +153,8 @@ async function testStreamingWithTools() {
 
     return true;
   } catch (error) {
-    console.log(`❌ Tool streaming error: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log(`❌ Tool streaming error: ${errorMessage}`);
     return false;
   }
 }
@@ -181,7 +199,7 @@ async function testStreamingPerformance() {
     `   Average chunk size: ${Math.round(totalChars / chunks)} chars`,
   );
 
-  return totalTime < 10000; // Should complete within 10 seconds
+  return totalTime < 10_000; // Should complete within 10 seconds
 }
 
 async function runStreamingTests() {

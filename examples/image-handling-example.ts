@@ -14,7 +14,7 @@ async function main() {
   console.log('- qwen2.5-coder (supports images)');
   console.log('\nUsing llava (vision model) for actual image processing...\n');
 
-  // Example 1: Image from URL
+  // Example 1: URL image
   console.log('1. Analysing image from URL...');
   try {
     const { text } = await generateText({
@@ -23,14 +23,11 @@ async function main() {
         {
           role: 'user',
           content: [
-            {
-              type: 'text',
-              text: 'What do you see in this image? Please describe it in detail.',
-            },
+            { type: 'text', text: 'Describe this image:' },
             {
               type: 'file',
               data: new URL(
-                'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400',
+                'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300',
               ),
               mediaType: 'image/jpeg',
             },
@@ -40,9 +37,10 @@ async function main() {
     });
     console.log('Response:', text);
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.log(
       "Error with URL image (this is expected if the model doesn't support images):",
-      error.message,
+      errorMessage,
     );
   }
 
@@ -71,7 +69,8 @@ async function main() {
     });
     console.log('Response:', text);
   } catch (error) {
-    console.log('Error with base64 image:', error.message);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log('Error with base64 image:', errorMessage);
   }
 
   // Example 3: Multiple images in one prompt
@@ -107,7 +106,8 @@ async function main() {
     });
     console.log('Response:', text);
   } catch (error) {
-    console.log('Error with multiple images:', error.message);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log('Error with multiple images:', errorMessage);
   }
 
   // Example 4: Image-only prompt (no text)
@@ -132,7 +132,8 @@ async function main() {
     });
     console.log('Response:', text);
   } catch (error) {
-    console.log('Error with image-only prompt:', error.message);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log('Error with image-only prompt:', errorMessage);
   }
 
   // Example 5: Streaming with images
@@ -166,7 +167,8 @@ async function main() {
     }
     console.log('\n');
   } catch (error) {
-    console.log('Error with streaming image:', error.message);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log('Error with streaming image:', errorMessage);
   }
 
   // Example 6: Mixed content types
@@ -193,7 +195,8 @@ async function main() {
     });
     console.log('Response:', text);
   } catch (error) {
-    console.log('Error with mixed content:', error.message);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log('Error with mixed content:', errorMessage);
   }
 
   console.log('\n=== Image Handling Example Complete ===');

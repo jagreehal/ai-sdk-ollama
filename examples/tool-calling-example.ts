@@ -11,8 +11,7 @@ import { z } from 'zod';
 
 // Mock weather function
 async function getWeather(location: string, unit: string = 'celsius') {
-  // This is a mock function - in real use, this would call a weather API
-  const temps = {
+  const temps: Record<string, { celsius: number; fahrenheit: number }> = {
     'San Francisco': { celsius: 18, fahrenheit: 64 },
     'New York': { celsius: 22, fahrenheit: 72 },
     London: { celsius: 15, fahrenheit: 59 },
@@ -22,7 +21,7 @@ async function getWeather(location: string, unit: string = 'celsius') {
   const weather = temps[location] || { celsius: 20, fahrenheit: 68 };
   return {
     location,
-    temperature: weather[unit],
+    temperature: weather[unit as keyof typeof weather],
     unit,
     condition: 'Partly cloudy',
     humidity: 65,
@@ -56,14 +55,18 @@ async function demonstrateToolCalling() {
       tools: {
         get_weather: {
           description: 'Get the current weather for a location',
-          parameters: z.object({
-            location: z.string().describe('The city name'),
+          inputSchema: z.object({
+            location: z.string().describe('The city name (required)'),
             unit: z
               .enum(['celsius', 'fahrenheit'])
               .optional()
-              .describe('Temperature unit'),
+              .describe('Temperature unit (optional, defaults to celsius)'),
           }),
-          execute: async ({ location, unit }) => {
+          execute: async (params) => {
+            // Handle different parameter names that Ollama might return
+            const location =
+              params.location || params.city || params.q || params.place;
+            const unit = params.unit || params.temperature_unit || 'celsius';
             return await getWeather(location, unit);
           },
         },
@@ -77,11 +80,30 @@ async function demonstrateToolCalling() {
 
       // Execute tool calls
       for (const toolCall of result.toolCalls) {
-        if (toolCall.toolName === 'get_weather') {
-          const weather = await getWeather(
-            toolCall.input.location,
-            toolCall.input.unit,
-          );
+        if (toolCall && toolCall.toolName === 'get_weather') {
+          // Parse the input if it's a JSON string
+          let parsedInput;
+          try {
+            parsedInput =
+              typeof toolCall.input === 'string'
+                ? JSON.parse(toolCall.input)
+                : toolCall.input;
+          } catch (parseError) {
+            const errorMessage =
+              parseError instanceof Error
+                ? parseError.message
+                : String(parseError);
+            console.log('Could not parse tool input:', errorMessage);
+            continue;
+          }
+
+          // Note: Due to Zod version compatibility issues, schema conversion may fail
+          // When this happens, Ollama receives an empty schema and invents its own parameter names
+          // This is why we need to handle multiple possible parameter names
+          const location =
+            parsedInput.location || parsedInput.city || parsedInput.q;
+          const unit = parsedInput.unit || parsedInput.temperature_unit;
+          const weather = await getWeather(location, unit);
           console.log('Tool result:', weather);
         }
       }
@@ -90,7 +112,8 @@ async function demonstrateToolCalling() {
     console.log(
       'Note: Tool calling requires a model that supports it (e.g., Llama 3.1)',
     );
-    console.log('Error:', error.message);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log('Error:', errorMessage);
   }
 
   // Example 2: Multiple Tools
@@ -108,20 +131,27 @@ async function demonstrateToolCalling() {
       tools: {
         get_weather: {
           description: 'Get the current weather for a location',
-          parameters: z.object({
+          inputSchema: z.object({
             location: z.string().describe('The city name'),
             unit: z.enum(['celsius', 'fahrenheit']).optional(),
           }),
-          execute: async ({ location, unit }) => {
+          execute: async (params) => {
+            // Handle different parameter names that Ollama might return
+            const location =
+              params.location || params.city || params.q || params.place;
+            const unit = params.unit || params.temperature_unit || 'celsius';
             return await getWeather(location, unit);
           },
         },
         get_flight_status: {
           description: 'Get the status of a flight',
-          parameters: z.object({
-            flightNumber: z.string().describe('The flight number'),
+          inputSchema: z.object({
+            flightNumber: z.string().describe('The flight number (required)'),
           }),
-          execute: async ({ flightNumber }) => {
+          execute: async (params) => {
+            // Handle different parameter names that Ollama might return
+            const flightNumber =
+              params.flightNumber || params.flight_number || params.flight;
             return await getFlightStatus(flightNumber);
           },
         },
@@ -135,23 +165,49 @@ async function demonstrateToolCalling() {
       console.log('Number of tool calls:', result.toolCalls.length);
 
       for (const toolCall of result.toolCalls) {
+        if (!toolCall) continue;
+
         console.log(`\nTool: ${toolCall.toolName}`);
-        console.log('Arguments:', toolCall.input);
+        console.log('Raw input:', toolCall.input);
+
+        // Parse the input if it's a JSON string
+        let parsedInput;
+        try {
+          parsedInput =
+            typeof toolCall.input === 'string'
+              ? JSON.parse(toolCall.input)
+              : toolCall.input;
+          console.log('Parsed input:', parsedInput);
+        } catch (parseError) {
+          const errorMessage =
+            parseError instanceof Error
+              ? parseError.message
+              : String(parseError);
+          console.log('Could not parse tool input:', errorMessage);
+          continue;
+        }
 
         let toolResult;
         if (toolCall.toolName === 'get_weather') {
-          toolResult = await getWeather(
-            toolCall.input.location,
-            toolCall.input.unit,
-          );
+          // Note: Ollama may return different parameter names than defined in schema
+          const location =
+            parsedInput.location || parsedInput.city || parsedInput.q;
+          const unit = parsedInput.unit || parsedInput.temperature_unit;
+          toolResult = await getWeather(location, unit);
         } else if (toolCall.toolName === 'get_flight_status') {
-          toolResult = await getFlightStatus(toolCall.input.flightNumber);
+          // Note: Ollama may return different parameter names than defined in schema
+          const flightNumber =
+            parsedInput.flightNumber ||
+            parsedInput.flight_number ||
+            parsedInput.flight;
+          toolResult = await getFlightStatus(flightNumber);
         }
         console.log('Result:', toolResult);
       }
     }
   } catch (error) {
-    console.log('Error:', error.message);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log('Error:', errorMessage);
   }
 
   // Example 3: Tool Choice Options
@@ -163,14 +219,17 @@ async function demonstrateToolCalling() {
   try {
     const result = await generateText({
       model: ollama('llama3.2'),
-      prompt: 'Tell me about Paris',
+      prompt: 'Get the weather for Paris using the weather tool',
       tools: {
         get_weather: {
           description: 'Get the current weather for a location',
-          parameters: z.object({
+          inputSchema: z.object({
             location: z.string(),
           }),
-          execute: async ({ location }) => {
+          execute: async (params) => {
+            // Handle different parameter names that Ollama might return
+            const location =
+              params.location || params.city || params.q || params.place;
             return await getWeather(location);
           },
         },
@@ -180,10 +239,35 @@ async function demonstrateToolCalling() {
 
     console.log('Response:', result.text);
     if (result.toolCalls && result.toolCalls.length > 0) {
-      console.log('Tool was called for:', result.toolCalls[0].input.location);
+      const toolCall = result.toolCalls[0];
+      if (toolCall) {
+        console.log('Tool was called:', toolCall.toolName);
+        console.log('Raw input:', toolCall.input);
+
+        // Parse the input if it's a JSON string
+        let parsedInput;
+        try {
+          parsedInput =
+            typeof toolCall.input === 'string'
+              ? JSON.parse(toolCall.input)
+              : toolCall.input;
+          console.log('Parsed input:', parsedInput);
+          // Note: Ollama may return different parameter names than defined in schema
+          const location =
+            parsedInput.location || parsedInput.city || parsedInput.q;
+          console.log('Location:', location);
+        } catch (parseError) {
+          const errorMessage =
+            parseError instanceof Error
+              ? parseError.message
+              : String(parseError);
+          console.log('Could not parse tool input:', errorMessage);
+        }
+      }
     }
   } catch (error) {
-    console.log('Error:', error.message);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log('Error:', errorMessage);
   }
 
   console.log('\n' + '='.repeat(50));
