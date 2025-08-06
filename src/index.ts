@@ -16,4 +16,3 @@ export { OllamaEmbeddingModel } from './models/embedding-model';
 export type { OllamaEmbeddingConfig } from './models/embedding-model';
 export { OllamaError } from './utils/ollama-error';
 export type { OllamaErrorData } from './utils/ollama-error';
-
