@@ -1,5 +1,5 @@
-export { 
-  createOllama, 
+export {
+  createOllama,
   ollama,
   type OllamaProvider,
   type OllamaProviderSettings,
@@ -12,18 +12,15 @@ export { OllamaEmbeddingModel } from './models/embedding-model';
 export { OllamaError } from './utils/ollama-error';
 
 // Model capabilities and suggestions utilities (optional for advanced users)
-export { 
-  getModelCapabilities, 
-  getModelInfo, 
+export {
+  getModelCapabilities,
+  getModelInfo,
   modelSupports,
-  type ModelCapabilities 
+  type ModelCapabilities,
 } from './utils/model-capabilities';
-export { 
-  suggestModelsForFeatures, 
+export {
+  suggestModelsForFeatures,
   getFeatureNotSupportedMessage,
-  type ModelSuggestion 
+  type ModelSuggestion,
 } from './utils/model-suggestions';
-export { 
-  validateModel, 
-  getModelStatus 
-} from './utils/validate-model';
+export { validateModel, getModelStatus } from './utils/validate-model';

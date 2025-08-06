@@ -60,7 +60,7 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
           input: value,
           options: this.settings.options,
         });
-        
+
         if (!response.embeddings) {
           throw new OllamaError({
             message: `No embeddings field in response`,
@@ -94,7 +94,7 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
       if (error instanceof OllamaError) {
         throw error;
       }
-      
+
       throw new OllamaError({
         message: error instanceof Error ? error.message : String(error),
         cause: error,

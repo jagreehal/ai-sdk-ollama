@@ -28,7 +28,7 @@ describe('convertToOllamaChatMessages', () => {
       const prompt: LanguageModelV2Prompt = [
         {
           role: 'user',
-          content: 'Hello, how are you?',
+          content: [{ type: 'text', text: 'Hello, how are you?' }],
         },
       ];
 
@@ -69,7 +69,11 @@ describe('convertToOllamaChatMessages', () => {
           role: 'user',
           content: [
             { type: 'text', text: 'What is in this image?' },
-            { type: 'image', image: new URL('https://example.com/image.jpg') },
+            {
+              type: 'file',
+              data: new URL('https://example.com/image.jpg'),
+              mediaType: 'image/jpeg',
+            },
           ],
         },
       ];
@@ -91,7 +95,11 @@ describe('convertToOllamaChatMessages', () => {
           role: 'user',
           content: [
             { type: 'text', text: 'Describe this image' },
-            { type: 'image', image: 'data:image/jpeg;base64,/9j/4AAQ...' },
+            {
+              type: 'file',
+              data: 'data:image/jpeg;base64,/9j/4AAQ...',
+              mediaType: 'image/jpeg',
+            },
           ],
         },
       ];
@@ -102,7 +110,7 @@ describe('convertToOllamaChatMessages', () => {
         {
           role: 'user',
           content: 'Describe this image',
-          images: ['data:image/jpeg;base64,/9j/4AAQ...'],
+          images: ['/9j/4AAQ...'],
         },
       ]);
     });
@@ -114,7 +122,7 @@ describe('convertToOllamaChatMessages', () => {
           role: 'user',
           content: [
             { type: 'text', text: 'Analyze this image' },
-            { type: 'image', image: imageData },
+            { type: 'file', data: imageData, mediaType: 'image/jpeg' },
           ],
         },
       ];
@@ -125,7 +133,7 @@ describe('convertToOllamaChatMessages', () => {
         {
           role: 'user',
           content: 'Analyze this image',
-          images: [`data:image/jpeg;base64,${Buffer.from(imageData).toString('base64')}`],
+          images: [Buffer.from(imageData).toString('base64')],
         },
       ]);
     });
@@ -136,8 +144,16 @@ describe('convertToOllamaChatMessages', () => {
           role: 'user',
           content: [
             { type: 'text', text: 'Compare these images' },
-            { type: 'image', image: new URL('https://example.com/image1.jpg') },
-            { type: 'image', image: 'data:image/png;base64,iVBOR...' },
+            {
+              type: 'file',
+              data: new URL('https://example.com/image1.jpg'),
+              mediaType: 'image/jpeg',
+            },
+            {
+              type: 'file',
+              data: 'data:image/png;base64,iVBOR...',
+              mediaType: 'image/png',
+            },
           ],
         },
       ];
@@ -148,10 +164,7 @@ describe('convertToOllamaChatMessages', () => {
         {
           role: 'user',
           content: 'Compare these images',
-          images: [
-            'https://example.com/image1.jpg',
-            'data:image/png;base64,iVBOR...',
-          ],
+          images: ['https://example.com/image1.jpg', 'iVBOR...'],
         },
       ]);
     });
@@ -161,7 +174,11 @@ describe('convertToOllamaChatMessages', () => {
         {
           role: 'user',
           content: [
-            { type: 'image', image: new URL('https://example.com/image.jpg') },
+            {
+              type: 'file',
+              data: new URL('https://example.com/image.jpg'),
+              mediaType: 'image/jpeg',
+            },
           ],
         },
       ];
@@ -183,7 +200,7 @@ describe('convertToOllamaChatMessages', () => {
       const prompt: LanguageModelV2Prompt = [
         {
           role: 'assistant',
-          content: 'I am doing well, thank you!',
+          content: [{ type: 'text', text: 'I am doing well, thank you!' }],
         },
       ];
 
@@ -228,7 +245,7 @@ describe('convertToOllamaChatMessages', () => {
               type: 'tool-call',
               toolCallId: '123',
               toolName: 'getWeather',
-              args: { location: 'New York' },
+              input: JSON.stringify({ location: 'New York' }),
             },
           ],
         },
@@ -239,7 +256,7 @@ describe('convertToOllamaChatMessages', () => {
       expect(result).toEqual([
         {
           role: 'assistant',
-          content: 'Let me check the weather for you.\n[Tool Call: getWeather({"location":"New York"})]',
+          content: 'Let me check the weather for you.\n[Tool Call: getWeather]',
         },
       ]);
     });
@@ -253,13 +270,13 @@ describe('convertToOllamaChatMessages', () => {
               type: 'tool-call',
               toolCallId: '1',
               toolName: 'getWeather',
-              args: { location: 'NYC' },
+              input: JSON.stringify({ location: 'NYC' }),
             },
             {
               type: 'tool-call',
               toolCallId: '2',
               toolName: 'getTime',
-              args: { timezone: 'EST' },
+              input: JSON.stringify({ timezone: 'EST' }),
             },
           ],
         },
@@ -270,7 +287,7 @@ describe('convertToOllamaChatMessages', () => {
       expect(result).toEqual([
         {
           role: 'assistant',
-          content: '[Tool Call: getWeather({"location":"NYC"})]\n[Tool Call: getTime({"timezone":"EST"})]',
+          content: '[Tool Call: getWeather]\n[Tool Call: getTime]',
         },
       ]);
     });
@@ -304,7 +321,10 @@ describe('convertToOllamaChatMessages', () => {
               type: 'tool-result',
               toolCallId: '123',
               toolName: 'getWeather',
-              result: { temperature: 72, condition: 'sunny' },
+              output: {
+                type: 'json',
+                value: { temperature: 72, condition: 'sunny' },
+              },
             },
           ],
         },
@@ -315,7 +335,7 @@ describe('convertToOllamaChatMessages', () => {
       expect(result).toEqual([
         {
           role: 'user',
-          content: '[Tool Result for getWeather]: {"temperature":72,"condition":"sunny"}',
+          content: '[Tool Result]',
         },
       ]);
     });
@@ -329,7 +349,7 @@ describe('convertToOllamaChatMessages', () => {
               type: 'tool-result',
               toolCallId: '456',
               toolName: 'getTime',
-              result: '2:30 PM EST',
+              output: { type: 'text', value: '2:30 PM EST' },
             },
           ],
         },
@@ -340,7 +360,7 @@ describe('convertToOllamaChatMessages', () => {
       expect(result).toEqual([
         {
           role: 'user',
-          content: '[Tool Result for getTime]: "2:30 PM EST"',
+          content: '[Tool Result]',
         },
       ]);
     });
@@ -355,7 +375,7 @@ describe('convertToOllamaChatMessages', () => {
         },
         {
           role: 'user',
-          content: 'What is the weather like?',
+          content: [{ type: 'text', text: 'What is the weather like?' }],
         },
         {
           role: 'assistant',
@@ -365,7 +385,7 @@ describe('convertToOllamaChatMessages', () => {
               type: 'tool-call',
               toolCallId: '1',
               toolName: 'getWeather',
-              args: { location: 'current' },
+              input: JSON.stringify({ location: 'current' }),
             },
           ],
         },
@@ -376,13 +396,18 @@ describe('convertToOllamaChatMessages', () => {
               type: 'tool-result',
               toolCallId: '1',
               toolName: 'getWeather',
-              result: { temp: 75, condition: 'partly cloudy' },
+              output: {
+                type: 'json',
+                value: { temp: 75, condition: 'partly cloudy' },
+              },
             },
           ],
         },
         {
           role: 'assistant',
-          content: 'The weather is 75°F and partly cloudy.',
+          content: [
+            { type: 'text', text: 'The weather is 75°F and partly cloudy.' },
+          ],
         },
       ];
 
@@ -399,11 +424,11 @@ describe('convertToOllamaChatMessages', () => {
         },
         {
           role: 'assistant',
-          content: 'Let me check that for you.\n[Tool Call: getWeather({"location":"current"})]',
+          content: 'Let me check that for you.\n[Tool Call: getWeather]',
         },
         {
           role: 'user',
-          content: '[Tool Result for getWeather]: {"temp":75,"condition":"partly cloudy"}',
+          content: '[Tool Result]',
         },
         {
           role: 'assistant',
@@ -417,12 +442,14 @@ describe('convertToOllamaChatMessages', () => {
     it('should throw error for unsupported message role', () => {
       const prompt = [
         {
-          role: 'unknown',
+          role: 'unknown' as never,
           content: 'This should fail',
         },
       ] as Parameters<typeof convertToOllamaChatMessages>[0];
 
-      expect(() => convertToOllamaChatMessages(prompt)).toThrow('Unsupported message role: unknown');
+      expect(() => convertToOllamaChatMessages(prompt)).toThrow(
+        'Unsupported message role: unknown',
+      );
     });
   });
 
@@ -439,7 +466,11 @@ describe('convertToOllamaChatMessages', () => {
           role: 'user',
           content: [
             { type: 'text', text: 'Hello' },
-            { type: 'image', image: 'data:image/jpeg;base64,abc123' },
+            {
+              type: 'file',
+              data: 'data:image/jpeg;base64,abc123',
+              mediaType: 'image/jpeg',
+            },
             { type: 'text', text: 'World' },
           ],
         },
@@ -451,7 +482,7 @@ describe('convertToOllamaChatMessages', () => {
         {
           role: 'user',
           content: 'Hello\nWorld',
-          images: ['data:image/jpeg;base64,abc123'],
+          images: ['abc123'],
         },
       ]);
     });

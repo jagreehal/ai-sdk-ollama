@@ -16,11 +16,10 @@ describe('OllamaEmbeddingModel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     settings = {};
-    model = new OllamaEmbeddingModel(
-      'nomic-embed-text',
-      settings,
-      { client: mockOllamaClient, provider: 'ollama' }
-    );
+    model = new OllamaEmbeddingModel('nomic-embed-text', settings, {
+      client: mockOllamaClient,
+      provider: 'ollama',
+    });
   });
 
   describe('initialization', () => {
@@ -36,7 +35,11 @@ describe('OllamaEmbeddingModel', () => {
   describe('doEmbed', () => {
     it('should generate embeddings for single value', async () => {
       const mockResponse = {
+        model: 'nomic-embed-text',
         embeddings: [[0.1, 0.2, 0.3, 0.4]],
+        total_duration: 1_000_000_000,
+        load_duration: 100_000_000,
+        prompt_eval_count: 5,
       };
 
       vi.mocked(mockOllamaClient.embed).mockResolvedValueOnce(mockResponse);
@@ -57,15 +60,33 @@ describe('OllamaEmbeddingModel', () => {
 
     it('should generate embeddings for multiple values', async () => {
       const mockResponses = [
-        { embeddings: [[0.1, 0.2, 0.3]] },
-        { embeddings: [[0.4, 0.5, 0.6]] },
-        { embeddings: [[0.7, 0.8, 0.9]] },
+        {
+          model: 'nomic-embed-text',
+          embeddings: [[0.1, 0.2, 0.3]],
+          total_duration: 1_000_000_000,
+          load_duration: 100_000_000,
+          prompt_eval_count: 5,
+        },
+        {
+          model: 'nomic-embed-text',
+          embeddings: [[0.4, 0.5, 0.6]],
+          total_duration: 1_000_000_000,
+          load_duration: 100_000_000,
+          prompt_eval_count: 5,
+        },
+        {
+          model: 'nomic-embed-text',
+          embeddings: [[0.7, 0.8, 0.9]],
+          total_duration: 1_000_000_000,
+          load_duration: 100_000_000,
+          prompt_eval_count: 5,
+        },
       ];
 
       vi.mocked(mockOllamaClient.embed)
-        .mockResolvedValueOnce(mockResponses[0])
-        .mockResolvedValueOnce(mockResponses[1])
-        .mockResolvedValueOnce(mockResponses[2]);
+        .mockResolvedValueOnce(mockResponses[0]!)
+        .mockResolvedValueOnce(mockResponses[1]!)
+        .mockResolvedValueOnce(mockResponses[2]!);
 
       const result = await model.doEmbed({
         values: ['First text', 'Second text', 'Third text'],
@@ -89,25 +110,35 @@ describe('OllamaEmbeddingModel', () => {
     });
 
     it('should throw error for too many values', async () => {
-      const largeArray = Array.from({length: 2049}).fill('text');
+      const largeArray = Array.from({ length: 2049 }, () => 'text');
 
-      await expect(model.doEmbed({
-        values: largeArray,
-      })).rejects.toThrow(OllamaError);
+      await expect(
+        model.doEmbed({
+          values: largeArray,
+        }),
+      ).rejects.toThrow(OllamaError);
 
-      await expect(model.doEmbed({
-        values: largeArray,
-      })).rejects.toThrow('Too many values to embed. Maximum: 2048, Received: 2049');
+      await expect(
+        model.doEmbed({
+          values: largeArray,
+        }),
+      ).rejects.toThrow(
+        'Too many values to embed. Maximum: 2048, Received: 2049',
+      );
     });
 
     it('should handle maximum allowed values', async () => {
       const mockResponse = {
+        model: 'nomic-embed-text',
         embeddings: [[0.1, 0.2]],
+        total_duration: 1_000_000_000,
+        load_duration: 100_000_000,
+        prompt_eval_count: 5,
       };
 
       vi.mocked(mockOllamaClient.embed).mockResolvedValue(mockResponse);
 
-      const maxArray = Array.from({length: 2048}).fill('text');
+      const maxArray = Array.from({ length: 2048 }, () => 'text');
 
       const result = await model.doEmbed({
         values: maxArray,
@@ -119,58 +150,79 @@ describe('OllamaEmbeddingModel', () => {
 
     it('should handle abort signal', async () => {
       const abortController = new AbortController();
-      
+
       vi.mocked(mockOllamaClient.embed).mockImplementation(async () => {
         if (abortController.signal.aborted) {
           throw new Error('Aborted');
         }
-        return { embeddings: [[0.1, 0.2]] };
+        return {
+          model: 'nomic-embed-text',
+          embeddings: [[0.1, 0.2]],
+          total_duration: 1_000_000_000,
+          load_duration: 100_000_000,
+          prompt_eval_count: 5,
+        };
       });
 
       // Abort immediately
       abortController.abort();
 
-      await expect(model.doEmbed({
-        values: ['Hello'],
-        abortSignal: abortController.signal,
-      })).rejects.toThrow('Aborted');
+      await expect(
+        model.doEmbed({
+          values: ['Hello'],
+          abortSignal: abortController.signal,
+        }),
+      ).rejects.toThrow('Aborted');
     });
 
     it('should handle errors from Ollama client', async () => {
       const error = new Error('Network error');
       vi.mocked(mockOllamaClient.embed).mockRejectedValueOnce(error);
 
-      await expect(model.doEmbed({
-        values: ['Hello'],
-      })).rejects.toThrow('Network error');
+      await expect(
+        model.doEmbed({
+          values: ['Hello'],
+        }),
+      ).rejects.toThrow('Network error');
     });
 
     it('should handle partial failure in batch', async () => {
       vi.mocked(mockOllamaClient.embed)
-        .mockResolvedValueOnce({ embeddings: [[0.1, 0.2]] })
+        .mockResolvedValueOnce({
+          model: 'nomic-embed-text',
+          embeddings: [[0.1, 0.2]],
+          total_duration: 1_000_000_000,
+          load_duration: 100_000_000,
+          prompt_eval_count: 5,
+        })
         .mockRejectedValueOnce(new Error('Second request failed'));
 
-      await expect(model.doEmbed({
-        values: ['First', 'Second'],
-      })).rejects.toThrow('Second request failed');
+      await expect(
+        model.doEmbed({
+          values: ['First', 'Second'],
+        }),
+      ).rejects.toThrow('Second request failed');
     });
 
     it('should use custom options from settings', async () => {
       const customSettings: OllamaEmbeddingSettings = {
         options: {
           num_thread: 8,
-          num_ctx: 2048,
         },
       };
 
       const customModel = new OllamaEmbeddingModel(
         'custom-embed',
         customSettings,
-        { client: mockOllamaClient, provider: 'ollama' }
+        { client: mockOllamaClient, provider: 'ollama' },
       );
 
       const mockResponse = {
+        model: 'custom-embed',
         embeddings: [[0.1, 0.2, 0.3]],
+        total_duration: 1_000_000_000,
+        load_duration: 100_000_000,
+        prompt_eval_count: 5,
       };
 
       vi.mocked(mockOllamaClient.embed).mockResolvedValueOnce(mockResponse);
@@ -184,14 +236,17 @@ describe('OllamaEmbeddingModel', () => {
         input: 'Test text',
         options: expect.objectContaining({
           num_thread: 8,
-          num_ctx: 2048,
         }),
       });
     });
 
     it('should handle different embedding dimensions', async () => {
       const mockResponse = {
+        model: 'nomic-embed-text',
         embeddings: [[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]], // 8-dimensional
+        total_duration: 1_000_000_000,
+        load_duration: 100_000_000,
+        prompt_eval_count: 5,
       };
 
       vi.mocked(mockOllamaClient.embed).mockResolvedValueOnce(mockResponse);
@@ -201,12 +256,18 @@ describe('OllamaEmbeddingModel', () => {
       });
 
       expect(result.embeddings[0]).toHaveLength(8);
-      expect(result.embeddings[0]).toEqual([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]);
+      expect(result.embeddings[0]).toEqual([
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+      ]);
     });
 
     it('should handle special characters in input', async () => {
       const mockResponse = {
+        model: 'nomic-embed-text',
         embeddings: [[0.1, 0.2, 0.3]],
+        total_duration: 1_000_000_000,
+        load_duration: 100_000_000,
+        prompt_eval_count: 5,
       };
 
       vi.mocked(mockOllamaClient.embed).mockResolvedValueOnce(mockResponse);
@@ -226,7 +287,11 @@ describe('OllamaEmbeddingModel', () => {
 
     it('should handle long text input', async () => {
       const mockResponse = {
+        model: 'nomic-embed-text',
         embeddings: [[0.1, 0.2, 0.3]],
+        total_duration: 1_000_000_000,
+        load_duration: 100_000_000,
+        prompt_eval_count: 5,
       };
 
       vi.mocked(mockOllamaClient.embed).mockResolvedValueOnce(mockResponse);
@@ -246,7 +311,11 @@ describe('OllamaEmbeddingModel', () => {
 
     it('should handle empty string input', async () => {
       const mockResponse = {
+        model: 'nomic-embed-text',
         embeddings: [[0, 0, 0]],
+        total_duration: 1_000_000_000,
+        load_duration: 100_000_000,
+        prompt_eval_count: 5,
       };
 
       vi.mocked(mockOllamaClient.embed).mockResolvedValueOnce(mockResponse);
@@ -263,7 +332,11 @@ describe('OllamaEmbeddingModel', () => {
   describe('concurrent embedding requests', () => {
     it('should handle multiple concurrent embed requests', async () => {
       const mockResponse = {
+        model: 'nomic-embed-text',
         embeddings: [[0.1, 0.2, 0.3]],
+        total_duration: 1_000_000_000,
+        load_duration: 100_000_000,
+        prompt_eval_count: 5,
       };
 
       vi.mocked(mockOllamaClient.embed).mockResolvedValue(mockResponse);

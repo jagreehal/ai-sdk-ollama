@@ -8,17 +8,20 @@ import { validateModelConfiguration } from './model-suggestions';
 /**
  * Validate model and provide helpful feedback
  */
-export function validateModel(modelId: string, context?: {
-  hasTools?: boolean;
-  hasImages?: boolean;
-  needsJsonMode?: boolean;
-  expectedTokens?: number;
-}) {
+export function validateModel(
+  modelId: string,
+  context?: {
+    hasTools?: boolean;
+    hasImages?: boolean;
+    needsJsonMode?: boolean;
+    expectedTokens?: number;
+  },
+) {
   const validation = validateModelConfiguration(modelId, context || {});
-  
+
   // No console logging - let errors be thrown where appropriate
   // The calling code should handle errors explicitly
-  
+
   return validation;
 }
 
@@ -27,7 +30,7 @@ export function validateModel(modelId: string, context?: {
  */
 export function getModelStatus(modelId: string) {
   const capabilities = getModelCapabilities(modelId);
-  
+
   const status = {
     isKnown: capabilities.recommendedFor[0] !== 'unknown',
     features: {
@@ -39,6 +42,6 @@ export function getModelStatus(modelId: string) {
     recommendedFor: capabilities.recommendedFor,
     isLegacy: capabilities.recommendedFor.includes('legacy'),
   };
-  
+
   return status;
 }

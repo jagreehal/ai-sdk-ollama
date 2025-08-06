@@ -2,7 +2,7 @@
   "name": "ai-sdk-ollama",
   "version": "0.1.0",
   "type": "module",
-  "description": "Vercel AI SDK v5 Provider for Ollama using official ollama-js library",
+  "description": "Vercel AI SDK Provider for Ollama using official ollama-js library",
   "main": "./dist/index.js",
   "exports": {
     ".": {
@@ -59,8 +59,8 @@
   ],
   "dependencies": {
     "@ai-sdk/provider": "^2.0.0",
-    "@ai-sdk/provider-utils": "^3.0.0",
-    "ai": "^5.0.0",
+    "@ai-sdk/provider-utils": "^3.0.1",
+    "ai": "^5.0.4",
     "ollama": "^0.5.16"
   },
   "devDependencies": {
@@ -70,18 +70,18 @@
     "@total-typescript/ts-reset": "^0.6.1",
     "@total-typescript/tsconfig": "^1.0.4",
     "@types/eslint-config-prettier": "^6.11.3",
-    "@types/node": "^24.1.0",
-    "@typescript-eslint/eslint-plugin": "^8.38.0",
-    "@typescript-eslint/parser": "^8.38.0",
+    "@types/node": "^24.2.0",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
+    "@typescript-eslint/parser": "^8.39.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-unicorn": "^60.0.0",
     "prettier": "^3.6.2",
     "tsup": "^8.5.0",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.38.0",
+    "typescript-eslint": "^8.39.0",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4",
-    "zod": "^4.0.14"
+    "zod": "^4.0.15"
   },
   "engines": {
     "node": ">=22"

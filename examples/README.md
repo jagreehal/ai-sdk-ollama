@@ -67,6 +67,21 @@ This example demonstrates tool calling with Ollama models
 npx tsx examples/tool-calling-example.ts
 ```
 
+### **image-handling-example.ts** - Image Processing
+
+This example demonstrates image handling capabilities with AI SDK v5 format
+
+- Images from URLs
+- Base64 encoded images
+- Multiple images in one prompt
+- Image-only prompts
+- Streaming with images
+- Mixed content types (text + image + text)
+
+```bash
+npx tsx examples/image-handling-example.ts
+```
+
 ### **streaming-simple-test.ts** - Streaming Basics
 
 This example covers streaming fundamentals for real-time applications

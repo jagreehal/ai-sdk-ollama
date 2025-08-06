@@ -147,6 +147,8 @@ const { text } = await generateText({
 });
 ```
 
+> **Parameter Precedence**: When both AI SDK parameters and Ollama options are specified, **Ollama options take precedence**. For example, if you set `temperature: 0.5` in Ollama options and `temperature: 0.8` in the `generateText` call, the final value will be `0.5`. This allows you to use standard AI SDK parameters for portability while having fine-grained control with Ollama-specific options when needed.
+
 ### Tool Calling Support
 
 Ollama supports tool calling with compatible models:
@@ -251,7 +253,7 @@ console.log(object);
 Works with any model in your Ollama installation:
 
 - **Chat**: `llama3.2`, `llama3.1`, `mistral`, `phi4-mini`, `qwen2.5`, `codellama`
-- **Vision**: `llama3.2-vision`, `llava`, `minicpm-v`
+- **Vision**: `llava`, `bakllava`, `llama3.2-vision`, `minicpm-v`
 - **Embeddings**: `nomic-embed-text`, `all-minilm`, `mxbai-embed-large`
 
 ## Learn More
@@ -264,8 +266,12 @@ Works with any model in your Ollama installation:
 
 🔧 **[Tool Calling Guide](./examples/tool-calling-example.ts)** - Function calling with Ollama
 
+🖼️ **[Image Processing Guide](./examples/image-handling-example.ts)** - Vision models with LLaVA
+
 📡 **[Streaming Examples](./examples/streaming-simple-test.ts)** - Real-time responses
 
 ## License
 
 MIT © [Jag Reehal](https://jagreehal.com)
+
+See [LICENSE](./LICENSE) for details.

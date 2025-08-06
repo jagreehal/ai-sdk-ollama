@@ -73,14 +73,14 @@ const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
     contextWindow: 128_000,
     recommendedFor: ['enterprise', 'complex', 'research'],
   },
-  'llama3': {
+  llama3: {
     supportsToolCalling: false, // Older Llama 3 doesn't support tools
     supportsVision: false,
     supportsJsonMode: true,
     contextWindow: 8192,
     recommendedFor: ['general', 'legacy'],
   },
-  'llama2': {
+  llama2: {
     supportsToolCalling: false,
     supportsVision: false,
     supportsJsonMode: false,
@@ -89,7 +89,7 @@ const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
   },
 
   // Mistral family
-  'mistral': {
+  mistral: {
     supportsToolCalling: true,
     supportsVision: false,
     supportsJsonMode: true,
@@ -103,7 +103,7 @@ const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
     contextWindow: 128_000,
     recommendedFor: ['general', 'multilingual', 'long-context'],
   },
-  'mixtral': {
+  mixtral: {
     supportsToolCalling: true,
     supportsVision: false,
     supportsJsonMode: true,
@@ -112,7 +112,7 @@ const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
   },
 
   // Phi family
-  'phi3': {
+  phi3: {
     supportsToolCalling: false, // Most Phi models don't support tools yet
     supportsVision: false,
     supportsJsonMode: true,
@@ -149,7 +149,7 @@ const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
     contextWindow: 32_768,
     recommendedFor: ['coding', 'development'],
   },
-  'qwen2': {
+  qwen2: {
     supportsToolCalling: true,
     supportsVision: false,
     supportsJsonMode: true,
@@ -158,14 +158,14 @@ const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
   },
 
   // Gemma family
-  'gemma2': {
+  gemma2: {
     supportsToolCalling: false,
     supportsVision: false,
     supportsJsonMode: true,
     contextWindow: 8192,
     recommendedFor: ['general', 'research'],
   },
-  'gemma': {
+  gemma: {
     supportsToolCalling: false,
     supportsVision: false,
     supportsJsonMode: true,
@@ -174,7 +174,7 @@ const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
   },
 
   // Vision models
-  'llava': {
+  llava: {
     supportsToolCalling: false,
     supportsVision: true,
     supportsJsonMode: true,
@@ -188,7 +188,7 @@ const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
     contextWindow: 8192,
     recommendedFor: ['vision', 'lightweight'],
   },
-  'bakllava': {
+  bakllava: {
     supportsToolCalling: false,
     supportsVision: true,
     supportsJsonMode: true,
@@ -197,7 +197,7 @@ const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
   },
 
   // Coding models
-  'codellama': {
+  codellama: {
     supportsToolCalling: false,
     supportsVision: false,
     supportsJsonMode: true,
@@ -244,7 +244,7 @@ const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
 export function getModelCapabilities(modelId: string): ModelCapabilities {
   // Normalize model ID by removing size suffixes and version tags
   const normalizedId = normalizeModelId(modelId);
-  
+
   // Try exact match first
   if (MODEL_CAPABILITIES[normalizedId]) {
     return MODEL_CAPABILITIES[normalizedId];
@@ -284,7 +284,7 @@ function normalizeModelId(modelId: string): string {
  */
 function getModelFamily(modelId: string): string {
   const normalized = normalizeModelId(modelId);
-  
+
   // Extract base family name
   if (normalized.includes('llama3.2')) return 'llama3.2';
   if (normalized.includes('llama3.1')) return 'llama3.1';
@@ -307,14 +307,17 @@ function getModelFamily(modelId: string): string {
   if (normalized.includes('llava')) return 'llava';
   if (normalized.includes('minicpm')) return 'minicpm-v';
   if (normalized.includes('bakllava')) return 'bakllava';
-  
+
   return normalized;
 }
 
 /**
  * Check if a model supports a specific feature
  */
-export function modelSupports(modelId: string, feature: keyof ModelCapabilities): boolean {
+export function modelSupports(
+  modelId: string,
+  feature: keyof ModelCapabilities,
+): boolean {
   const capabilities = getModelCapabilities(modelId);
   return Boolean(capabilities[feature]);
 }
@@ -325,7 +328,7 @@ export function modelSupports(modelId: string, feature: keyof ModelCapabilities)
 export function getModelInfo(modelId: string) {
   const capabilities = getModelCapabilities(modelId);
   const normalized = normalizeModelId(modelId);
-  
+
   return {
     modelId: normalized,
     capabilities,
