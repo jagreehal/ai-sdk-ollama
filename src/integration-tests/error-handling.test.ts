@@ -15,15 +15,20 @@ describe('Error Handling Integration Tests', () => {
   });
 
   it('should handle network errors with invalid base URL', async () => {
-    const provider = createOllama({ baseURL: 'http://invalid-host:99999' });
-
-    await expect(
-      generateText({
+    let errorCaught = false;
+    try {
+      const provider = createOllama({ baseURL: 'http://invalid-host:99999' });
+      await generateText({
         model: provider('llama3.2'),
         prompt: 'Hello',
         maxOutputTokens: 10,
-      }),
-    ).rejects.toThrow();
+      });
+    } catch {
+      errorCaught = true;
+      // Optionally log the error for debugging
+      // console.warn('Caught error as expected:', err);
+    }
+    expect(errorCaught).toBe(true);
   });
 
   it('should handle invalid embedding model', async () => {

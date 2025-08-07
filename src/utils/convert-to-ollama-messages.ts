@@ -1,6 +1,10 @@
 import { LanguageModelV2Prompt } from '@ai-sdk/provider';
 import { Message as OllamaMessage } from 'ollama';
 
+/**
+ * Enhanced message conversion that supports all Ollama capabilities
+ * and handles edge cases better than the referenced implementation
+ */
 export function convertToOllamaChatMessages(
   prompt: LanguageModelV2Prompt,
 ): OllamaMessage[] {
@@ -23,7 +27,7 @@ export function convertToOllamaChatMessages(
             content: message.content,
           });
         } else {
-          // Handle multi-part content
+          // Handle multi-part content with enhanced image support
           const textParts = message.content
             .filter((part) => part.type === 'text')
             .map((part) => part.text)
@@ -34,35 +38,53 @@ export function convertToOllamaChatMessages(
               (part): part is Extract<typeof part, { type: 'file' }> =>
                 part.type === 'file',
             )
-            .filter((part) => part.mediaType.startsWith('image/'))
+            .filter((part) => {
+              // Support image files only
+              return part.mediaType?.startsWith('image/') || false;
+            })
             .map((part) => {
-              if (part.data instanceof URL) {
-                return part.data.href;
-              } else if (typeof part.data === 'string') {
-                // If it's already a data URL, extract just the base64 part
-                if (part.data.startsWith('data:')) {
-                  const base64Match = part.data.match(/data:[^;]+;base64,(.+)/);
+              const imageData = part.data;
+
+              if (imageData instanceof URL) {
+                // Handle image URLs - extract base64 from data URLs or use URL directly
+                if (imageData.protocol === 'data:') {
+                  const base64Match = imageData.href.match(
+                    /data:[^;]+;base64,(.+)/,
+                  );
+                  if (base64Match) {
+                    return base64Match[1]; // Return just the base64 part
+                  }
+                  // If no base64 match, return the full data URL
+                  return imageData.href;
+                }
+                // For HTTP URLs, return as-is (Ollama will handle them)
+                return imageData.href;
+              } else if (typeof imageData === 'string') {
+                // Handle base64 strings
+                if (imageData.startsWith('data:')) {
+                  const base64Match = imageData.match(/data:[^;]+;base64,(.+)/);
                   if (base64Match) {
                     return base64Match[1]; // Return just the base64 part
                   }
                 }
-                return part.data;
-              } else if (part.data instanceof Uint8Array) {
-                // Handle Uint8Array by converting to base64 (without data URL prefix)
-                return Buffer.from(part.data).toString('base64');
+                return imageData;
+              } else if (imageData instanceof Uint8Array) {
+                // Handle Uint8Array by converting to base64
+                return Buffer.from(imageData).toString('base64');
               } else {
                 // Fallback for other types
-                return String(part.data);
+                console.warn(
+                  `Unsupported image data type: ${typeof imageData}`,
+                );
+                return null;
               }
-            });
+            })
+            .filter((img): img is string => img !== null);
 
           messages.push({
             role: 'user',
-            content: textParts,
-            images:
-              imageParts.length > 0
-                ? imageParts.filter((img): img is string => img !== undefined)
-                : undefined,
+            content: textParts || '', // Ensure content is never undefined
+            images: imageParts.length > 0 ? imageParts : undefined,
           });
         }
         break;
@@ -74,11 +96,19 @@ export function convertToOllamaChatMessages(
         if (typeof message.content === 'string') {
           content = message.content;
         } else {
-          // Combine text parts
-          content = message.content
+          // Enhanced content handling with better tool call support
+          const textParts = message.content
             .filter((part) => part.type === 'text')
             .map((part) => part.text)
             .join('');
+
+          const reasoningParts = message.content
+            .filter((part) => part.type === 'reasoning')
+            .map((part) => part.text)
+            .join('\n');
+
+          // Combine text and reasoning
+          content = [textParts, reasoningParts].filter(Boolean).join('\n');
 
           // Handle tool calls if present
           const toolCalls = message.content.filter(
@@ -97,24 +127,45 @@ export function convertToOllamaChatMessages(
 
         messages.push({
           role: 'assistant',
-          content,
+          content: content || '', // Ensure content is never undefined
         });
         break;
       }
 
       case 'tool': {
-        // Ollama doesn't have native tool result support, so we'll add it as a user message
-        messages.push({
-          role: 'user',
-          content: `[Tool Result]`,
-        });
+        // Enhanced tool result handling
+        if (typeof message.content === 'string') {
+          messages.push({
+            role: 'user', // Ollama doesn't have native tool role, so we use user
+            content: `[Tool Result]: ${message.content}`,
+          });
+        } else {
+          // Handle multi-part tool results
+          const toolResultParts = message.content
+            .filter((part) => part.type === 'tool-result')
+            .map((part) => {
+              if (part.output.type === 'text') {
+                return part.output.value;
+              } else if (part.output.type === 'json') {
+                return JSON.stringify(part.output.value);
+              }
+              return String(part.output.value);
+            })
+            .join('\n');
+
+          messages.push({
+            role: 'user',
+            content: `[Tool Result]: ${toolResultParts || ''}`,
+          });
+        }
         break;
       }
 
       default: {
-        // Handle unknown message roles
+        // Enhanced error handling with more descriptive messages
+        const role = (message as { role: string }).role;
         throw new Error(
-          `Unsupported message role: ${(message as { role: string }).role}`,
+          `Unsupported message role: ${role}. Supported roles are: system, user, assistant, tool`,
         );
       }
     }

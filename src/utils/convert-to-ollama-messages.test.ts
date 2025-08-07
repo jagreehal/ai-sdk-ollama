@@ -335,7 +335,7 @@ describe('convertToOllamaChatMessages', () => {
       expect(result).toEqual([
         {
           role: 'user',
-          content: '[Tool Result]',
+          content: '[Tool Result]: {"temperature":72,"condition":"sunny"}',
         },
       ]);
     });
@@ -360,7 +360,7 @@ describe('convertToOllamaChatMessages', () => {
       expect(result).toEqual([
         {
           role: 'user',
-          content: '[Tool Result]',
+          content: '[Tool Result]: 2:30 PM EST',
         },
       ]);
     });
@@ -419,16 +419,17 @@ describe('convertToOllamaChatMessages', () => {
           content: 'You are a helpful assistant.',
         },
         {
-          role: 'user',
           content: 'What is the weather like?',
-        },
-        {
-          role: 'assistant',
-          content: 'Let me check that for you.\n[Tool Call: getWeather]',
-        },
-        {
+          images: undefined,
           role: 'user',
-          content: '[Tool Result]',
+        },
+        {
+          content: 'Let me check that for you.\n[Tool Call: getWeather]',
+          role: 'assistant',
+        },
+        {
+          content: '[Tool Result]: {"temp":75,"condition":"partly cloudy"}',
+          role: 'user',
         },
         {
           role: 'assistant',
@@ -485,6 +486,168 @@ describe('convertToOllamaChatMessages', () => {
           images: ['abc123'],
         },
       ]);
+    });
+  });
+
+  it('should convert user message with ArrayBuffer image', () => {
+    const imageData = new Uint8Array([255, 216, 255, 224]); // JPEG header
+
+    const result = convertToOllamaChatMessages([
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Analyze this Uint8Array image' },
+          { type: 'file', data: imageData, mediaType: 'image/jpeg' },
+        ],
+      },
+    ]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      role: 'user',
+      content: 'Analyze this Uint8Array image',
+      images: [Buffer.from(imageData).toString('base64')],
+    });
+  });
+
+  it('should convert user message with Node.js Buffer image', () => {
+    const imageData = Buffer.from([255, 216, 255, 224]); // JPEG header
+
+    const result = convertToOllamaChatMessages([
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Analyze this Buffer image' },
+          { type: 'file', data: imageData, mediaType: 'image/jpeg' },
+        ],
+      },
+    ]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      role: 'user',
+      content: 'Analyze this Buffer image',
+      images: [imageData.toString('base64')],
+    });
+  });
+
+  it('should handle mixed image types in single message', () => {
+    const result = convertToOllamaChatMessages([
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Compare these different image formats' },
+          {
+            type: 'file',
+            data: new URL('https://example.com/image1.jpg'),
+            mediaType: 'image/jpeg',
+          },
+          {
+            type: 'file',
+            data: 'data:image/png;base64,iVBOR...',
+            mediaType: 'image/png',
+          },
+          {
+            type: 'file',
+            data: new Uint8Array([255, 216, 255, 224]),
+            mediaType: 'image/jpeg',
+          },
+        ],
+      },
+    ]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      role: 'user',
+      content: 'Compare these different image formats',
+      images: [
+        'https://example.com/image1.jpg',
+        'iVBOR...',
+        Buffer.from([255, 216, 255, 224]).toString('base64'),
+      ],
+    });
+  });
+
+  it('should handle assistant message with reasoning', () => {
+    const result = convertToOllamaChatMessages([
+      {
+        role: 'assistant',
+        content: [
+          { type: 'reasoning', text: 'Let me think about this step by step.' },
+          { type: 'text', text: 'The answer is 42.' },
+        ],
+      },
+    ]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      role: 'assistant',
+      content: 'The answer is 42.\nLet me think about this step by step.',
+    });
+  });
+
+  it('should handle tool message with multi-part content', () => {
+    const result = convertToOllamaChatMessages([
+      {
+        role: 'tool',
+        content: [
+          {
+            type: 'tool-result',
+            toolCallId: 'call1',
+            toolName: 'weather',
+            output: { type: 'text', value: 'Weather data retrieved' },
+          },
+          {
+            type: 'tool-result',
+            toolCallId: 'call2',
+            toolName: 'weather',
+            output: { type: 'text', value: 'Temperature: 72°F' },
+          },
+        ],
+      },
+    ]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      role: 'user',
+      content: '[Tool Result]: Weather data retrieved\nTemperature: 72°F',
+    });
+  });
+
+  it('should handle empty content gracefully', () => {
+    const result = convertToOllamaChatMessages([
+      {
+        role: 'user',
+        content: [],
+      },
+    ]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      role: 'user',
+      content: '',
+    });
+  });
+
+  it('should handle user message with only images', () => {
+    const result = convertToOllamaChatMessages([
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'file',
+            data: new URL('https://example.com/image.jpg'),
+            mediaType: 'image/jpeg',
+          },
+        ],
+      },
+    ]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      role: 'user',
+      content: '',
+      images: ['https://example.com/image.jpg'],
     });
   });
 });

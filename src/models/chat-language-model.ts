@@ -22,13 +22,19 @@ export interface OllamaChatConfig {
 export class OllamaChatLanguageModel implements LanguageModelV2 {
   readonly specificationVersion = 'v2' as const;
   readonly defaultObjectGenerationMode = 'json';
-  readonly supportsImages = false;
-  readonly supportsVideoURLs = false;
-  readonly supportsAudioURLs = false;
-  readonly supportsVideoFile = false;
-  readonly supportsAudioFile = false;
-  readonly supportsImageFile = true;
-  readonly supportedUrls: Record<string, RegExp[]> = {};
+  readonly supportsImages = true; // ✅ Ollama supports images (URLs, files, base64)
+  readonly supportsVideoURLs = false; // ❌ Not supported by Ollama API
+  readonly supportsAudioURLs = false; // ❌ Not supported by Ollama API
+  readonly supportsVideoFile = false; // ❌ Not supported by Ollama API
+  readonly supportsAudioFile = false; // ❌ Not supported by Ollama API
+  readonly supportsImageFile = true; // ✅ Already correct
+  readonly supportedUrls: Record<string, RegExp[]> = {
+    // Support common image URL patterns
+    image: [
+      /^https?:\/\/.*\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i,
+      /^data:image\/[^;]+;base64,/i, // Data URLs
+    ],
+  };
 
   constructor(
     public readonly modelId: string,
@@ -254,14 +260,22 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
 
       const text = response.message.content;
       const toolCalls = response.message.tool_calls;
+      const thinking = response.message.thinking;
 
-      // Convert content based on whether we have tool calls
+      // Convert content based on whether we have tool calls, reasoning, or text
       const content: LanguageModelV2Content[] = [];
 
+      // Add reasoning content if present and enabled
+      if (thinking && this.settings.reasoning) {
+        content.push({ type: 'reasoning', text: thinking });
+      }
+
+      // Add text content if present
       if (text) {
         content.push({ type: 'text', text });
       }
 
+      // Add tool calls if present
       if (toolCalls && toolCalls.length > 0) {
         for (const toolCall of toolCalls) {
           const toolInput = toolCall.function.arguments || {};
@@ -353,6 +367,9 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
       };
       let finishReason: LanguageModelV2FinishReason = 'unknown';
 
+      // Capture settings for use in transform function
+      const reasoningEnabled = this.settings.reasoning;
+
       const transformStream = new TransformStream<
         ChatResponse,
         LanguageModelV2StreamPart
@@ -382,6 +399,27 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
               usage,
             });
           } else {
+            // Handle reasoning in streaming
+            if (chunk.message.thinking && reasoningEnabled) {
+              // For reasoning, we'll emit it as a single reasoning content
+              // since Ollama doesn't stream reasoning in chunks
+              controller.enqueue({
+                type: 'reasoning-start',
+                id: crypto.randomUUID(),
+              });
+
+              controller.enqueue({
+                type: 'reasoning-delta',
+                id: crypto.randomUUID(),
+                delta: chunk.message.thinking,
+              });
+
+              controller.enqueue({
+                type: 'reasoning-end',
+                id: crypto.randomUUID(),
+              });
+            }
+
             // Handle tool calls in streaming
             if (
               chunk.message.tool_calls &&
@@ -397,9 +435,13 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
                   input: JSON.stringify(toolInput),
                 });
               }
-            } else if (
+            }
+
+            // Handle text content in streaming (always emit if present)
+            if (
               chunk.message.content &&
-              typeof chunk.message.content === 'string'
+              typeof chunk.message.content === 'string' &&
+              chunk.message.content.length > 0
             ) {
               controller.enqueue({
                 type: 'text-delta',
