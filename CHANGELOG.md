@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.3.0
+
+### Minor Changes
+
+- **Auto-Structured Outputs**: Enhanced structured outputs with intelligent auto-detection
+  - 🎯 **Smart Auto-Detection**: Automatically enables structured outputs when JSON schema is provided
+  - 🔧 **Backward Compatibility**: Explicit `structuredOutputs: true/false` settings are still respected
+  - ⚠️ **User-Friendly Warnings**: Clear warnings when auto-enabling structured outputs
+  - 📚 **Enhanced Documentation**: Updated examples and README with auto-detection guidance
+  - 🧪 **Comprehensive Testing**: Added integration tests for auto-detection scenarios
+  - 🛠️ **Improved Developer Experience**: No need to manually set `structuredOutputs: true` for object generation
+
+### Technical Improvements
+
+- Enhanced `shouldEnableStructuredOutputs()` method for intelligent auto-detection
+- Improved schema validation and error handling
+- Updated README with auto-detection examples and best practices
+- Added comprehensive integration tests for edge cases
+- Streamlined configuration for common use cases
+
 ## 0.2.0
 
 ### Minor Changes
@@ -79,7 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Supported Models
 
-- **Chat Models**: llama3.2, llama3.1, mistral, phi4-mini, qwen2.5, codellama, and all Ollama chat models
+- **Chat Models**: llama3.2, mistral, phi4-mini, qwen2.5, codellama, and all Ollama chat models
 - **Vision Models**: llava, bakllava, llama3.2-vision, minicpm-v
 - **Embedding Models**: nomic-embed-text, all-minilm, mxbai-embed-large, and all Ollama embedding models
 

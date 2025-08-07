@@ -19,12 +19,14 @@ A Vercel AI SDK v5+ provider for Ollama built on the official `ollama` package. 
     - [Cross Provider Compatibility](#cross-provider-compatibility)
     - [Native Ollama Power](#native-ollama-power)
     - [Tool Calling Support](#tool-calling-support)
-    - [Smart Model Intelligence](#smart-model-intelligence)
+    - [Simple and Predictable](#simple-and-predictable)
   - [Advanced Features](#advanced-features)
     - [Custom Ollama Instance](#custom-ollama-instance)
     - [Structured Output](#structured-output)
+    - [Auto-Detection of Structured Outputs](#auto-detection-of-structured-outputs)
   - [Common Issues](#common-issues)
   - [Supported Models](#supported-models)
+  - [Testing](#testing)
   - [Learn More](#learn-more)
   - [License](#license)
 
@@ -223,8 +225,9 @@ const { text } = await generateText({
 import { generateObject } from 'ai';
 import { z } from 'zod';
 
+// Auto-detection: structuredOutputs is automatically enabled for object generation
 const { object } = await generateObject({
-  model: ollama('llama3.2', { structuredOutputs: true }),
+  model: ollama('llama3.2'), // No need to set structuredOutputs: true
   schema: z.object({
     name: z.string(),
     age: z.number(),
@@ -235,6 +238,40 @@ const { object } = await generateObject({
 
 console.log(object);
 // { name: "Alice", age: 28, interests: ["reading", "hiking"] }
+
+// Explicit setting still works
+const { object: explicitObject } = await generateObject({
+  model: ollama('llama3.2', { structuredOutputs: true }), // Explicit
+  schema: z.object({
+    name: z.string(),
+    age: z.number(),
+  }),
+  prompt: 'Generate a person',
+});
+```
+
+### Auto-Detection of Structured Outputs
+
+The provider automatically detects when structured outputs are needed:
+
+- **Object Generation**: `generateObject` and `streamObject` automatically enable `structuredOutputs: true`
+- **Text Generation**: `generateText` and `streamText` require explicit `structuredOutputs: true` for JSON output
+- **Backward Compatibility**: Explicit settings are respected, with warnings when overridden
+- **No Breaking Changes**: Existing code continues to work as expected
+
+```typescript
+// This works without explicit structuredOutputs: true
+const { object } = await generateObject({
+  model: ollama('llama3.2'),
+  schema: z.object({ name: z.string() }),
+  prompt: 'Generate a name',
+});
+
+// This still requires explicit setting for JSON output
+const { text } = await generateText({
+  model: ollama('llama3.2', { structuredOutputs: true }),
+  prompt: 'Generate JSON with a message field',
+});
 ```
 
 ## Common Issues
@@ -250,9 +287,28 @@ console.log(object);
 
 Works with any model in your Ollama installation:
 
-- **Chat**: `llama3.2`, `llama3.1`, `mistral`, `phi4-mini`, `qwen2.5`, `codellama`
+- **Chat**: `llama3.2`, `mistral`, `phi4-mini`, `qwen2.5`, `codellama`
 - **Vision**: `llava`, `bakllava`, `llama3.2-vision`, `minicpm-v`
 - **Embeddings**: `nomic-embed-text`, `all-minilm`, `mxbai-embed-large`
+
+## Testing
+
+The project includes unit and integration tests:
+
+```bash
+# Run unit tests only (fast, no external dependencies)
+npm test
+
+# Run all tests (unit + integration)
+npm run test:all
+
+# Run integration tests only (requires Ollama running)
+npm run test:integration
+```
+
+> **Note**: Integration tests may occasionally fail due to the non-deterministic nature of AI model outputs. This is expected behavior - the tests use loose assertions to account for LLM output variability. Some tests may also skip if required models aren't available locally.
+
+For detailed testing information, see [Integration Tests Documentation](./src/integration-tests/README.md).
 
 ## Learn More
 

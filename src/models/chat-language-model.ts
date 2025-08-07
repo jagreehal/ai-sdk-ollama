@@ -41,13 +41,47 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
   }
 
   get supportsStructuredOutputs(): boolean {
+    // Auto-detect structured outputs when JSON schema is provided
+    // This allows generateObject and streamObject to work without explicit structuredOutputs: true
     return this.settings.structuredOutputs ?? false;
+  }
+
+  /**
+   * Check if structured outputs should be enabled based on the call options
+   * This is used internally to auto-detect when structured outputs are needed
+   */
+  private shouldEnableStructuredOutputs(
+    options: LanguageModelV2CallOptions,
+  ): boolean {
+    // Auto-detect: if we have a JSON schema, we need structured outputs
+    // This overrides explicit settings to ensure object generation works
+    if (
+      options.responseFormat?.type === 'json' &&
+      options.responseFormat.schema
+    ) {
+      // Warn if structuredOutputs was explicitly set to false but we're auto-enabling it
+      if (this.settings.structuredOutputs === false) {
+        console.warn(
+          'Ollama: structuredOutputs was set to false but auto-enabled for object generation. ' +
+            'This ensures generateObject and streamObject work correctly.',
+        );
+      }
+      return true;
+    }
+
+    // If explicitly set, use that value (for text generation)
+    if (this.settings.structuredOutputs !== undefined) {
+      return this.settings.structuredOutputs;
+    }
+
+    // Default to false for regular text generation
+    return false;
   }
 
   private getCallOptions(options: LanguageModelV2CallOptions): {
     messages: OllamaMessage[];
     options: Record<string, unknown>;
-    format?: string;
+    format?: string | Record<string, unknown>;
     tools?: Tool[];
     warnings: LanguageModelV2CallWarning[];
   } {
@@ -67,11 +101,14 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
 
     const warnings: LanguageModelV2CallWarning[] = [];
 
+    // Auto-detect structured outputs when JSON schema is provided
+    const needsStructuredOutputs = this.shouldEnableStructuredOutputs(options);
+
     // Check for unsupported features and throw errors
     if (
       responseFormat?.type === 'json' &&
       responseFormat.schema &&
-      !this.supportsStructuredOutputs
+      !needsStructuredOutputs
     ) {
       throw new Error(
         'JSON schema is only supported when structuredOutputs is enabled',
@@ -169,9 +206,12 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
       }
     }
 
-    let format: string | undefined;
+    let format: string | Record<string, unknown> | undefined;
     if (responseFormat?.type === 'json') {
-      format = 'json';
+      format =
+        responseFormat.schema && needsStructuredOutputs
+          ? (responseFormat.schema as Record<string, unknown>)
+          : 'json';
     }
 
     const messages = convertToOllamaChatMessages(prompt);

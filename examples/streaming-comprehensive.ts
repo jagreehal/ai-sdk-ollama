@@ -177,7 +177,7 @@ async function testStreamObject() {
 
   try {
     const { partialObjectStream } = await streamObject({
-      model: ollama('llama3.2', { structuredOutputs: true }),
+      model: ollama('llama3.2'),
       schema: z.object({
         recipe: z.object({
           name: z.string(),

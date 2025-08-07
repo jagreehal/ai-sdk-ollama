@@ -1,6 +1,6 @@
 {
   "name": "ai-sdk-ollama",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "Vercel AI SDK Provider for Ollama using official ollama-js library",
   "main": "./dist/index.js",
@@ -38,9 +38,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check src/**/*.ts",
     "type-check": "tsc --noEmit",
-    "test": "pnpm run test:node && pnpm run test:edge",
-    "test:node": "vitest run --config vitest.node.config.js",
-    "test:edge": "vitest run --config vitest.edge.config.js",
+    "test": "vitest run --config vitest.unit.config.ts",
+    "test:watch": "vitest --config vitest.unit.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:integration:watch": "vitest --config vitest.integration.config.ts",
+    "test:all": "npm run test && npm run test:integration",
     "check-format": "prettier --check .",
     "check-exports": "attw --pack . --ignore-rules false-esm no-resolution",
     "local-release": "npm run ci && changeset version && changeset publish --access public"
