@@ -5,13 +5,18 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     include: ['src/**/*.test.ts'],
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      'src/integration-tests/**/*.test.ts',
+    ],
     globals: true,
     environment: 'node',
-    testTimeout: 30_000, // 30 seconds for integration tests
+    testTimeout: 10_000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
+      exclude: ['src/integration-tests/**/*'],
     },
-    exclude: ['**/___old/**', '**/node_modules/**', '**/dist/**'],
   },
 });
