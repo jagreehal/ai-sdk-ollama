@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.4.0
+
+### Minor Changes
+
+- **Reasoning Support**: Added support for reasoning (chain-of-thought) output
+  - 🧠 **Reasoning Content**: Models that support reasoning can now output their thinking process
+  - 📝 **Content Types**: Support for `LanguageModelV2Reasoning` content type in both non-streaming and streaming responses
+  - 🔄 **Streaming Support**: Full streaming support with `reasoning-start`, `reasoning-delta`, and `reasoning-end` events
+  - ⚙️ **Configurable**: Enable reasoning with `{ reasoning: true }` setting
+  - 🧪 **Comprehensive Testing**: Added unit tests for reasoning functionality
+  - 📚 **Documentation**: Updated README and examples with reasoning usage
+  - 🎯 **Backward Compatible**: Reasoning is disabled by default, existing code continues to work
+
+### Technical Improvements
+
+- Added `reasoning` setting to `OllamaChatSettings` interface
+- Enhanced `doGenerate` method to handle `thinking` field from Ollama responses
+- Enhanced `doStream` method to emit reasoning stream parts
+- Added reasoning support to content conversion logic
+- Updated type definitions to include reasoning content types
+
 ## 0.3.0
 
 ### Minor Changes

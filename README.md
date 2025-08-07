@@ -274,6 +274,48 @@ const { text } = await generateText({
 });
 ```
 
+### Reasoning Support
+
+Some models like DeepSeek-R1 support reasoning (chain-of-thought) output. Enable this feature to see the model's thinking process:
+
+```typescript
+// Enable reasoning for models that support it (e.g., deepseek-r1:7b)
+const model = ollama('deepseek-r1:7b', { reasoning: true });
+
+// Generate text with reasoning
+const { text } = await generateText({
+  model,
+  prompt:
+    'Solve: If I have 3 boxes, each with 4 smaller boxes, and each smaller box has 5 items, how many items total?',
+});
+
+console.log('Answer:', text);
+// DeepSeek-R1 includes reasoning in the output with <think> tags:
+// <think>
+// First, I'll calculate the number of smaller boxes: 3 × 4 = 12
+// Then, the total items: 12 × 5 = 60
+// </think>
+// You have 60 items in total.
+
+// Compare with reasoning disabled
+const modelNoReasoning = ollama('deepseek-r1:7b', { reasoning: false });
+const { text: noReasoningText } = await generateText({
+  model: modelNoReasoning,
+  prompt: 'Calculate 3 × 4 × 5',
+});
+// Output: 60 (without showing the thinking process)
+```
+
+**Recommended Reasoning Models**:
+
+- `deepseek-r1:7b` - Balanced performance and reasoning capability (5GB)
+- `deepseek-r1:1.5b` - Lightweight option (2.5GB)
+- `deepseek-r1:8b` - Llama-based distilled version (5.5GB)
+
+Install with: `ollama pull deepseek-r1:7b`
+
+**Note**: The reasoning feature is model-dependent. Models without reasoning support will work normally without showing thinking process.
+
 ## Common Issues
 
 - **Make sure Ollama is running** - Run `ollama serve` before using the provider
@@ -290,6 +332,7 @@ Works with any model in your Ollama installation:
 - **Chat**: `llama3.2`, `mistral`, `phi4-mini`, `qwen2.5`, `codellama`
 - **Vision**: `llava`, `bakllava`, `llama3.2-vision`, `minicpm-v`
 - **Embeddings**: `nomic-embed-text`, `all-minilm`, `mxbai-embed-large`
+- **Reasoning**: `deepseek-r1:7b`, `deepseek-r1:1.5b`, `deepseek-r1:8b`
 
 ## Testing
 

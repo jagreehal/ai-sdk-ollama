@@ -76,6 +76,11 @@ export interface OllamaChatSettings {
   structuredOutputs?: boolean;
 
   /**
+   * Enable reasoning support for models that support it
+   */
+  reasoning?: boolean;
+
+  /**
    * Additional model parameters
    */
   options?: {

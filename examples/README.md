@@ -12,6 +12,8 @@ This directory contains examples demonstrating various features of the ai-sdk-ol
    ollama pull phi4-mini
    ollama pull qwen2.5-coder
    ollama pull nomic-embed-text
+   # For reasoning examples:
+   ollama pull deepseek-r1:7b
    ```
 
 ## Running Examples
@@ -106,6 +108,34 @@ This example shows comprehensive streaming with all available features
 
 ```bash
 npx tsx examples/streaming-comprehensive.ts
+```
+
+### **reasoning-example.ts** - Reasoning Support (DeepSeek-R1)
+
+This example demonstrates reasoning (chain-of-thought) capabilities with DeepSeek-R1 models
+
+- Mathematical reasoning with verification
+- Logic puzzles with step-by-step deduction
+- Code verification and analysis
+- Comparison with reasoning disabled
+- Shows how DeepSeek-R1 includes `<think>` tags in output
+
+**Required model**: Install with `ollama pull deepseek-r1:7b`
+
+```bash
+npx tsx examples/reasoning-example.ts
+```
+
+### **reasoning-example-simple.ts** - Simple Reasoning Demo
+
+A simplified example focusing on the core reasoning feature
+
+- Basic mathematical reasoning
+- Clear comparison between reasoning enabled/disabled
+- Minimal setup for quick testing
+
+```bash
+npx tsx examples/reasoning-example-simple.ts
 ```
 
 ## 🧠 **Intelligent Features**
