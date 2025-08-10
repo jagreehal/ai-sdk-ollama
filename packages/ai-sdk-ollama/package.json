@@ -64,7 +64,8 @@
     "test:all": "pnpm test && pnpm test:integration",
     "check-format": "prettier --check ./src",
     "check-exports": "attw --pack . --ignore-rules false-esm no-resolution",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "local-release": "pnpm run ci && changeset version && changeset publish --access public"
   },
   "keywords": [
     "ai",
