@@ -11,12 +11,33 @@ importers:
       '@changesets/cli':
         specifier: ^2.29.5
         version: 2.29.5
+      '@eslint/js':
+        specifier: ^9.33.0
+        version: 9.33.0
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.39.0
+        version: 8.39.0(@typescript-eslint/parser@8.39.0(eslint@9.33.0)(typescript@5.9.2))(eslint@9.33.0)(typescript@5.9.2)
+      '@typescript-eslint/parser':
+        specifier: ^8.39.0
+        version: 8.39.0(eslint@9.33.0)(typescript@5.9.2)
       eslint:
         specifier: ^9.33.0
         version: 9.33.0
+      eslint-config-prettier:
+        specifier: ^10.1.8
+        version: 10.1.8(eslint@9.33.0)
+      eslint-plugin-unicorn:
+        specifier: ^60.0.0
+        version: 60.0.0(eslint@9.33.0)
+      prettier:
+        specifier: ^3.6.2
+        version: 3.6.2
       turbo:
         specifier: ^2.5.5
         version: 2.5.5
+      typescript-eslint:
+        specifier: ^8.39.0
+        version: 8.39.0(eslint@9.33.0)(typescript@5.9.2)
 
   examples/browser:
     dependencies:
