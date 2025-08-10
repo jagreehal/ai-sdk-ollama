@@ -1,0 +1,113 @@
+{
+  "name": "ai-sdk-ollama",
+  "version": "0.4.0",
+  "type": "module",
+  "description": "Vercel AI SDK Provider for Ollama using official ollama-js library",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "browser": {
+        "types": "./dist/index.browser.d.ts",
+        "import": "./dist/index.browser.js",
+        "require": "./dist/index.browser.cjs"
+      },
+      "node": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
+      },
+      "default": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
+      }
+    },
+    "./browser": {
+      "types": "./dist/index.browser.d.ts",
+      "import": "./dist/index.browser.js",
+      "require": "./dist/index.browser.cjs"
+    }
+  },
+  "homepage": "https://github.com/jagreehal/ai-sdk-ollama",
+  "bugs": {
+    "url": "https://github.com/jagreehal/ai-sdk-ollama/issues"
+  },
+  "author": "Jag Reehal<jag@jagreehal.com> (https://jagreehal.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jagreehal/ai-sdk-ollama.git",
+    "directory": "packages/ai-sdk-ollama"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "ci": "npm run build && npm run check-format && npm run check-exports && npm run lint && npm run test",
+    "dev": "tsup --watch",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check src/**/*.ts",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run --config vitest.unit.config.ts",
+    "test:watch": "vitest --config vitest.unit.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:integration:watch": "vitest --config vitest.integration.config.ts",
+    "test:all": "pnpm test && pnpm test:integration",
+    "check-format": "prettier --check ./src",
+    "check-exports": "attw --pack . --ignore-rules false-esm no-resolution",
+    "clean": "rimraf dist"
+  },
+  "keywords": [
+    "ai",
+    "vercel-ai",
+    "ollama",
+    "ai-sdk",
+    "llm",
+    "language-model",
+    "embedding",
+    "chat",
+    "local-ai",
+    "provider",
+    "typescript",
+    "embeddings",
+    "tool-calling"
+  ],
+  "dependencies": {
+    "@ai-sdk/provider": "^2.0.0",
+    "@ai-sdk/provider-utils": "^3.0.1",
+    "ai": "^5.0.9",
+    "ollama": "^0.5.17"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.2",
+    "@edge-runtime/vm": "^5.0.0",
+    "@total-typescript/ts-reset": "^0.6.1",
+    "@total-typescript/tsconfig": "^1.0.4",
+    "@types/eslint-config-prettier": "^6.11.3",
+    "@types/node": "^24.2.1",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
+    "@typescript-eslint/parser": "^8.39.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-unicorn": "^60.0.0",
+    "prettier": "^3.6.2",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.39.0",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.4",
+    "zod": "^4.0.17"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

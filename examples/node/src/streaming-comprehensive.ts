@@ -3,7 +3,7 @@
  * Tests various streaming scenarios to ensure perfect compatibility
  */
 
-import { ollama } from '../src';
+import { ollama } from 'ai-sdk-ollama';
 import { streamText, streamObject } from 'ai';
 import { z } from 'zod';
 
