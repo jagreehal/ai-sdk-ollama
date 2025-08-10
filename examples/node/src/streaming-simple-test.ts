@@ -3,7 +3,7 @@
  * Tests the core streaming functionality that users actually need
  */
 
-import { ollama } from '../src';
+import { ollama } from 'ai-sdk-ollama';
 import { streamText } from 'ai';
 import { z } from 'zod';
 

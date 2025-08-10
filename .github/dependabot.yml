@@ -1,13 +1,21 @@
 version: 2
 updates:
-  - package-ecosystem: 'npm'
+  - package-ecosystem: npm
     directory: '/'
     schedule:
-      interval: 'weekly'
+      interval: daily
     open-pull-requests-limit: 10
-    versioning-strategy: 'auto'
+    versioning-strategy: auto
     allow:
-      - dependency-type: 'all'
-    labels:
-      - 'dependencies'
-      - 'automerge'
+      - dependency-type: all
+    labels: [dependencies, automerge]
+
+  - package-ecosystem: npm
+    directory: '/packages/ai-sdk-ollama'
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    versioning-strategy: auto
+    allow:
+      - dependency-type: all
+    labels: [dependencies, automerge]

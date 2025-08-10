@@ -382,6 +382,19 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
 
           // Regular chunk with content
           if (chunk.done) {
+            // If the final chunk carries residual content, emit it before finish
+            if (
+              chunk.message &&
+              typeof chunk.message.content === 'string' &&
+              chunk.message.content.length > 0
+            ) {
+              controller.enqueue({
+                type: 'text-delta',
+                id: crypto.randomUUID(),
+                delta: chunk.message.content,
+              });
+            }
+
             // Final chunk with metadata
             usage = {
               inputTokens: chunk.prompt_eval_count || 0,

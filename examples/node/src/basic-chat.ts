@@ -1,4 +1,4 @@
-import { ollama } from '../src';
+import { ollama } from 'ai-sdk-ollama';
 import { generateText, streamText, embed } from 'ai';
 
 async function main() {
