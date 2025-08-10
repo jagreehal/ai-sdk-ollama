@@ -1,4 +1,4 @@
-# AI SDK Ollama Provider Monorepo
+# AI SDK Ollama
 
 [![npm version](https://badge.fury.io/js/ai-sdk-ollama.svg)](https://badge.fury.io/js/ai-sdk-ollama)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
@@ -7,11 +7,11 @@
 
 A monorepo containing the AI SDK Ollama Provider and examples demonstrating usage in both Node.js and browser environments.
 
-## 📦 Packages
+## 📦 Package
 
 ### [`ai-sdk-ollama`](./packages/ai-sdk-ollama)
 
-The main package - a Vercel AI SDK v5+ provider for Ollama built on the official `ollama` package. Features:
+Vercel AI SDK v5+ provider for Ollama built on the official `ollama` package. Features:
 
 - ✅ **Cross-environment support** - Works in Node.js and browsers
 - ✅ **Type-safe** - Full TypeScript support with strict typing
@@ -186,10 +186,6 @@ pnpm release
 5. Run `pnpm build && pnpm lint && pnpm test`
 6. Submit a pull request
 
-## 📄 License
-
 MIT © [Jag Reehal](https://jagreehal.com)
 
----
-
-For detailed documentation, see the [main package README](./packages/ai-sdk-ollama/README.md).
+See [LICENSE](./LICENSE) for details.
