@@ -220,6 +220,21 @@ Tests automatic detection of structured outputs:
 - Backward compatibility with explicit settings
 - Warning messages for overridden settings
 
+#### 18. Model-Specific Tests
+
+##### GPT-OSS:20B (`gpt-oss-20b.test.ts`)
+
+Tests compatibility with the GPT-OSS:20B model:
+
+- Basic text generation with capital city prompts
+- Streaming functionality with counting tasks
+- Structured object generation (if supported)
+- Temperature parameter variations
+- Token limit enforcement
+- Basic reasoning and arithmetic capabilities
+- **Note**: Limited compatibility - basic generation works but advanced features may return empty responses
+- Uses `getNonEmptyText()` helper to handle model-specific response patterns
+
 ## Test Design Principles
 
 1. **Loose Assertions**: Since AI model outputs are non-deterministic, tests use loose assertions like:

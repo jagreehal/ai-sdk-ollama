@@ -14,15 +14,17 @@ This directory contains examples demonstrating various features of the ai-sdk-ol
    ollama pull nomic-embed-text
    # For reasoning examples:
    ollama pull deepseek-r1:7b
+   # For gpt-oss:20b
+   ollama pull gpt-oss:20b
    ```
 
 ## Running Examples
 
 ```bash
-# Install dependencies
+# From repo root
 pnpm install
 
-# Run any example
+# Run any example directly with tsx
 npx tsx examples/[example-name].ts
 ```
 

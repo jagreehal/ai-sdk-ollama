@@ -5,7 +5,7 @@
  * Ollama supports tool calling with models like Llama 3.1, Llama 3.2, and others.
  */
 
-import { ollama } from '../src';
+import { ollama } from 'ai-sdk-ollama';
 import { generateText } from 'ai';
 import { z } from 'zod';
 
