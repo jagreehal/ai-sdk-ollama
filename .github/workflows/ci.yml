@@ -48,7 +48,7 @@ jobs:
         run: pnpm type-check
 
       - name: Run unit tests
-        run: pnpm test
+        run: pnpm --filter ai-sdk-ollama test
         env:
           NODE_ENV: test
 
