@@ -83,7 +83,7 @@
   ],
   "dependencies": {
     "@ai-sdk/provider": "^2.0.0",
-    "@ai-sdk/provider-utils": "^3.0.2",
+    "@ai-sdk/provider-utils": "^3.0.3",
     "ai": "^5.0.14",
     "ollama": "^0.5.17"
   },
