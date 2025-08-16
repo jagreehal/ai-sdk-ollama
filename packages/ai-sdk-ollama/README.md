@@ -208,12 +208,14 @@ Ollama supports tool calling with compatible models.
 
 ```typescript
 import { z } from 'zod';
+import { generateText, tool } from 'ai';
+import { ollama } from 'ai-sdk-ollama';
 
 const { text, toolCalls } = await generateText({
   model: ollama('llama3.2'),
   prompt: 'What is the weather in San Francisco?',
   tools: {
-    getWeather: {
+    getWeather: tool({
       description: 'Get current weather for a location',
       inputSchema: z.object({
         location: z.string().describe('City name'),
@@ -223,7 +225,7 @@ const { text, toolCalls } = await generateText({
         // Your actual weather API call here
         return { temp: 18, unit, condition: 'sunny' };
       },
-    },
+    }),
   },
 });
 ```
