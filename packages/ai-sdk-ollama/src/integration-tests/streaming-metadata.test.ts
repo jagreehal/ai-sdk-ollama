@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { streamText } from 'ai';
+import { streamText, tool } from 'ai';
 import { ollama } from '../index';
+import { z } from 'zod';
 
 describe('Streaming Metadata Integration Tests', { timeout: 120_000 }, () => {
   it('should track detailed streaming events and metadata', async () => {
-    const result = await streamText({
+    const result = streamText({
       model: ollama('llama3.2'),
       prompt: 'List 5 programming languages and briefly describe each',
       maxOutputTokens: 200,
@@ -50,7 +51,7 @@ describe('Streaming Metadata Integration Tests', { timeout: 120_000 }, () => {
   });
 
   it('should capture streaming metadata with usage statistics', async () => {
-    const result = await streamText({
+    const result = streamText({
       model: ollama('llama3.2'),
       prompt: 'Explain the concept of recursion',
       maxOutputTokens: 150,
@@ -87,24 +88,20 @@ describe('Streaming Metadata Integration Tests', { timeout: 120_000 }, () => {
   });
 
   it('should track streaming events with tool calls', async () => {
-    const result = await streamText({
+    const result = streamText({
       model: ollama('llama3.2'),
       prompt: 'What is the weather in Paris? Use the weather tool.',
       maxOutputTokens: 100,
       tools: {
-        getWeather: {
+        getWeather: tool({
           description: 'Get weather for a city',
-          parameters: {
-            type: 'object',
-            properties: {
-              city: { type: 'string' },
-            },
-            required: ['city'],
-          },
+          inputSchema: z.object({
+            city: z.string(),
+          }),
           execute: async ({ city }) => {
             return { city, temperature: 20, condition: 'sunny' };
           },
-        },
+        }),
       },
     });
 
@@ -144,7 +141,7 @@ describe('Streaming Metadata Integration Tests', { timeout: 120_000 }, () => {
   });
 
   it('should measure streaming consistency and timing patterns', async () => {
-    const result = await streamText({
+    const result = streamText({
       model: ollama('llama3.2'),
       prompt: 'Write a step-by-step guide for making tea',
       maxOutputTokens: 150,
@@ -199,7 +196,7 @@ describe('Streaming Metadata Integration Tests', { timeout: 120_000 }, () => {
   });
 
   it('should capture comprehensive stream metadata', async () => {
-    const result = await streamText({
+    const result = streamText({
       model: ollama('llama3.2'),
       prompt: 'Describe the solar system in 3 sentences',
       maxOutputTokens: 100,
@@ -275,7 +272,7 @@ describe('Streaming Metadata Integration Tests', { timeout: 120_000 }, () => {
     };
 
     try {
-      const result = await streamText({
+      const result = streamText({
         model: ollama('llama3.2'),
         prompt:
           'Write a very long story about space exploration with lots of details',
@@ -315,7 +312,7 @@ describe('Streaming Metadata Integration Tests', { timeout: 120_000 }, () => {
     const results = await Promise.all(
       prompts.map(async (prompt, index) => {
         const startTime = Date.now();
-        const result = await streamText({
+        const result = streamText({
           model: ollama('llama3.2'),
           prompt,
           maxOutputTokens: 50,

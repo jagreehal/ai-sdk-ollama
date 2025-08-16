@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { streamText } from 'ai';
+import { streamText, tool } from 'ai';
 import { ollama } from '../index';
+import { z } from 'zod';
 
 describe(
   'Streaming Performance Integration Tests',
@@ -9,7 +10,7 @@ describe(
     it('should measure basic streaming performance metrics', async () => {
       const startTime = Date.now();
 
-      const result = await streamText({
+      const result = streamText({
         model: ollama('llama3.2'),
         prompt: 'Explain the concept of recursion in programming',
         maxOutputTokens: 100,
@@ -49,7 +50,7 @@ describe(
     });
 
     it('should handle real-time streaming with chunk analysis', async () => {
-      const result = await streamText({
+      const result = streamText({
         model: ollama('llama3.2'),
         prompt: 'Count from 1 to 5 with descriptions',
         maxOutputTokens: 150,
@@ -109,7 +110,7 @@ describe(
       for (const { name, text, expectedTime } of prompts) {
         const startTime = Date.now();
 
-        const result = await streamText({
+        const result = streamText({
           model: ollama('llama3.2'),
           prompt: text,
           maxOutputTokens: name === 'Short' ? 30 : name === 'Medium' ? 60 : 100,
@@ -153,7 +154,7 @@ describe(
       for (const modelName of models) {
         const startTime = Date.now();
 
-        const result = await streamText({
+        const result = streamText({
           model: ollama(modelName),
           prompt: 'Explain TypeScript in one paragraph',
           maxOutputTokens: 80,
@@ -188,24 +189,20 @@ describe(
     it('should handle streaming performance with tool calls', async () => {
       const startTime = Date.now();
 
-      const result = await streamText({
+      const result = streamText({
         model: ollama('llama3.2'),
         prompt: 'What is the weather in London? Use the weather tool.',
         maxOutputTokens: 100,
         tools: {
-          getWeather: {
+          getWeather: tool({
             description: 'Get weather for a city',
-            parameters: {
-              type: 'object',
-              properties: {
-                city: { type: 'string' },
-              },
-              required: ['city'],
-            },
+            inputSchema: z.object({
+              city: z.string(),
+            }),
             execute: async ({ city }) => {
               return { city, temperature: 15, condition: 'cloudy' };
             },
-          },
+          }),
         },
       });
 
@@ -243,7 +240,7 @@ describe(
     });
 
     it('should benchmark streaming throughput', async () => {
-      const result = await streamText({
+      const result = streamText({
         model: ollama('llama3.2'),
         prompt:
           'Write a detailed explanation of how computers work, covering hardware and software',
