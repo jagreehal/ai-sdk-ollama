@@ -8,18 +8,18 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rimraf dist",
-    "test": "playwright test",
-    "test:headed": "playwright test --headed",
-    "test:ui": "playwright test --ui",
-    "test:report": "playwright show-report"
+    "test:integration": "playwright test",
+    "test:integration:headed": "playwright test --headed",
+    "test:integration:ui": "playwright test --ui",
+    "test:integration:report": "playwright show-report"
   },
   "dependencies": {
-    "ai": "^5.0.14",
+    "ai": "^5.0.15",
     "ai-sdk-ollama": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.2",
-    "@types/node": "^24.2.1",
+    "@types/node": "^24.3.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.9.2",
     "vite": "^7.1.2"

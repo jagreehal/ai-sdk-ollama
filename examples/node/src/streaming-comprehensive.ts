@@ -4,7 +4,7 @@
  */
 
 import { ollama } from 'ai-sdk-ollama';
-import { streamText, streamObject } from 'ai';
+import { streamText, streamObject, tool } from 'ai';
 import { z } from 'zod';
 
 async function testBasicStreaming() {
@@ -48,9 +48,9 @@ async function testStreamingWithTools() {
       prompt:
         'What is the weather in San Francisco and Paris? Use the weather tool for both cities.',
       tools: {
-        getWeather: {
+        getWeather: tool({
           description: 'Get weather for a city',
-          parameters: z.object({
+          inputSchema: z.object({
             city: z.string().describe('City name'),
             unit: z.enum(['celsius', 'fahrenheit']).optional(),
           }),
@@ -72,7 +72,7 @@ async function testStreamingWithTools() {
               condition: cityWeather.condition,
             };
           },
-        },
+        }),
       },
     });
 

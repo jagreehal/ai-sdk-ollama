@@ -4,7 +4,7 @@
  */
 
 import { ollama } from 'ai-sdk-ollama';
-import { streamText } from 'ai';
+import { streamText, tool } from 'ai';
 import { z } from 'zod';
 
 async function testBasicStreaming() {
@@ -102,15 +102,15 @@ async function testStreamingWithTools() {
       model: ollama('llama3.2'),
       prompt: 'What is the weather in London? Use the weather tool.',
       tools: {
-        getWeather: {
+        getWeather: tool({
           description: 'Get weather for a city',
-          parameters: z.object({
+          inputSchema: z.object({
             city: z.string(),
           }),
           execute: async ({ city }) => {
             return { city, temperature: 15, condition: 'cloudy' };
           },
-        },
+        }),
       },
     });
 
