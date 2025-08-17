@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1
+
+### Patch Changes
+
+- edb4d47: Updated ai package version to 5.0.15
+
 ## 0.5.0
 
 ### Minor Changes
