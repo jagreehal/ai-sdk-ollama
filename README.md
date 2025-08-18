@@ -1,4 +1,4 @@
-# AI SDK Ollama Provider
+# AI SDK Ollama
 
 [![npm version](https://badge.fury.io/js/ai-sdk-ollama.svg)](https://badge.fury.io/js/ai-sdk-ollama)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
@@ -146,10 +146,12 @@ console.log('Embedding length:', embedding.length); // 768 dimensions
 // Multiple embeddings
 const texts = ['Hello world', 'How are you?', 'AI is amazing'];
 const results = await Promise.all(
-  texts.map(text => embed({
-    model: ollama.embedding('nomic-embed-text'),
-    value: text,
-  }))
+  texts.map((text) =>
+    embed({
+      model: ollama.embedding('nomic-embed-text'),
+      value: text,
+    }),
+  ),
 );
 ```
 
@@ -163,7 +165,7 @@ const mcpClient = await experimental_createMCPClient({
   transport: {
     type: 'stdio',
     command: 'path/to/mcp-server',
-  }
+  },
 });
 
 // Get tools from MCP server
