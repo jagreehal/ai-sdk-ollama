@@ -1,127 +1,17 @@
-# AI SDK Ollama
+# AI SDK Ollama Provider
 
 [![npm version](https://badge.fury.io/js/ai-sdk-ollama.svg)](https://badge.fury.io/js/ai-sdk-ollama)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A monorepo containing the AI SDK Ollama Provider and examples demonstrating usage in both Node.js and browser environments.
+A Vercel AI SDK v5+ provider for Ollama built on the official `ollama` package. Type safe, future proof, with cross provider compatibility and native Ollama features.
 
-## 📦 Package
-
-### [`ai-sdk-ollama`](./packages/ai-sdk-ollama)
-
-Vercel AI SDK v5+ provider for Ollama built on the official `ollama` package. Features:
-
-- ✅ **Cross-environment support** - Works in Node.js and browsers
-- ✅ **Type-safe** - Full TypeScript support with strict typing
-- ✅ **Cross-provider compatible** - Drop-in replacement for other AI SDK providers
-- ✅ **Native Ollama features** - Access to Ollama-specific options and parameters
-- ✅ **Browser support** - Automatic environment detection with `ollama/browser`
-
-## 🚀 Examples
-
-### [`examples/node`](./examples/node)
-
-Node.js examples (run individually with tsx):
-
-- Basic text generation
-- Streaming responses
-- Structured object generation with Zod schemas
-- Advanced Ollama-specific configuration
-
-Run any example from the repo root:
-
-```bash
-npx tsx examples/basic-chat.ts
-# or
-npx tsx examples/dual-parameter-example.ts
-```
-
-### [`examples/browser`](./examples/browser)
-
-Interactive browser example featuring:
-
-- Vite-powered development environment
-- Real-time text generation and streaming
-- Model configuration UI
-- CORS proxy setup for Ollama access
-
-## 🛠️ Development
-
-This monorepo uses [pnpm workspaces](https://pnpm.io/workspaces) and [Turborepo](https://turbo.build/) for efficient development and build processes.
-
-### Prerequisites
-
-- Node.js 22+
-- pnpm 8+
-- [Ollama](https://ollama.com) installed locally
-
-### Quick Start
-
-```bash
-# Clone and install dependencies
-git clone https://github.com/jagreehal/ai-sdk-ollama.git
-cd ai-sdk-ollama
-pnpm install
-
-# Build all packages
-pnpm build
-
-# Start Ollama (required for examples and integration tests)
-ollama serve
-
-# Pull a model
-ollama pull llama3.2
-```
-
-### Available Scripts
-
-```bash
-# Build all packages and examples
-pnpm build
-
-# Run all linting
-pnpm lint
-
-# Run all unit tests
-pnpm test
-
-# Run integration tests (requires Ollama running)
-pnpm test:integration
-
-# Type check all packages
-pnpm type-check
-
-# Clean all build artifacts
-pnpm clean
-```
-
-### Working with Specific Packages
-
-```bash
-# Build only the main package
-pnpm --filter ai-sdk-ollama build
-
-# Run a Node.js example directly with tsx
-npx tsx examples/basic-chat.ts
-
-# Start the browser example dev server
-pnpm --filter @examples/browser dev
-
-# Run tests for the main package only
-pnpm --filter ai-sdk-ollama test
-```
-
-## 📖 Usage
-
-### Installation
+## Quick Start
 
 ```bash
 npm install ai-sdk-ollama ai@^5.0.0
 ```
-
-### Basic Usage
 
 ```typescript
 import { ollama } from 'ai-sdk-ollama';
@@ -137,54 +27,190 @@ const { text } = await generateText({
 console.log(text);
 ```
 
-### Browser Environment
+## Why Choose AI SDK Ollama?
 
-The library automatically detects browser environments and uses the CORS-compatible `ollama/browser` client:
+- ✅ **Cross-provider compatibility** - Drop-in replacement for OpenAI, Anthropic, etc.
+- ✅ **Type-safe** - Full TypeScript support with strict typing
+- ✅ **Cross-environment** - Works in Node.js and browsers automatically
+- ✅ **Native Ollama power** - Access advanced features like `mirostat`, `repeat_penalty`, `num_ctx`
+- ✅ **Tool calling support** - Function calling with compatible models
+- ✅ **Structured outputs** - Auto-detection for object generation
+- ✅ **Reasoning support** - Chain-of-thought with models like DeepSeek-R1
+
+## More Examples
+
+### Streaming Responses
 
 ```typescript
-import { ollama } from 'ai-sdk-ollama'; // Automatically uses browser version
-// or explicitly:
-import { ollama } from 'ai-sdk-ollama/browser';
+import { streamText } from 'ai';
+
+const { textStream } = await streamText({
+  model: ollama('llama3.2'),
+  prompt: 'Tell me a story about a robot',
+});
+
+for await (const chunk of textStream) {
+  process.stdout.write(chunk);
+}
 ```
 
-**CORS Setup**: Ensure your Ollama server allows browser requests:
+### Advanced Ollama Features
+
+```typescript
+// Access Ollama's advanced sampling while keeping portability
+const { text } = await generateText({
+  model: ollama('llama3.2', {
+    options: {
+      mirostat: 2, // Advanced sampling algorithm
+      repeat_penalty: 1.1, // Fine-tune repetition
+      num_ctx: 8192, // Larger context window
+    },
+  }),
+  prompt: 'Write a detailed analysis',
+  temperature: 0.8, // Standard AI SDK parameters still work
+});
+```
+
+### Tool Calling
+
+```typescript
+import { z } from 'zod';
+import { generateText, tool } from 'ai';
+
+const { text, toolCalls } = await generateText({
+  model: ollama('llama3.2'),
+  prompt: 'What is the weather in San Francisco?',
+  tools: {
+    getWeather: tool({
+      description: 'Get current weather for a location',
+      inputSchema: z.object({
+        location: z.string().describe('City name'),
+        unit: z.enum(['celsius', 'fahrenheit']).optional(),
+      }),
+      execute: async ({ location, unit = 'celsius' }) => {
+        return { temp: 18, unit, condition: 'sunny' };
+      },
+    }),
+  },
+});
+```
+
+### Structured Object Generation
+
+```typescript
+import { generateObject } from 'ai';
+import { z } from 'zod';
+
+// Auto-detection: structured outputs enabled automatically
+const { object } = await generateObject({
+  model: ollama('llama3.2'),
+  schema: z.object({
+    name: z.string(),
+    age: z.number(),
+    interests: z.array(z.string()),
+  }),
+  prompt: 'Generate a random person profile',
+});
+
+console.log(object);
+// { name: "Alice", age: 28, interests: ["reading", "hiking"] }
+```
+
+### Browser Usage
+
+```typescript
+// Automatic environment detection - same code works everywhere
+import { ollama } from 'ai-sdk-ollama';
+import { generateText } from 'ai';
+
+const { text } = await generateText({
+  model: ollama('llama3.2'),
+  prompt: 'Hello from the browser!',
+});
+```
+
+## Prerequisites
+
+- [Ollama](https://ollama.com) installed and running locally
+- Node.js 22+ for development
+- AI SDK v5+ (`ai` package)
 
 ```bash
-OLLAMA_ORIGINS=* ollama serve
+# Start Ollama
+ollama serve
+
+# Pull a model
+ollama pull llama3.2
 ```
 
-## 🏗️ Architecture
+## Live Examples
 
-- **Monorepo Structure**: Clean separation of library code and examples
-- **Turborepo**: Efficient task runner with intelligent caching
-- **Environment Detection**: Automatic Node.js vs browser client selection
-- **TypeScript**: Strict typing throughout with shared configurations
-- **Testing**: Unit and integration test suites with Vitest
-- **CI/CD**: GitHub Actions with Dependabot auto-merge
+### Node.js Examples
 
-## 🔄 Release Process
-
-This monorepo uses [Changesets](https://github.com/changesets/changesets) for version management:
+Complete working examples in [`examples/node`](./examples/node):
 
 ```bash
-# Add a changeset
-pnpm changeset
-
-# Version packages (done in CI)
-pnpm version-packages
-
-# Release (done in CI)
-pnpm release
+# Run any example directly
+npx tsx examples/node/basic-chat.ts
+npx tsx examples/node/dual-parameter-example.ts
+npx tsx examples/node/tool-calling-example.ts
+npx tsx examples/node/tools-no-parameters.ts  # Fixes rival provider issues
+npx tsx examples/node/streaming-simple-test.ts
 ```
 
-## 🤝 Contributing
+### Interactive Browser Demo
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new features
-5. Run `pnpm build && pnpm lint && pnpm test`
-6. Submit a pull request
+Try the live browser example at [`examples/browser`](./examples/browser):
+
+```bash
+cd examples/browser
+npm install
+npm run dev
+```
+
+Features real-time text generation, model configuration UI, and proper CORS setup.
+
+## Documentation & API Reference
+
+📚 **[Full Documentation](./packages/ai-sdk-ollama/README.md)** - Complete API reference and advanced features
+
+🔧 **[Custom Ollama Instance](./packages/ai-sdk-ollama/README.md#custom-ollama-instance)** - Connect to remote Ollama servers
+
+🛠️ **[Tool Calling Guide](./packages/ai-sdk-ollama/README.md#tool-calling-support)** - Function calling with Ollama models
+
+🧠 **[Reasoning Support](./packages/ai-sdk-ollama/README.md#reasoning-support)** - Chain-of-thought with DeepSeek-R1
+
+🌐 **[Browser Setup](./packages/ai-sdk-ollama/README.md#browser-support)** - CORS configuration and proxy setup
+
+## Supported Models
+
+Works with any model in your Ollama installation:
+
+- **Chat**: `llama3.2`, `mistral`, `phi4-mini`, `qwen2.5`, `codellama`
+- **Vision**: `llava`, `bakllava`, `llama3.2-vision`, `minicpm-v`
+- **Embeddings**: `nomic-embed-text`, `all-minilm`, `mxbai-embed-large`
+- **Reasoning**: `deepseek-r1:7b`, `deepseek-r1:1.5b`, `deepseek-r1:8b`
+
+## Development & Contributing
+
+This is a monorepo using pnpm workspaces and Turborepo. Quick commands:
+
+```bash
+# Clone and setup
+git clone https://github.com/jagreehal/ai-sdk-ollama.git
+cd ai-sdk-ollama && pnpm install
+
+# Build everything
+pnpm build
+
+# Run tests
+pnpm test
+
+# Run examples
+npx tsx examples/node/basic-chat.ts
+```
+
+**Contributing**: Fork → feature branch → tests → PR. See [CLAUDE.md](./CLAUDE.md) for detailed development guidelines.
 
 MIT © [Jag Reehal](https://jagreehal.com)
 
