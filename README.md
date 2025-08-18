@@ -34,6 +34,7 @@ console.log(text);
 - ✅ **Cross-environment** - Works in Node.js and browsers automatically
 - ✅ **Native Ollama power** - Access advanced features like `mirostat`, `repeat_penalty`, `num_ctx`
 - ✅ **Tool calling support** - Function calling with compatible models
+- ✅ **MCP integration** - Model Context Protocol for external tools and services
 - ✅ **Structured outputs** - Auto-detection for object generation
 - ✅ **Reasoning support** - Chain-of-thought with models like DeepSeek-R1
 
@@ -129,6 +130,56 @@ const { text } = await generateText({
 });
 ```
 
+### Embeddings
+
+```typescript
+import { embed } from 'ai';
+
+// Single embedding
+const { embedding } = await embed({
+  model: ollama.embedding('nomic-embed-text'),
+  value: 'Hello world',
+});
+
+console.log('Embedding length:', embedding.length); // 768 dimensions
+
+// Multiple embeddings
+const texts = ['Hello world', 'How are you?', 'AI is amazing'];
+const results = await Promise.all(
+  texts.map(text => embed({
+    model: ollama.embedding('nomic-embed-text'),
+    value: text,
+  }))
+);
+```
+
+### MCP (Model Context Protocol) Integration
+
+```typescript
+import { generateText, experimental_createMCPClient } from 'ai';
+
+// Connect to MCP server for external tools
+const mcpClient = await experimental_createMCPClient({
+  transport: {
+    type: 'stdio',
+    command: 'path/to/mcp-server',
+  }
+});
+
+// Get tools from MCP server
+const tools = await mcpClient.tools();
+
+// Use MCP tools with Ollama
+const { text } = await generateText({
+  model: ollama('llama3.2'),
+  prompt: 'Calculate 15 + 27 and get the current time',
+  tools, // MCP tools automatically work with Ollama
+});
+
+// Clean up
+await mcpClient.close();
+```
+
 ## Prerequisites
 
 - [Ollama](https://ollama.com) installed and running locally
@@ -155,6 +206,8 @@ npx tsx examples/node/basic-chat.ts
 npx tsx examples/node/dual-parameter-example.ts
 npx tsx examples/node/tool-calling-example.ts
 npx tsx examples/node/tools-no-parameters.ts  # Fixes rival provider issues
+npx tsx examples/node/mcp-tools-example.ts     # Model Context Protocol integration
+npx tsx examples/node/embedding-example.ts     # Vector embeddings
 npx tsx examples/node/streaming-simple-test.ts
 ```
 
