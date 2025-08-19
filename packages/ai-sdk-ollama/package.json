@@ -95,7 +95,7 @@
     "@types/eslint-config-prettier": "^6.11.3",
     "@types/node": "^24.3.0",
     "@typescript-eslint/eslint-plugin": "^8.39.1",
-    "@typescript-eslint/parser": "^8.39.1",
+    "@typescript-eslint/parser": "^8.40.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-unicorn": "^60.0.0",
     "prettier": "^3.6.2",
