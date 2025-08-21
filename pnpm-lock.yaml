@@ -42,8 +42,8 @@ importers:
   examples/browser:
     dependencies:
       ai:
-        specifier: ^5.0.18
-        version: 5.0.18(zod@4.0.17)
+        specifier: ^5.0.19
+        version: 5.0.19(zod@4.0.17)
       ai-sdk-ollama:
         specifier: workspace:*
         version: link:../../packages/ai-sdk-ollama
@@ -67,8 +67,8 @@ importers:
   examples/node:
     dependencies:
       ai:
-        specifier: ^5.0.18
-        version: 5.0.18(zod@4.0.17)
+        specifier: ^5.0.19
+        version: 5.0.19(zod@4.0.17)
       ai-sdk-ollama:
         specifier: workspace:*
         version: link:../../packages/ai-sdk-ollama
@@ -98,8 +98,8 @@ importers:
         specifier: ^3.0.3
         version: 3.0.3(zod@4.0.17)
       ai:
-        specifier: ^5.0.18
-        version: 5.0.18(zod@4.0.17)
+        specifier: ^5.0.19
+        version: 5.0.19(zod@4.0.17)
       ollama:
         specifier: ^0.5.17
         version: 0.5.17
@@ -1095,8 +1095,8 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  ai@5.0.18:
-    resolution: {integrity: sha512-fx5RqO0e+wB/dd/pbtCvx2j5WT1UYXSeONyMCgej0s6neCEhh9Wv5OmZHk6yxWKqI0y6WyjEqxCp8VCIqNZTDg==}
+  ai@5.0.19:
+    resolution: {integrity: sha512-I0yQO68Z1DdvjMc9be5scMYdsuBvpNneQDh6TUuUVlFXdCxAIm7yATnOaomfYTE2KaRDsrO+OSRPjJm4FSKioA==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4
@@ -3274,7 +3274,7 @@ snapshots:
 
   acorn@8.15.0: {}
 
-  ai@5.0.18(zod@4.0.17):
+  ai@5.0.19(zod@4.0.17):
     dependencies:
       '@ai-sdk/gateway': 1.0.9(zod@4.0.17)
       '@ai-sdk/provider': 2.0.0
