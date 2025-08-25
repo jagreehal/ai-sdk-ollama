@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.2
+
+### Patch Changes
+
+- 96ec6dc: Updated to ai v5.0.23
+
 ## 0.5.1
 
 ### Patch Changes
