@@ -43,7 +43,7 @@ importers:
     dependencies:
       ai:
         specifier: ^5.0.21
-        version: 5.0.21(zod@4.0.17)
+        version: 5.0.21(zod@4.1.1)
       ai-sdk-ollama:
         specifier: workspace:*
         version: link:../../packages/ai-sdk-ollama
@@ -68,13 +68,13 @@ importers:
     dependencies:
       ai:
         specifier: ^5.0.21
-        version: 5.0.21(zod@4.0.17)
+        version: 5.0.21(zod@4.1.1)
       ai-sdk-ollama:
         specifier: workspace:*
         version: link:../../packages/ai-sdk-ollama
       zod:
-        specifier: ^4.0.17
-        version: 4.0.17
+        specifier: ^4.1.1
+        version: 4.1.1
     devDependencies:
       '@types/node':
         specifier: ^24.3.0
@@ -96,10 +96,10 @@ importers:
         version: 2.0.0
       '@ai-sdk/provider-utils':
         specifier: ^3.0.4
-        version: 3.0.4(zod@4.0.17)
+        version: 3.0.4(zod@4.1.1)
       ai:
         specifier: ^5.0.21
-        version: 5.0.21(zod@4.0.17)
+        version: 5.0.21(zod@4.1.1)
       ollama:
         specifier: ^0.5.17
         version: 0.5.17
@@ -156,8 +156,8 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@edge-runtime/vm@5.0.0)(@types/node@24.3.0)(tsx@4.20.4)
       zod:
-        specifier: ^4.0.17
-        version: 4.0.17
+        specifier: ^4.1.1
+        version: 4.1.1
 
 packages:
 
@@ -2347,32 +2347,32 @@ packages:
     peerDependencies:
       zod: ^3.24.1
 
-  zod@4.0.17:
-    resolution: {integrity: sha512-1PHjlYRevNxxdy2JZ8JcNAw7rX8V9P1AKkP+x/xZfxB0K5FYfuV+Ug6P/6NVSR2jHQ+FzDDoDHS04nYUsOIyLQ==}
+  zod@4.1.1:
+    resolution: {integrity: sha512-SgMZK/h8Tigt9nnKkfJMvB/mKjiJXaX26xegP4sa+0wHIFVFWVlsQGdhklDmuargBD3Hsi3rsQRIzwJIhTPJHA==}
 
 snapshots:
 
-  '@ai-sdk/gateway@1.0.10(zod@4.0.17)':
+  '@ai-sdk/gateway@1.0.10(zod@4.1.1)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.5(zod@4.0.17)
-      zod: 4.0.17
+      '@ai-sdk/provider-utils': 3.0.5(zod@4.1.1)
+      zod: 4.1.1
 
-  '@ai-sdk/provider-utils@3.0.4(zod@4.0.17)':
+  '@ai-sdk/provider-utils@3.0.4(zod@4.1.1)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
       '@standard-schema/spec': 1.0.0
       eventsource-parser: 3.0.5
-      zod: 4.0.17
-      zod-to-json-schema: 3.24.6(zod@4.0.17)
+      zod: 4.1.1
+      zod-to-json-schema: 3.24.6(zod@4.1.1)
 
-  '@ai-sdk/provider-utils@3.0.5(zod@4.0.17)':
+  '@ai-sdk/provider-utils@3.0.5(zod@4.1.1)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
       '@standard-schema/spec': 1.0.0
       eventsource-parser: 3.0.5
-      zod: 4.0.17
-      zod-to-json-schema: 3.24.6(zod@4.0.17)
+      zod: 4.1.1
+      zod-to-json-schema: 3.24.6(zod@4.1.1)
 
   '@ai-sdk/provider@2.0.0':
     dependencies:
@@ -3137,13 +3137,13 @@ snapshots:
 
   acorn@8.15.0: {}
 
-  ai@5.0.21(zod@4.0.17):
+  ai@5.0.21(zod@4.1.1):
     dependencies:
-      '@ai-sdk/gateway': 1.0.10(zod@4.0.17)
+      '@ai-sdk/gateway': 1.0.10(zod@4.1.1)
       '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.5(zod@4.0.17)
+      '@ai-sdk/provider-utils': 3.0.5(zod@4.1.1)
       '@opentelemetry/api': 1.9.0
-      zod: 4.0.17
+      zod: 4.1.1
 
   ajv@6.12.6:
     dependencies:
@@ -4413,8 +4413,8 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod-to-json-schema@3.24.6(zod@4.0.17):
+  zod-to-json-schema@3.24.6(zod@4.1.1):
     dependencies:
-      zod: 4.0.17
+      zod: 4.1.1
 
-  zod@4.0.17: {}
+  zod@4.1.1: {}
