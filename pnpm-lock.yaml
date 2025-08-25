@@ -42,8 +42,8 @@ importers:
   examples/browser:
     dependencies:
       ai:
-        specifier: ^5.0.21
-        version: 5.0.21(zod@4.0.17)
+        specifier: ^5.0.22
+        version: 5.0.22(zod@4.0.17)
       ai-sdk-ollama:
         specifier: workspace:*
         version: link:../../packages/ai-sdk-ollama
@@ -67,8 +67,8 @@ importers:
   examples/node:
     dependencies:
       ai:
-        specifier: ^5.0.21
-        version: 5.0.21(zod@4.0.17)
+        specifier: ^5.0.22
+        version: 5.0.22(zod@4.0.17)
       ai-sdk-ollama:
         specifier: workspace:*
         version: link:../../packages/ai-sdk-ollama
@@ -98,8 +98,8 @@ importers:
         specifier: ^3.0.4
         version: 3.0.4(zod@4.0.17)
       ai:
-        specifier: ^5.0.21
-        version: 5.0.21(zod@4.0.17)
+        specifier: ^5.0.22
+        version: 5.0.22(zod@4.0.17)
       ollama:
         specifier: ^0.5.17
         version: 0.5.17
@@ -161,8 +161,8 @@ importers:
 
 packages:
 
-  '@ai-sdk/gateway@1.0.10':
-    resolution: {integrity: sha512-JKagBcP5JZ3gVLcXGWTiNf7nqIeCD0L4SmwnX66/ZpkLnrH3e0mj1l2BxDaDSbP2wr3XxnrOyBkVOHWgeCtBAw==}
+  '@ai-sdk/gateway@1.0.11':
+    resolution: {integrity: sha512-ErwWS3sPOuWy42eE3AVxlKkTa1XjjKBEtNCOylVKMO5KNyz5qie8QVlLYbULOG56dtxX4zTKX3rQNJudplhcmQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4
@@ -1043,8 +1043,8 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  ai@5.0.21:
-    resolution: {integrity: sha512-EbeSvzVhqADEwVqcSq/PUt5ohvO1JiOGmgJyktCYgtTrMRslpnNtoXEKuqgryaejTc5jCeUvZq+QStyBcN6VQQ==}
+  ai@5.0.22:
+    resolution: {integrity: sha512-RZiYhj7Ux7hrLtXkHPcxzdiSZt4NOiC69O5AkNfMCsz3twwz/KRkl9ASptosoOsg833s5yRcTSdIu5z53Sl6Pw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4
@@ -2352,7 +2352,7 @@ packages:
 
 snapshots:
 
-  '@ai-sdk/gateway@1.0.10(zod@4.0.17)':
+  '@ai-sdk/gateway@1.0.11(zod@4.0.17)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
       '@ai-sdk/provider-utils': 3.0.5(zod@4.0.17)
@@ -3137,9 +3137,9 @@ snapshots:
 
   acorn@8.15.0: {}
 
-  ai@5.0.21(zod@4.0.17):
+  ai@5.0.22(zod@4.0.17):
     dependencies:
-      '@ai-sdk/gateway': 1.0.10(zod@4.0.17)
+      '@ai-sdk/gateway': 1.0.11(zod@4.0.17)
       '@ai-sdk/provider': 2.0.0
       '@ai-sdk/provider-utils': 3.0.5(zod@4.0.17)
       '@opentelemetry/api': 1.9.0
