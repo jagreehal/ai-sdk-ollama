@@ -16,18 +16,7 @@ describe('GPT-OSS:20B Model Integration Tests', () => {
 
     // 2) Try streaming fallback
     try {
-      const streamRes = await streamText(
-        params as {
-          model: ReturnType<typeof ollama>;
-          messages?: {
-            role: 'system' | 'user' | 'assistant';
-            content: string;
-          }[];
-          prompt?: string;
-          maxOutputTokens?: number;
-          temperature?: number;
-        },
-      );
+      const streamRes = await streamText(params);
       const chunks: string[] = [];
       for await (const c of streamRes.textStream) chunks.push(c);
       const text = chunks.join('');
