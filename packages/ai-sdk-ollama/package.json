@@ -84,7 +84,7 @@
   "dependencies": {
     "@ai-sdk/provider": "^2.0.0",
     "@ai-sdk/provider-utils": "^3.0.7",
-    "ai": "^5.0.28",
+    "ai": "^5.0.29",
     "ollama": "^0.5.17"
   },
   "devDependencies": {
