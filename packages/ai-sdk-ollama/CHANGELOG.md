@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.3
+
+### Patch Changes
+
+- e58649c: chore: bump ai to ^5.0.29
+
 ## 0.5.2
 
 ### Patch Changes
