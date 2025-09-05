@@ -42,8 +42,8 @@ importers:
   examples/browser:
     dependencies:
       ai:
-        specifier: ^5.0.30
-        version: 5.0.30(zod@4.1.5)
+        specifier: ^5.0.32
+        version: 5.0.32(zod@4.1.5)
       ai-sdk-ollama:
         specifier: workspace:*
         version: link:../../packages/ai-sdk-ollama
@@ -67,8 +67,8 @@ importers:
   examples/node:
     dependencies:
       ai:
-        specifier: ^5.0.30
-        version: 5.0.30(zod@4.1.5)
+        specifier: ^5.0.32
+        version: 5.0.32(zod@4.1.5)
       ai-sdk-ollama:
         specifier: workspace:*
         version: link:../../packages/ai-sdk-ollama
@@ -98,8 +98,8 @@ importers:
         specifier: ^3.0.7
         version: 3.0.7(zod@4.1.5)
       ai:
-        specifier: ^5.0.30
-        version: 5.0.30(zod@4.1.5)
+        specifier: ^5.0.32
+        version: 5.0.32(zod@4.1.5)
       ollama:
         specifier: ^0.5.17
         version: 0.5.17
@@ -161,14 +161,20 @@ importers:
 
 packages:
 
-  '@ai-sdk/gateway@1.0.15':
-    resolution: {integrity: sha512-xySXoQ29+KbGuGfmDnABx+O6vc7Gj7qugmj1kGpn0rW0rQNn6UKUuvscKMzWyv1Uv05GyC1vqHq8ZhEOLfXscQ==}
+  '@ai-sdk/gateway@1.0.17':
+    resolution: {integrity: sha512-9wP4tVaOnf9yQSCGwSGSg2m4+7DTCSFbwRkNf4hlhWF/HmFDtIbqVypB/i/MfQuROFh897g/uX3FyVd3DMQIJQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4
 
   '@ai-sdk/provider-utils@3.0.7':
     resolution: {integrity: sha512-o3BS5/t8KnBL3ubP8k3w77AByOypLm+pkIL/DCw0qKkhDbvhCy+L3hRTGPikpdb8WHcylAeKsjgwOxhj4cqTUA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4
+
+  '@ai-sdk/provider-utils@3.0.8':
+    resolution: {integrity: sha512-cDj1iigu7MW2tgAQeBzOiLhjHOUM9vENsgh4oAVitek0d//WdgfPCsKO3euP7m7LyO/j9a1vr/So+BGNdpFXYw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4
@@ -1042,8 +1048,8 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  ai@5.0.30:
-    resolution: {integrity: sha512-u7WdsDde9BasP+h8Q64CtU32GFShCYmxVtBa2h5dxM1f0w/AMKwzpmIDI1t3M3ean+L6uBiwOtRs8B2KA+OHgQ==}
+  ai@5.0.32:
+    resolution: {integrity: sha512-Xn1A3ciIHvTJYHEmruuB4FLOJ1CGW1rD6wOj1e8d6nbIjqEFw06LoWz0AW5asxfqguJNv+wVG0VHhIgUN2+7Jg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4
@@ -1365,6 +1371,10 @@ packages:
   eventsource-parser@3.0.5:
     resolution: {integrity: sha512-bSRG85ZrMdmWtm7qkF9He9TNRzc/Bm99gEJMaQoHJ9E6Kv9QBbsldh2oMj7iXmYNEAVvNgvv5vPorG6W+XtBhQ==}
     engines: {node: '>=20.0.0'}
+
+  eventsource-parser@3.0.6:
+    resolution: {integrity: sha512-Vo1ab+QXPzZ4tCa8SwIHJFaSzy4R6SHf7BY79rFBDf0idraZWAkYrDjDj8uWaSm3S2TK+hJ7/t1CEmZ7jXw+pg==}
+    engines: {node: '>=18.0.0'}
 
   expect-type@1.2.2:
     resolution: {integrity: sha512-JhFGDVJ7tmDJItKhYgJCGLOWjuK9vPxiXoUFLwLDc99NlmklilbiQJwoctZtt13+xMw91MCk/REan6MWHqDjyA==}
@@ -2346,10 +2356,10 @@ packages:
 
 snapshots:
 
-  '@ai-sdk/gateway@1.0.15(zod@4.1.5)':
+  '@ai-sdk/gateway@1.0.17(zod@4.1.5)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.7(zod@4.1.5)
+      '@ai-sdk/provider-utils': 3.0.8(zod@4.1.5)
       zod: 4.1.5
 
   '@ai-sdk/provider-utils@3.0.7(zod@4.1.5)':
@@ -2357,6 +2367,13 @@ snapshots:
       '@ai-sdk/provider': 2.0.0
       '@standard-schema/spec': 1.0.0
       eventsource-parser: 3.0.5
+      zod: 4.1.5
+
+  '@ai-sdk/provider-utils@3.0.8(zod@4.1.5)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@standard-schema/spec': 1.0.0
+      eventsource-parser: 3.0.6
       zod: 4.1.5
 
   '@ai-sdk/provider@2.0.0':
@@ -3125,11 +3142,11 @@ snapshots:
 
   acorn@8.15.0: {}
 
-  ai@5.0.30(zod@4.1.5):
+  ai@5.0.32(zod@4.1.5):
     dependencies:
-      '@ai-sdk/gateway': 1.0.15(zod@4.1.5)
+      '@ai-sdk/gateway': 1.0.17(zod@4.1.5)
       '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.7(zod@4.1.5)
+      '@ai-sdk/provider-utils': 3.0.8(zod@4.1.5)
       '@opentelemetry/api': 1.9.0
       zod: 4.1.5
 
@@ -3490,6 +3507,8 @@ snapshots:
   esutils@2.0.3: {}
 
   eventsource-parser@3.0.5: {}
+
+  eventsource-parser@3.0.6: {}
 
   expect-type@1.2.2: {}
 
