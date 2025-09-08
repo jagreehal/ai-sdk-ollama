@@ -14,7 +14,7 @@
     "test:integration:report": "playwright show-report"
   },
   "dependencies": {
-    "ai": "^5.0.35",
+    "ai": "^5.0.37",
     "ai-sdk-ollama": "workspace:*"
   },
   "devDependencies": {
@@ -22,6 +22,6 @@
     "@types/node": "^24.3.1",
     "rimraf": "^6.0.1",
     "typescript": "^5.9.2",
-    "vite": "^7.1.4"
+    "vite": "^7.1.5"
   }
 }
