@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.0
+
+### Minor Changes
+
+- a7e2377: Allow passing an existing Ollama client to `createOllama` and expose raw client/methods for direct model operations. Closes #67.
+
 ## 0.5.5
 
 ### Patch Changes
