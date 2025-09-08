@@ -23,6 +23,11 @@ export interface OllamaProviderSettings {
    * Custom fetch implementation
    */
   fetch?: typeof fetch;
+
+  /**
+   * Existing Ollama client instance to use instead of creating a new one
+   */
+  client?: Ollama;
 }
 
 export interface OllamaProvider extends ProviderV2 {
@@ -159,11 +164,14 @@ export interface OllamaEmbeddingProviderOptions extends OllamaProviderOptions {
 export function createOllama(
   options: OllamaProviderSettings = {},
 ): OllamaProvider {
-  const client = new Ollama({
-    host: options.baseURL,
-    fetch: options.fetch,
-    headers: options.headers,
-  });
+  // Use existing client or create new one
+  const client =
+    options.client ||
+    new Ollama({
+      host: options.baseURL,
+      fetch: options.fetch,
+      headers: options.headers,
+    });
 
   const createChatModel = (
     modelId: string,
