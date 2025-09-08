@@ -72,6 +72,9 @@ importers:
       ai-sdk-ollama:
         specifier: workspace:*
         version: link:../../packages/ai-sdk-ollama
+      ollama:
+        specifier: ^0.5.17
+        version: 0.5.17
       zod:
         specifier: ^4.1.5
         version: 4.1.5

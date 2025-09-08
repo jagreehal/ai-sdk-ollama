@@ -169,6 +169,19 @@ This example shows how to generate embeddings for semantic search
 npx tsx examples/embedding-example.ts
 ```
 
+### **existing-client-example.ts** - Using Existing Ollama Client
+
+This example demonstrates how to use an existing Ollama client instance with the AI SDK provider
+
+- Creating an existing Ollama client with custom configuration
+- Passing the client to createOllama
+- Using both raw client methods and AI SDK operations
+- Model listing and information retrieval
+
+```bash
+npx tsx examples/existing-client-example.ts
+```
+
 ## Key Features Demonstrated
 
 ### Dual Parameter Support

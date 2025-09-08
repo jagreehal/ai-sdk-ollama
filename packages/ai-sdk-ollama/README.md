@@ -26,6 +26,7 @@ A Vercel AI SDK v5+ provider for Ollama built on the official `ollama` package. 
     - [Simple and Predictable](#simple-and-predictable)
   - [Advanced Features](#advanced-features)
     - [Custom Ollama Instance](#custom-ollama-instance)
+    - [Using Existing Ollama Client](#using-existing-ollama-client)
     - [Structured Output](#structured-output)
     - [Auto-Detection of Structured Outputs](#auto-detection-of-structured-outputs)
     - [Reasoning Support](#reasoning-support)
@@ -256,6 +257,8 @@ const { text } = await generateText({
 
 ### Custom Ollama Instance
 
+You can create a custom Ollama provider instance with specific configuration:
+
 ```typescript
 import { createOllama } from 'ai-sdk-ollama';
 
@@ -268,6 +271,31 @@ const ollama = createOllama({
 
 const { text } = await generateText({
   model: ollama('llama3.2'),
+  prompt: 'Hello!',
+});
+```
+
+### Using Existing Ollama Client
+
+You can also pass an existing Ollama client instance to reuse your configuration:
+
+```typescript
+import { Ollama } from 'ollama';
+import { createOllama } from 'ai-sdk-ollama';
+
+// Create your existing Ollama client
+const existingClient = new Ollama({
+  host: 'http://my-ollama-server:11434',
+  // Add any custom configuration
+});
+
+// Use it with the AI SDK provider
+const ollamaSdk = createOllama({ client: existingClient });
+
+// Use both clients as needed
+await ollamaRaw.list(); // Direct Ollama operations
+const { text } = await generateText({
+  model: ollamaSdk('llama3.2'),
   prompt: 'Hello!',
 });
 ```
