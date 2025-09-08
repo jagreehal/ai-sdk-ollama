@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.5
+
+### Patch Changes
+
+- 12d4f4a: ai ^5.0.35 → ^5.0.37
+
 ## 0.5.4
 
 ### Patch Changes
