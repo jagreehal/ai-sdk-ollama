@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "ai": "^5.0.37",
+    "ai": "^5.0.38",
     "ollama": "^0.5.17",
     "ai-sdk-ollama": "workspace:*",
     "zod": "^4.1.5"
