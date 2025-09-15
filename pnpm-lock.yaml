@@ -98,8 +98,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       '@ai-sdk/provider-utils':
-        specifier: ^3.0.8
-        version: 3.0.8(zod@4.1.8)
+        specifier: ^3.0.9
+        version: 3.0.9(zod@4.1.8)
       ai:
         specifier: ^5.0.44
         version: 5.0.44(zod@4.1.8)
@@ -166,12 +166,6 @@ packages:
 
   '@ai-sdk/gateway@1.0.23':
     resolution: {integrity: sha512-ynV7WxpRK2zWLGkdOtrU2hW22mBVkEYVS3iMg1+ZGmAYSgzCqzC74bfOJZ2GU1UdcrFWUsFI9qAYjsPkd+AebA==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4
-
-  '@ai-sdk/provider-utils@3.0.8':
-    resolution: {integrity: sha512-cDj1iigu7MW2tgAQeBzOiLhjHOUM9vENsgh4oAVitek0d//WdgfPCsKO3euP7m7LyO/j9a1vr/So+BGNdpFXYw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4
@@ -2359,13 +2353,6 @@ snapshots:
     dependencies:
       '@ai-sdk/provider': 2.0.0
       '@ai-sdk/provider-utils': 3.0.9(zod@4.1.8)
-      zod: 4.1.8
-
-  '@ai-sdk/provider-utils@3.0.8(zod@4.1.8)':
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
-      eventsource-parser: 3.0.6
       zod: 4.1.8
 
   '@ai-sdk/provider-utils@3.0.9(zod@4.1.8)':
