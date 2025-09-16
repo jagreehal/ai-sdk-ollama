@@ -59,6 +59,7 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
           model: this.modelId,
           input: value,
           options: this.settings.options,
+          ...(this.settings.dimensions !== undefined && { dimensions: this.settings.dimensions }),
         });
 
         if (!response.embeddings) {
