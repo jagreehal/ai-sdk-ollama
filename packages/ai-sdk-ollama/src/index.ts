@@ -8,6 +8,7 @@ export {
   type OllamaProviderOptions,
   type OllamaChatProviderOptions,
   type OllamaEmbeddingProviderOptions,
+  type Options,
 } from './provider';
 
 export { OllamaChatLanguageModel } from './models/chat-language-model';

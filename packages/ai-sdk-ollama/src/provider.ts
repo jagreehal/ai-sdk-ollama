@@ -4,9 +4,15 @@ import {
   ProviderV2,
   NoSuchModelError,
 } from '@ai-sdk/provider';
-import { Ollama } from 'ollama';
+import { Ollama, type Options } from 'ollama';
 import { OllamaChatLanguageModel } from './models/chat-language-model';
 import { OllamaEmbeddingModel } from './models/embedding-model';
+
+// Re-export ollama-js types for convenience
+export type {
+  Options,
+  Ollama,
+} from 'ollama';
 
 export interface OllamaProviderSettings {
   /**
@@ -86,46 +92,23 @@ export interface OllamaChatSettings {
   reasoning?: boolean;
 
   /**
-   * Additional model parameters
+   * Additional model parameters - re-exported from ollama-js
+   * This automatically includes ALL Ollama parameters including new ones like 'dimensions'
    */
-  options?: {
-    num_ctx?: number;
-    num_predict?: number;
-    temperature?: number;
-    top_k?: number;
-    top_p?: number;
-    min_p?: number;
-    seed?: number;
-    stop?: string[];
-    num_keep?: number;
-    typical_p?: number;
-    repeat_last_n?: number;
-    repeat_penalty?: number;
-    presence_penalty?: number;
-    frequency_penalty?: number;
-    mirostat?: number;
-    mirostat_tau?: number;
-    mirostat_eta?: number;
-    penalize_newline?: boolean;
-    numa?: boolean;
-    num_thread?: number;
-    num_gpu?: number;
-    main_gpu?: number;
-    low_vram?: boolean;
-    f16_kv?: boolean;
-    vocab_only?: boolean;
-    use_mmap?: boolean;
-    use_mlock?: boolean;
-  };
+  options?: Partial<Options>;
 }
 
 export interface OllamaEmbeddingSettings {
   /**
    * Additional embedding parameters
    */
-  options?: {
-    num_thread?: number;
-  };
+  options?: Partial<Options>;
+  
+  /**
+   * Dimensions for embedding output (if supported by the model)
+   * This is a direct parameter of EmbedRequest, not part of Options
+   */
+  dimensions?: number;
 }
 
 /**
