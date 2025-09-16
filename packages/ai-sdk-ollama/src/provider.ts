@@ -4,13 +4,21 @@ import {
   ProviderV2,
   NoSuchModelError,
 } from '@ai-sdk/provider';
-import { Ollama, type Options } from 'ollama';
+import { Ollama, type Options as OllamaOptions } from 'ollama';
 import { OllamaChatLanguageModel } from './models/chat-language-model';
 import { OllamaEmbeddingModel } from './models/embedding-model';
 
+// Extend Ollama Options to include missing parameters
+export interface Options extends OllamaOptions {
+  /**
+   * Minimum probability threshold for token selection
+   * This parameter is supported by Ollama API but missing from ollama-js TypeScript definitions
+   */
+  min_p?: number;
+}
+
 // Re-export ollama-js types for convenience
 export type {
-  Options,
   Ollama,
 } from 'ollama';
 
