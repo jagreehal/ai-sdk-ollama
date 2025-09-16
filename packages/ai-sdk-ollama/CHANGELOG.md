@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.1
+
+### Patch Changes
+
+- 80fbf5b: Update to ollama-0.5.18
+  - Updated Ollama provider to support version 0.5.18
+  - Enhanced embedding model functionality
+  - Improved provider implementation with better error handling
+  - Updated examples to demonstrate new features
+
 ## 0.6.0
 
 ### Minor Changes
