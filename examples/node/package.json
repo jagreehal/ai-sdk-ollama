@@ -5,7 +5,7 @@
   "type": "module",
   "dependencies": {
     "ai": "^5.0.44",
-    "ollama": "^0.5.17",
+    "ollama": "^0.5.18",
     "ai-sdk-ollama": "workspace:*",
     "zod": "^4.1.8"
   },
