@@ -85,7 +85,7 @@
     "@ai-sdk/provider": "^2.0.0",
     "@ai-sdk/provider-utils": "^3.0.9",
     "ai": "^5.0.44",
-    "ollama": "^0.5.17"
+    "ollama": "^0.5.18"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
