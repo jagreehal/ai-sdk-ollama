@@ -25,7 +25,7 @@ describe('Advanced Features Integration Tests', () => {
           mirostat_eta: 0.1,
           penalize_newline: true,
           numa: false,
-        },
+        } as any,
       }),
       prompt: 'Write one word',
       maxOutputTokens: 10,
