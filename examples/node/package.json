@@ -7,7 +7,7 @@
     "ai": "^5.0.44",
     "ollama": "^0.5.18",
     "ai-sdk-ollama": "workspace:*",
-    "zod": "^4.1.8"
+    "zod": "^4.1.9"
   },
   "devDependencies": {
     "@types/node": "^24.5.0",
