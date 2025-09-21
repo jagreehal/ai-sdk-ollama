@@ -7,6 +7,13 @@
 
 A Vercel AI SDK v5+ provider for Ollama built on the official `ollama` package. Type safe, future proof, with cross provider compatibility and native Ollama features.
 
+> **Two Ways to Use**: This library enhances the standard AI SDK functions with automatic reliability improvements when you pass tools or schemas. For maximum reliability, use these drop-in replacements written specifically for Ollama:
+>
+> - `generateText` → `generateTextOllama`
+> - `generateObject` → `generateObjectOllama`
+> - `streamText` → `streamTextOllama`
+> - `streamObject` → `streamObjectOllama`
+
 ## Quick Start
 
 ```bash
@@ -115,6 +122,35 @@ const { object } = await generateObject({
 
 console.log(object);
 // { name: "Alice", age: 28, interests: ["reading", "hiking"] }
+```
+
+### Enhanced Ollama Functions
+
+For maximum control and Ollama-specific features, use the specialized wrapper functions:
+
+```typescript
+import {
+  generateTextOllama,
+  generateObjectOllama,
+  streamTextOllama,
+  streamObjectOllama
+} from 'ai-sdk-ollama';
+
+// Same parameters as AI SDK functions, plus enhanced options
+const result = await generateTextOllama({
+  model: ollama('llama3.2'),
+  prompt: 'Explain quantum computing',
+  tools: { /* your tools */ },
+  enhancedOptions: {
+    enableReliability: true,
+    maxSteps: 5,
+    enableSynthesis: true,
+    maxSynthesisAttempts: 2,
+  },
+});
+
+// Enhanced metadata available
+console.log(result.metadata?.steps); // Step-by-step execution details
 ```
 
 ### Browser Usage

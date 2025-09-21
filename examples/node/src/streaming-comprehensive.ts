@@ -6,6 +6,7 @@
 import { ollama } from 'ai-sdk-ollama';
 import { streamText, streamObject, tool } from 'ai';
 import { z } from 'zod';
+import { model, MODELS } from './model';
 
 async function testBasicStreaming() {
   console.log('🌊 Basic Text Streaming');
@@ -13,7 +14,7 @@ async function testBasicStreaming() {
 
   try {
     const { textStream, usage } = await streamText({
-      model: ollama('llama3.2'),
+      model,
       prompt:
         'Write a short story about a robot learning to paint. Keep it under 100 words.',
       maxOutputTokens: 150,
@@ -44,7 +45,7 @@ async function testStreamingWithTools() {
 
   try {
     const { textStream, toolCalls } = await streamText({
-      model: ollama('llama3.2'),
+      model,
       prompt:
         'What is the weather in San Francisco and Paris? Use the weather tool for both cities.',
       tools: {
@@ -105,7 +106,7 @@ async function testStreamingEvents() {
 
   try {
     const result = await streamText({
-      model: ollama('llama3.2'),
+      model,
       prompt: 'List 5 programming languages and briefly describe each.',
       maxOutputTokens: 200,
     });
@@ -144,9 +145,8 @@ async function testStreamingWithDifferentModels() {
   console.log('-'.repeat(40));
 
   const models = [
-    { name: 'llama3.2', prompt: 'Write a haiku about code' },
-    { name: 'qwen2.5-coder', prompt: 'Explain recursion in one sentence' },
-    { name: 'phi4-mini', prompt: 'What is 2+2?' },
+    { name: MODELS.LLAMA_3_2, prompt: 'Write a haiku about code' },
+    { name: MODELS.PHI4_MINI, prompt: 'What is 2+2?' },
   ];
 
   for (const { name, prompt } of models) {
@@ -220,7 +220,7 @@ async function testStreamingAbort() {
 
   try {
     const { textStream } = await streamText({
-      model: ollama('llama3.2'),
+      model,
       prompt:
         'Write a very long story about a journey through space. Include lots of details about planets, stars, and adventures.',
       maxOutputTokens: 500,

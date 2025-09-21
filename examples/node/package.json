@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "ai": "^5.0.46",
+    "ai": "^5.0.48",
     "ollama": "^0.5.18",
     "ai-sdk-ollama": "workspace:*",
-    "zod": "^4.1.9"
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@types/node": "^24.5.2",

@@ -6,12 +6,13 @@
 import { ollama } from 'ai-sdk-ollama';
 import { streamText, tool } from 'ai';
 import { z } from 'zod';
+import {  MODELS } from './model';
 
 async function testBasicStreaming() {
   console.log('🌊 Basic Text Streaming Test\n');
 
   const { textStream } = await streamText({
-    model: ollama('llama3.2'),
+    model: ollama(MODELS.LLAMA_3_2),
     prompt: 'Write a short poem about programming. Keep it under 50 words.',
     maxOutputTokens: 100,
   });
@@ -64,9 +65,7 @@ async function testStreamingWithDifferentModels() {
   console.log('\n\n🤖 Multi-Model Streaming Test\n');
 
   const models = [
-    { name: 'llama3.2', prompt: 'What is TypeScript?' },
-    { name: 'qwen2.5-coder', prompt: 'What is TypeScript?' },
-    { name: 'phi4-mini', prompt: 'What is TypeScript?' },
+    { name: MODELS.LLAMA_3_2, prompt: 'What is TypeScript?' },
   ];
 
   for (const { name, prompt } of models) {

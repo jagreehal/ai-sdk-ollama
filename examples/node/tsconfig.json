@@ -14,8 +14,12 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
+  "paths": {
+    "@/*": ["./src/*"],
+    "ai-sdk-ollama": ["../../packages/ai-sdk-ollama/src/*"]
+  },
   "include": [
-    "src/**/*"
+    "src/**/*",
   ],
   "exclude": [
     "node_modules",
