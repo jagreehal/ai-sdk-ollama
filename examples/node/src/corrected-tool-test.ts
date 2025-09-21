@@ -73,7 +73,7 @@ async function runCorrectedTests() {
   const modelsToTest = [
     MODELS.LLAMA_3_2,
     MODELS.PHI4_MINI,
-    MODELS.GTP_OSS_20B,
+    MODELS.GPT_OSS_20B,
   ];
 
   const results: Record<string, any> = {};

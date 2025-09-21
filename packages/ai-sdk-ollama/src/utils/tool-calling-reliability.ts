@@ -608,7 +608,12 @@ ${finalInstruction}`;
 
   const result = await model.doGenerate({
     ...options,
-    prompt: followUpPrompt as unknown as LanguageModelV2CallOptions['prompt'], // Type assertion needed for string prompt
+    prompt: [
+      {
+        role: 'user',
+        content: [{ type: 'text', text: followUpPrompt }],
+      },
+    ],
     // Don't provide tools for the follow-up to avoid recursion
   });
 
@@ -655,7 +660,15 @@ export async function reliableToolCall(
       // Make the initial call
       const result = await model.doGenerate({
         ...options,
-        prompt: finalPrompt as unknown as LanguageModelV2CallOptions['prompt'], // Type assertion needed for string prompt
+        prompt:
+          typeof finalPrompt === 'string'
+            ? [
+                {
+                  role: 'user',
+                  content: [{ type: 'text', text: finalPrompt }],
+                },
+              ]
+            : finalPrompt,
       });
 
       // Check if we got tool calls but no final response

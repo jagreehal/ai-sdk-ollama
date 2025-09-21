@@ -67,7 +67,7 @@ async function runToolCallingTests() {
   const modelsToTest = [
     MODELS.LLAMA_3_2,
     MODELS.PHI4_MINI,
-    MODELS.GTP_OSS_20B,
+    MODELS.GPT_OSS_20B,
     MODELS.QWEN_2_5_CODER,
   ];
 
