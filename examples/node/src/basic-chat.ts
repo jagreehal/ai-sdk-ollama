@@ -1,11 +1,12 @@
 import { ollama } from 'ai-sdk-ollama';
 import { generateText, streamText, embed } from 'ai';
+import { model } from './model';
 
 async function main() {
   // Basic text generation
   console.log('=== Basic Text Generation ===');
   const { text } = await generateText({
-    model: ollama('llama3.2'),
+    model,
     prompt: 'What is the capital of France?',
   });
   console.log(text);

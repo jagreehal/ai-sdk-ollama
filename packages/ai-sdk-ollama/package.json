@@ -1,6 +1,6 @@
 {
   "name": "ai-sdk-ollama",
-  "version": "0.6.2",
+  "version": "0.6.1",
   "type": "module",
   "description": "Vercel AI SDK Provider for Ollama using official ollama-js library",
   "main": "./dist/index.js",
@@ -64,7 +64,8 @@
     "test:all": "pnpm test && pnpm test:integration",
     "check-format": "prettier --check ./src",
     "check-exports": "attw --pack . --ignore-rules false-esm no-resolution",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "quality": "pnpm type-check && pnpm test && pnpm lint && pnpm format:check && pnpm build && pnpm check-exports"
   },
   "keywords": [
     "ai",
@@ -84,8 +85,10 @@
   "dependencies": {
     "@ai-sdk/provider": "^2.0.0",
     "@ai-sdk/provider-utils": "^3.0.9",
-    "ai": "^5.0.46",
     "ollama": "^0.5.18"
+  },
+  "peerDependencies": {
+    "ai": "^5.0.0"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
@@ -105,7 +108,7 @@
     "typescript-eslint": "^8.44.0",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4",
-    "zod": "^4.1.9"
+    "zod": "^4.1.11"
   },
   "engines": {
     "node": ">=22"
