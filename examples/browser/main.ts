@@ -34,8 +34,8 @@ const refreshModelsBtn = document.getElementById('refreshModelsBtn') as HTMLButt
 const clearBtn = document.getElementById('clearBtn') as HTMLButtonElement;
 const copyBtn = document.getElementById('copyBtn') as HTMLButtonElement;
 
-// Initialize Ollama provider
-let ollama: ReturnType<typeof createOllama>;
+// Initialize Ollama provider - we'll create it with the selected base URL
+let ollamaProvider: ReturnType<typeof createOllama>;
 
 function updateStatus(message: string, type: 'info' | 'connected' | 'error' = 'info'): void {
   const statusDot = statusEl.querySelector('.status-dot') as HTMLElement;
@@ -122,8 +122,8 @@ async function initializeOllama(): Promise<void> {
     // Use proxy for CORS-free requests in development, direct URL otherwise
     const proxyBaseURL = window.location.hostname === 'localhost' ? window.location.origin : baseURL;
     
-    // Create Ollama provider with custom baseURL
-    ollama = createOllama({
+    // Create Ollama provider with the specified base URL
+    ollamaProvider = createOllama({
       baseURL: proxyBaseURL,
       headers: {
         'Content-Type': 'application/json',
@@ -197,7 +197,7 @@ async function handleGenerate(): Promise<void> {
   
   try {
     const { text } = await generateText({
-      model: ollama(selectedModel),
+      model: ollamaProvider(selectedModel),
       prompt: prompt,
       temperature: 0.7,
       maxOutputTokens: 500,
@@ -302,7 +302,7 @@ async function handleStream(): Promise<void> {
   
   try {
     const { textStream } = await streamText({
-      model: ollama(selectedModel),
+      model: ollamaProvider(selectedModel),
       prompt: prompt,
       temperature: 0.7,
       maxOutputTokens: 500,
@@ -458,7 +458,7 @@ setTimeout(() => {
 
 // Log that we're using the browser version
 console.log('🚀 AI SDK Ollama Browser Example loaded');
-console.log('📡 Using ollama/browser for browser compatibility');
+console.log('📡 Using createOllama for browser compatibility');
 console.log('💡 Press Ctrl+Enter (⌘+Enter on Mac) to generate from textarea');
 
 // Initialize after DOM is ready
