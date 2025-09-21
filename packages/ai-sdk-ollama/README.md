@@ -7,6 +7,13 @@
 
 A Vercel AI SDK v5+ provider for Ollama built on the official `ollama` package. Type safe, future proof, with cross provider compatibility and native Ollama features.
 
+> **Two Ways to Use**: This library enhances the standard AI SDK functions with automatic reliability improvements when you pass tools or schemas. For maximum reliability, use these drop-in replacements written specifically for Ollama:
+>
+> - `generateText` → `generateTextOllama`
+> - `generateObject` → `generateObjectOllama`
+> - `streamText` → `streamTextOllama`
+> - `streamObject` → `streamObjectOllama`
+
 ## Contents
 
 - [AI SDK Ollama Provider](#ai-sdk-ollama-provider)

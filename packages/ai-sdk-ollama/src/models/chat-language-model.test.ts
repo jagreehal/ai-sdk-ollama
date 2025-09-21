@@ -4,6 +4,7 @@ import { OllamaChatSettings } from '../provider';
 import {
   LanguageModelV2CallOptions,
   LanguageModelV2StreamPart,
+  LanguageModelV2FunctionTool,
 } from '@ai-sdk/provider';
 import { Ollama, AbortableAsyncIterator, ChatResponse } from 'ollama';
 
@@ -248,6 +249,98 @@ describe('OllamaChatLanguageModel', () => {
           ]),
         }),
       );
+    });
+
+    it('should force completion when tool calls succeed without final text', async () => {
+      const toolExecute = vi.fn().mockResolvedValue({
+        temperature: 20,
+        unit: 'celsius',
+      });
+
+      const initialResponse: ChatResponse = {
+        model: 'llama3.2',
+        created_at: new Date(),
+        message: {
+          role: 'assistant',
+          content: '',
+          tool_calls: [
+            {
+              function: {
+                name: 'get_weather',
+                arguments: { city: 'San Francisco' },
+              },
+            },
+          ],
+        },
+        done: true,
+        done_reason: 'stop',
+        eval_count: 10,
+        prompt_eval_count: 5,
+        total_duration: 1_000_000_000,
+        load_duration: 100_000_000,
+        prompt_eval_duration: 200_000_000,
+        eval_duration: 700_000_000,
+      };
+
+      const forcedResponse: ChatResponse = {
+        model: 'llama3.2',
+        created_at: new Date(),
+        message: {
+          role: 'assistant',
+          content: 'It is 20C in San Francisco today with clear skies.',
+        },
+        done: true,
+        done_reason: 'stop',
+        eval_count: 8,
+        prompt_eval_count: 4,
+        total_duration: 800_000_000,
+        load_duration: 80_000_000,
+        prompt_eval_duration: 120_000_000,
+        eval_duration: 600_000_000,
+      };
+
+      vi.mocked(mockOllamaClient.chat)
+        .mockResolvedValueOnce(initialResponse)
+        .mockResolvedValueOnce(forcedResponse);
+
+      const options: LanguageModelV2CallOptions = {
+        prompt: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'What is the weather in San Francisco?' },
+            ],
+          },
+        ],
+        tools: [
+          {
+            type: 'function',
+            name: 'get_weather',
+            description: 'Get the current weather for a location',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                location: { type: 'string' },
+              },
+            },
+            execute: toolExecute,
+          } as LanguageModelV2FunctionTool & { execute: typeof toolExecute },
+        ],
+      };
+
+      const result = await model.doGenerate(options);
+
+      expect(toolExecute).toHaveBeenCalledWith(
+        expect.objectContaining({ location: 'San Francisco' }),
+      );
+      expect(vi.mocked(mockOllamaClient.chat)).toHaveBeenCalledTimes(2);
+      expect(result.content.find((part) => part.type === 'text')).toEqual({
+        type: 'text',
+        text: 'It is 20C in San Francisco today with clear skies.',
+      });
+      expect(result.providerMetadata?.ollama?.reliable_tool_calling).toBe(true);
+      expect(result.providerMetadata?.ollama?.completion_method).toBe('forced');
+      expect(result.providerMetadata?.ollama?.retry_count).toBe(1);
     });
 
     it('should handle errors properly', async () => {

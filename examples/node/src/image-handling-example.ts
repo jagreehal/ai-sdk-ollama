@@ -11,7 +11,6 @@ async function main() {
   );
   console.log('- llava (vision model)');
   console.log('- bakllava (vision model)');
-  console.log('- qwen2.5-coder (supports images)');
   console.log('\nUsing llava (vision model) for actual image processing...\n');
 
   // Example 1: URL image

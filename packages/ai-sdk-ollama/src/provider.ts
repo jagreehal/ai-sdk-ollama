@@ -18,9 +18,7 @@ export interface Options extends OllamaOptions {
 }
 
 // Re-export ollama-js types for convenience
-export type {
-  Ollama,
-} from 'ollama';
+export type { Ollama } from 'ollama';
 
 export interface OllamaProviderSettings {
   /**
@@ -100,6 +98,92 @@ export interface OllamaChatSettings {
   reasoning?: boolean;
 
   /**
+   * Enable reliable tool calling with retry and completion mechanisms.
+   * Defaults to true whenever function tools are provided; set to false to opt out.
+   */
+  reliableToolCalling?: boolean;
+
+  /**
+   * Tool calling reliability options. These override the sensible defaults used by the
+   * built-in reliability layer (maxRetries=2, forceCompletion=true,
+   * normalizeParameters=true, validateResults=true).
+   */
+  toolCallingOptions?: {
+    /**
+     * Maximum number of retry attempts for tool calls
+     */
+    maxRetries?: number;
+
+    /**
+     * Whether to force completion when tool calls succeed but no final text is generated
+     */
+    forceCompletion?: boolean;
+
+    /**
+     * Whether to normalize parameter names to handle inconsistencies
+     */
+    normalizeParameters?: boolean;
+
+    /**
+     * Whether to validate tool results and attempt recovery
+     */
+    validateResults?: boolean;
+
+    /**
+     * Custom parameter normalization mappings
+     */
+    parameterMappings?: Record<string, string[]>;
+
+    /**
+     * Timeout for tool execution in milliseconds
+     */
+    toolTimeout?: number;
+  };
+
+  /**
+   * Enable reliable object generation with retry and repair mechanisms.
+   * Defaults to true whenever JSON schemas are used; set to false to opt out.
+   */
+  reliableObjectGeneration?: boolean;
+
+  /**
+   * Object generation reliability options. These override the sensible defaults used by the
+   * built-in reliability layer (maxRetries=3, attemptRecovery=true, useFallbacks=true,
+   * fixTypeMismatches=true).
+   */
+  objectGenerationOptions?: {
+    /**
+     * Maximum number of retry attempts for object generation
+     */
+    maxRetries?: number;
+
+    /**
+     * Whether to attempt schema recovery when validation fails
+     */
+    attemptRecovery?: boolean;
+
+    /**
+     * Whether to use fallback values for failed generations
+     */
+    useFallbacks?: boolean;
+
+    /**
+     * Custom fallback values for specific fields
+     */
+    fallbackValues?: Record<string, unknown>;
+
+    /**
+     * Timeout for object generation in milliseconds
+     */
+    generationTimeout?: number;
+
+    /**
+     * Whether to validate and fix type mismatches
+     */
+    fixTypeMismatches?: boolean;
+  };
+
+  /**
    * Additional model parameters - re-exported from ollama-js
    * This automatically includes ALL Ollama parameters including new ones like 'dimensions'
    */
@@ -111,7 +195,7 @@ export interface OllamaEmbeddingSettings {
    * Additional embedding parameters
    */
   options?: Partial<Options>;
-  
+
   /**
    * Dimensions for embedding output (if supported by the model)
    * This is a direct parameter of EmbedRequest, not part of Options
