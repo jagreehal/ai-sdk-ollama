@@ -1,142 +1,134 @@
 # Ollama AI SDK Examples
 
-This directory contains comprehensive examples demonstrating the enhanced Ollama functions with reliability features.
+This directory contains comprehensive examples demonstrating the enhanced Ollama provider with reliability features.
 
 ## Available Demos
 
 ### Core Function Demos
 
-1. **`generate-text-ollama-demo.ts`** - Tool Calling Demo
-   - Demonstrates `generateTextOllama` with tool calling reliability
-   - Shows comparison between reliable and unreliable tool calling
-   - Tests parameter normalization and retry logic
-   - Run: `npx tsx src/generate-text-ollama-demo.ts`
-
-2. **`generate-object-ollama-demo.ts`** - Object Generation Demo
-   - Demonstrates `generateObjectOllama` for structured object generation
-   - Shows weather, person, and product object generation
-   - Tests reliability features and error recovery
-   - Run: `npx tsx src/generate-object-ollama-demo.ts`
-
-3. **`stream-text-ollama-demo.ts`** - Text Streaming Demo
-   - Demonstrates `streamTextOllama` for real-time text streaming
-   - Shows streaming with tool calls and multiple tools
-   - Tests reliability comparison and long-form content
-   - Run: `npx tsx src/stream-text-ollama-demo.ts`
-
-4. **`stream-object-ollama-demo.ts`** - Object Streaming Demo
-   - Demonstrates `streamObjectOllama` for real-time object streaming
-   - Shows complex objects with arrays and records
-   - Tests error handling and recovery
-   - Run: `npx tsx src/stream-object-ollama-demo.ts`
-
-5. **`generate-all-ollama-demo.ts`** - All Functions Demo
-   - Demonstrates all four Ollama functions in one comprehensive example
-   - Shows function comparison and use case recommendations
-   - Tests performance and reliability features
-   - Run: `npx tsx src/generate-all-ollama-demo.ts`
-
-### Additional Examples
-
-6. **`basic-chat.ts`** - Basic Chat Example
-   - Simple chat example using the standard AI SDK
+1. **`basic-chat.ts`** - Basic Chat Example
+   - Simple chat example using the standard AI SDK with enhanced Ollama provider
    - Run: `npx tsx src/basic-chat.ts`
 
-7. **`embedding-example.ts`** - Embedding Example
+2. **`embedding-example.ts`** - Embedding Example
    - Demonstrates text embedding with Ollama
    - Run: `npx tsx src/embedding-example.ts`
 
-8. **`streaming-comprehensive.ts`** - Streaming Examples
-   - Comprehensive streaming examples
+3. **`streaming-comprehensive.ts`** - Streaming Examples
+   - Comprehensive streaming examples with enhanced Ollama provider
    - Run: `npx tsx src/streaming-comprehensive.ts`
+
+4. **`streaming-simple-test.ts`** - Simple Streaming Test
+   - Basic streaming functionality test
+   - Run: `npx tsx src/streaming-simple-test.ts`
+
+5. **`minimal-stream-test.ts`** - Minimal Streaming Test
+   - Minimal streaming example
+   - Run: `npx tsx src/minimal-stream-test.ts`
+
+### Tool Calling Examples
+
+6. **`test-tool-calling.ts`** - Tool Calling Test
+   - Basic tool calling with enhanced Ollama provider
+   - Run: `npx tsx src/test-tool-calling.ts`
+
+7. **`test-tool-calling-models.ts`** - Tool Calling Models Test
+   - Tests tool calling with different models
+   - Run: `npx tsx src/test-tool-calling-models.ts`
+
+8. **`simple-tool-test.ts`** - Simple Tool Test
+   - Simple tool calling example
+   - Run: `npx tsx src/simple-tool-test.ts`
+
+9. **`corrected-tool-test.ts`** - Corrected Tool Test
+   - Tool calling with error correction
+   - Run: `npx tsx src/corrected-tool-test.ts`
+
+### Advanced Examples
+
+10. **`mcp-tools-example.ts`** - MCP Tools Example
+    - Model Context Protocol tools example
+    - Run: `npx tsx src/mcp-tools-example.ts`
+
+11. **`image-handling-example.ts`** - Image Handling Example
+    - Image processing with Ollama
+    - Run: `npx tsx src/image-handling-example.ts`
+
+12. **`reasoning-example.ts`** - Reasoning Example
+    - Advanced reasoning capabilities
+    - Run: `npx tsx src/reasoning-example.ts`
+
+13. **`reasoning-example-simple.ts`** - Simple Reasoning Example
+    - Basic reasoning example
+    - Run: `npx tsx src/reasoning-example-simple.ts`
 
 ## Key Features Demonstrated
 
-### Reliability Features
+### Enhanced Ollama Provider Features
+- **Improved Reliability**: Better error handling and retry logic
+- **Enhanced Tool Calling**: More reliable tool calling with Ollama models
+- **Better Response Synthesis**: Improved response generation after tool calls
 - **Parameter Normalization**: Handles different parameter names and formats
-- **Retry Logic**: Automatic retries with exponential backoff
-- **Error Recovery**: Graceful handling of malformed responses
 - **Stop Conditions**: Enhanced stop conditions for better completion
-- **Response Synthesis**: Ensures complete responses even after tool calls
 
-### Function-Specific Features
-
-#### generateTextOllama
-- Enhanced tool calling reliability
-- Better parameter handling
-- Improved response synthesis
-- Automatic retry logic
-
-#### generateObjectOllama
-- Schema validation and recovery
-- Type mismatch fixing
-- Fallback value generation
-- Object reliability features
-
-#### streamTextOllama
-- Real-time text streaming
-- Progressive response delivery
-- Tool calling support
-- Enhanced stop conditions
-
-#### streamObjectOllama
-- Real-time object streaming
-- Progressive object building
-- Schema validation during streaming
-- Error handling for streaming
+### Standard AI SDK Functions
+All examples use the standard AI SDK functions with the enhanced Ollama provider:
+- `generateText` - Text generation with tools
+- `generateObject` - Structured object generation
+- `streamText` - Real-time text streaming
+- `streamObject` - Real-time object streaming
+- `embed` - Text embeddings
 
 ## Usage Patterns
 
-### For Text Generation
+### For Text Generation with Tools
 ```typescript
-import { generateTextOllama } from 'ai-sdk-ollama';
+import { ollama } from 'ai-sdk-ollama';
+import { generateText, tool } from 'ai';
+import { z } from 'zod';
 
-const result = await generateTextOllama({
+const myTool = tool({
+  description: 'Your tool description',
+  inputSchema: z.object({
+    // your schema
+  }),
+  execute: async ({ /* parameters */ }) => {
+    // your tool logic
+  },
+});
+
+const result = await generateText({
   model: ollama('llama3.2'),
   prompt: 'Your prompt here',
-  tools: { /* your tools */ },
-  enhancedOptions: {
-    enableReliability: true,
-    maxSteps: 5,
-    minResponseLength: 30,
-  },
+  tools: { myTool },
 });
 ```
 
 ### For Object Generation
 ```typescript
-import { generateObjectOllama } from 'ai-sdk-ollama';
+import { ollama } from 'ai-sdk-ollama';
+import { generateObject } from 'ai';
 import { z } from 'zod';
 
 const schema = z.object({
   // your schema
 });
 
-const result = await generateObjectOllama({
+const result = await generateObject({
   model: ollama('llama3.2'),
   prompt: 'Your prompt here',
   schema,
-  enhancedOptions: {
-    enableReliability: true,
-    objectReliabilityOptions: {
-      maxRetries: 3,
-      attemptRecovery: true,
-    },
-  },
 });
 ```
 
 ### For Text Streaming
 ```typescript
-import { streamTextOllama } from 'ai-sdk-ollama';
+import { ollama } from 'ai-sdk-ollama';
+import { streamText } from 'ai';
 
-const result = await streamTextOllama({
+const result = await streamText({
   model: ollama('llama3.2'),
   prompt: 'Your prompt here',
-  enhancedOptions: {
-    enableReliability: true,
-    maxSteps: 5,
-  },
 });
 
 for await (const chunk of result.textStream) {
@@ -146,15 +138,18 @@ for await (const chunk of result.textStream) {
 
 ### For Object Streaming
 ```typescript
-import { streamObjectOllama } from 'ai-sdk-ollama';
+import { ollama } from 'ai-sdk-ollama';
+import { streamObject } from 'ai';
+import { z } from 'zod';
 
-const result = await streamObjectOllama({
+const schema = z.object({
+  // your schema
+});
+
+const result = await streamObject({
   model: ollama('llama3.2'),
   prompt: 'Your prompt here',
   schema,
-  enhancedOptions: {
-    enableReliability: true,
-  },
 });
 
 for await (const chunk of result.partialObjectStream) {
@@ -197,11 +192,11 @@ for await (const chunk of result.partialObjectStream) {
 
 ## Best Practices
 
-1. **Always Enable Reliability**: Set `enableReliability: true` for production use
-2. **Set Appropriate Limits**: Configure `maxSteps` and `minResponseLength` based on your needs
-3. **Handle Errors**: Always wrap function calls in try-catch blocks
-4. **Use Schemas**: Define proper schemas for object generation
-5. **Test Thoroughly**: Run examples multiple times to verify consistency
+1. **Use Enhanced Provider**: Always use `ollama` from `ai-sdk-ollama` for better reliability
+2. **Handle Errors**: Always wrap function calls in try-catch blocks
+3. **Use Schemas**: Define proper schemas for object generation
+4. **Test Thoroughly**: Run examples multiple times to verify consistency
+5. **Tool Calling**: Use tools with `generateText` and `streamText` for enhanced reliability
 
 ## Contributing
 
