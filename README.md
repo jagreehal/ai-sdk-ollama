@@ -7,14 +7,6 @@
 
 A Vercel AI SDK v5+ provider for Ollama built on the official `ollama` package. Type safe, future proof, with cross provider compatibility and native Ollama features.
 
-> **🚀 Reliable Tool Calling**: This provider includes built-in reliability features enabled by default, plus enhanced wrapper functions for guaranteed tool calling success:
->
-> - **Standard**: `generateText({ model: ollama('llama3.2'), tools, prompt })` - works with built-in reliability
-> - **Enhanced**: `generateTextOllama({ model: ollama('llama3.2'), tools, prompt })` - reliable tool calling
-> - **Streaming**: `streamTextOllama()` - enhanced streaming with tool awareness
->
-> **The Problem We Solve**: Standard Ollama providers often execute tools but return empty responses. Our enhanced functions guarantee complete, useful responses every time.
-
 ## Quick Start
 
 ```bash
@@ -38,7 +30,7 @@ console.log(text);
 ## Why Choose AI SDK Ollama?
 
 - ✅ **Solves tool calling problems** - Response synthesis for reliable tool execution
-- ✅ **Enhanced wrapper functions** - `generateTextOllama` guarantees complete responses
+- ✅ **Enhanced wrapper functions** - `generateText` and `streamText` guarantees complete responses
 - ✅ **Built-in reliability** - Default reliability features enabled automatically
 - ✅ **Cross-provider compatibility** - Drop-in replacement for OpenAI, Anthropic, etc.
 - ✅ **Type-safe** - Full TypeScript support with strict typing
@@ -46,22 +38,123 @@ console.log(text);
 - ✅ **Native Ollama power** - Access advanced features like `mirostat`, `repeat_penalty`, `num_ctx`
 - ✅ **Production ready** - Handles the core Ollama limitations other providers struggle with
 
-## More Examples
+## Enhanced Tool Calling
 
-### Streaming Responses
+> **🚀 The Problem We Solve**: Standard Ollama providers often execute tools but return empty responses. Our enhanced functions guarantee complete, useful responses every time.
 
 ```typescript
-import { streamText } from 'ai';
+import { generateText, streamText } from 'ai-sdk-ollama';
 
+// ✅ Enhanced generateText - guaranteed complete responses
+const { text } = await generateText({
+  model: ollama('llama3.2'),
+  tools: { /* your tools */ },
+  prompt: 'Use the tools and explain the results'
+});
+// ✅ Always returns complete, useful text
+```
+
+![Enhanced generateText Demo](media/generateText.gif)
+
+```typescript
+// ✅ Enhanced streaming - tool-aware streaming
 const { textStream } = await streamText({
   model: ollama('llama3.2'),
-  prompt: 'Tell me a story about a robot',
+  tools: { /* your tools */ },
+  prompt: 'Stream with tools'
+});
+// ✅ Reliable streaming with tool execution
+```
+
+![Enhanced streamText Demo](media/streamText.gif)
+
+## 100% Compatible with AI SDK
+
+```typescript
+import { ollama } from 'ai-sdk-ollama';
+import { generateText, streamText, generateObject, streamObject, embed, tool } from 'ai';
+import { z } from 'zod';
+
+// Text generation - works exactly like OpenAI, Anthropic, etc.
+const { text } = await generateText({
+  model: ollama('llama3.2'), // Just swap the model
+  prompt: 'Write a haiku about coding',
+  temperature: 0.8,
 });
 
-for await (const chunk of textStream) {
-  process.stdout.write(chunk);
-}
+// Streaming text
+const { textStream } = await streamText({
+  model: ollama('llama3.2'),
+  prompt: 'Tell me a story',
+});
+
+// Structured object generation
+const { object } = await generateObject({
+  model: ollama('llama3.2'),
+  schema: z.object({
+    name: z.string(),
+    age: z.number(),
+    interests: z.array(z.string()),
+  }),
+  prompt: 'Generate a random person profile',
+});
+
+// Streaming structured objects
+const { objectStream } = await streamObject({
+  model: ollama('llama3.2'),
+  schema: z.object({
+    step: z.string(),
+    result: z.string(),
+  }),
+  prompt: 'Break down the process of making coffee',
+});
+
+// Embeddings
+const { embedding } = await embed({
+  model: ollama.embedding('nomic-embed-text'),
+  value: 'Hello world',
+});
+
+console.log('Embedding dimensions:', embedding.length); // 768
+
+// Tool calling (with enhanced reliability)
+const { text, toolCalls } = await generateText({
+  model: ollama('llama3.2'),
+  prompt: 'What is the weather in San Francisco?',
+  tools: {
+    getWeather: tool({
+      description: 'Get current weather for a location',
+      inputSchema: z.object({
+        location: z.string().describe('City name'),
+      }),
+      execute: async ({ location }) => ({ temp: 18, condition: 'sunny' }),
+    }),
+  },
+});
+
+// Image analysis (vision models like llava, bakllava)
+const { text } = await generateText({
+  model: ollama('llava'),
+  prompt: [
+    {
+      role: 'user',
+      content: [
+        { type: 'text', text: 'Describe this image:' },
+        {
+          type: 'file',
+          data: new URL('https://example.com/image.jpg'),
+          mediaType: 'image/jpeg',
+        },
+      ],
+    },
+  ],
+});
+
+// Note: Image generation is not supported by Ollama
+// Use other providers like OpenAI DALL-E for image generation
 ```
+
+## More Examples
 
 ### Advanced Ollama Features
 
@@ -77,30 +170,6 @@ const { text } = await generateText({
   }),
   prompt: 'Write a detailed analysis',
   temperature: 0.8, // Standard AI SDK parameters still work
-});
-```
-
-### Tool Calling
-
-```typescript
-import { z } from 'zod';
-import { generateText, tool } from 'ai';
-
-const { text, toolCalls } = await generateText({
-  model: ollama('llama3.2'),
-  prompt: 'What is the weather in San Francisco?',
-  tools: {
-    getWeather: tool({
-      description: 'Get current weather for a location',
-      inputSchema: z.object({
-        location: z.string().describe('City name'),
-        unit: z.enum(['celsius', 'fahrenheit']).optional(),
-      }),
-      execute: async ({ location, unit = 'celsius' }) => {
-        return { temp: 18, unit, condition: 'sunny' };
-      },
-    }),
-  },
 });
 ```
 
@@ -125,49 +194,31 @@ console.log(object);
 // { name: "Alice", age: 28, interests: ["reading", "hiking"] }
 ```
 
-### Enhanced Tool Calling Functions
-
-Get reliable tool calling with our enhanced wrapper functions that guarantee complete responses:
+### MCP (Model Context Protocol) Integration
 
 ```typescript
-import { ollama, generateTextOllama, streamTextOllama } from 'ai-sdk-ollama';
-import { tool } from 'ai';
-import { z } from 'zod';
+import { generateText, experimental_createMCPClient } from 'ai';
 
-// Enhanced generateText with automatic response synthesis
-const result = await generateTextOllama({
-  model: ollama('llama3.2'),
-  prompt: 'Calculate 15 + 27 using the math tool and explain the result',
-  tools: {
-    math: tool({
-      description: 'Perform math calculations',
-      inputSchema: z.object({
-        operation: z.string().describe('Math operation like "15 + 27"'),
-      }),
-      execute: async ({ operation }) => {
-        return { result: eval(operation), operation };
-      },
-    }),
-  },
-  // Optional: Configure reliability behavior
-  enhancedOptions: {
-    enableSynthesis: true, // Default: true
-    maxSynthesisAttempts: 2, // Default: 2
-    minResponseLength: 10, // Default: 10
+// Connect to MCP server for external tools
+const mcpClient = await experimental_createMCPClient({
+  transport: {
+    type: 'stdio',
+    command: 'path/to/mcp-server',
   },
 });
 
-console.log(result.text);
-// "15 + 27 equals 42. Using the math tool, I calculated that the sum is 42."
-// ✅ Complete response guaranteed, unlike standard functions
+// Get tools from MCP server
+const tools = await mcpClient.tools();
 
-// Compare with standard generateText (may return empty text after tool execution)
-const standardResult = await generateText({
+// Use MCP tools with Ollama
+const { text } = await generateText({
   model: ollama('llama3.2'),
-  prompt: 'Calculate 15 + 27 using the math tool',
-  tools: { math: mathTool },
+  prompt: 'Calculate 15 + 27 and get the current time',
+  tools, // MCP tools automatically work with Ollama
 });
-// ⚠️ May execute tool but return empty text - common Ollama limitation
+
+// Clean up
+await mcpClient.close();
 ```
 
 ### Browser Usage
@@ -206,33 +257,6 @@ const results = await Promise.all(
     }),
   ),
 );
-```
-
-### MCP (Model Context Protocol) Integration
-
-```typescript
-import { generateText, experimental_createMCPClient } from 'ai';
-
-// Connect to MCP server for external tools
-const mcpClient = await experimental_createMCPClient({
-  transport: {
-    type: 'stdio',
-    command: 'path/to/mcp-server',
-  },
-});
-
-// Get tools from MCP server
-const tools = await mcpClient.tools();
-
-// Use MCP tools with Ollama
-const { text } = await generateText({
-  model: ollama('llama3.2'),
-  prompt: 'Calculate 15 + 27 and get the current time',
-  tools, // MCP tools automatically work with Ollama
-});
-
-// Clean up
-await mcpClient.close();
 ```
 
 ## Prerequisites
