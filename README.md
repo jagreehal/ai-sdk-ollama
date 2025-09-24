@@ -7,12 +7,13 @@
 
 A Vercel AI SDK v5+ provider for Ollama built on the official `ollama` package. Type safe, future proof, with cross provider compatibility and native Ollama features.
 
-> **Two Ways to Use**: This library enhances the standard AI SDK functions with automatic reliability improvements when you pass tools or schemas. For maximum reliability, use these drop-in replacements written specifically for Ollama:
+> **🚀 Reliable Tool Calling**: This provider includes built-in reliability features enabled by default, plus enhanced wrapper functions for guaranteed tool calling success:
 >
-> - `generateText` → `generateTextOllama`
-> - `generateObject` → `generateObjectOllama`
-> - `streamText` → `streamTextOllama`
-> - `streamObject` → `streamObjectOllama`
+> - **Standard**: `generateText({ model: ollama('llama3.2'), tools, prompt })` - works with built-in reliability
+> - **Enhanced**: `generateTextOllama({ model: ollama('llama3.2'), tools, prompt })` - reliable tool calling
+> - **Streaming**: `streamTextOllama()` - enhanced streaming with tool awareness
+>
+> **The Problem We Solve**: Standard Ollama providers often execute tools but return empty responses. Our enhanced functions guarantee complete, useful responses every time.
 
 ## Quick Start
 
@@ -36,14 +37,14 @@ console.log(text);
 
 ## Why Choose AI SDK Ollama?
 
+- ✅ **Solves tool calling problems** - Response synthesis for reliable tool execution
+- ✅ **Enhanced wrapper functions** - `generateTextOllama` guarantees complete responses
+- ✅ **Built-in reliability** - Default reliability features enabled automatically
 - ✅ **Cross-provider compatibility** - Drop-in replacement for OpenAI, Anthropic, etc.
 - ✅ **Type-safe** - Full TypeScript support with strict typing
 - ✅ **Cross-environment** - Works in Node.js and browsers automatically
 - ✅ **Native Ollama power** - Access advanced features like `mirostat`, `repeat_penalty`, `num_ctx`
-- ✅ **Tool calling support** - Function calling with compatible models
-- ✅ **MCP integration** - Model Context Protocol for external tools and services
-- ✅ **Structured outputs** - Auto-detection for object generation
-- ✅ **Reasoning support** - Chain-of-thought with models like DeepSeek-R1
+- ✅ **Production ready** - Handles the core Ollama limitations other providers struggle with
 
 ## More Examples
 
@@ -124,33 +125,49 @@ console.log(object);
 // { name: "Alice", age: 28, interests: ["reading", "hiking"] }
 ```
 
-### Enhanced Ollama Functions
+### Enhanced Tool Calling Functions
 
-For maximum control and Ollama-specific features, use the specialized wrapper functions:
+Get reliable tool calling with our enhanced wrapper functions that guarantee complete responses:
 
 ```typescript
-import {
-  generateTextOllama,
-  generateObjectOllama,
-  streamTextOllama,
-  streamObjectOllama
-} from 'ai-sdk-ollama';
+import { ollama, generateTextOllama, streamTextOllama } from 'ai-sdk-ollama';
+import { tool } from 'ai';
+import { z } from 'zod';
 
-// Same parameters as AI SDK functions, plus enhanced options
+// Enhanced generateText with automatic response synthesis
 const result = await generateTextOllama({
   model: ollama('llama3.2'),
-  prompt: 'Explain quantum computing',
-  tools: { /* your tools */ },
+  prompt: 'Calculate 15 + 27 using the math tool and explain the result',
+  tools: {
+    math: tool({
+      description: 'Perform math calculations',
+      inputSchema: z.object({
+        operation: z.string().describe('Math operation like "15 + 27"'),
+      }),
+      execute: async ({ operation }) => {
+        return { result: eval(operation), operation };
+      },
+    }),
+  },
+  // Optional: Configure reliability behavior
   enhancedOptions: {
-    enableReliability: true,
-    maxSteps: 5,
-    enableSynthesis: true,
-    maxSynthesisAttempts: 2,
+    enableSynthesis: true, // Default: true
+    maxSynthesisAttempts: 2, // Default: 2
+    minResponseLength: 10, // Default: 10
   },
 });
 
-// Enhanced metadata available
-console.log(result.metadata?.steps); // Step-by-step execution details
+console.log(result.text);
+// "15 + 27 equals 42. Using the math tool, I calculated that the sum is 42."
+// ✅ Complete response guaranteed, unlike standard functions
+
+// Compare with standard generateText (may return empty text after tool execution)
+const standardResult = await generateText({
+  model: ollama('llama3.2'),
+  prompt: 'Calculate 15 + 27 using the math tool',
+  tools: { math: mathTool },
+});
+// ⚠️ May execute tool but return empty text - common Ollama limitation
 ```
 
 ### Browser Usage

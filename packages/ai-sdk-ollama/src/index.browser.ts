@@ -13,20 +13,24 @@ export {
 export { OllamaError } from './utils/ollama-error';
 export type { OllamaErrorData } from './utils/ollama-error';
 
-// Ollama-specific wrapper functions
+// Re-export tool calling reliability utilities for advanced users
+export type {
+  ToolCallingOptions,
+  ResolvedToolCallingOptions,
+  ToolCallResult,
+  ReliableToolCallResult,
+  ToolDefinition,
+} from './utils/tool-calling-reliability';
+
+export type { ObjectGenerationOptions } from './utils/object-generation-reliability';
+
+// Enhanced wrapper functions for better Ollama tool calling reliability
 export {
   generateTextOllama,
   type GenerateTextOllamaOptions,
-} from './ai-functions/generate-text-ollama';
-export {
-  generateObjectOllama,
-  type GenerateObjectOllamaOptions,
-} from './ai-functions/generate-object-ollama';
+} from './functions/generate-text-ollama';
+
 export {
   streamTextOllama,
   type StreamTextOllamaOptions,
-} from './ai-functions/stream-text-ollama';
-export {
-  streamObjectOllama,
-  type StreamObjectOllamaOptions,
-} from './ai-functions/stream-object-ollama';
+} from './functions/stream-text-ollama';

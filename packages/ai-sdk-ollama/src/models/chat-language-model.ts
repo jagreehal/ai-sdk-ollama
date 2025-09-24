@@ -1243,6 +1243,23 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
       warnings,
     } = this.getCallOptions(options);
 
+    // Check if tools are being used with streaming
+    const functionTools = (options.tools ?? []).filter(
+      (tool): tool is LanguageModelV2FunctionTool => tool.type === 'function',
+    );
+
+    const hasTools = functionTools.length > 0;
+    const reliabilityEnabled =
+      hasTools && (this.settings.reliableToolCalling ?? true);
+
+    if (hasTools && reliabilityEnabled) {
+      // Note: Full tool calling reliability is handled by the AI SDK's streaming loop
+      // We can only enhance the individual stream responses here
+      console.log(
+        `🔧 Streaming with ${functionTools.length} tools (AI SDK handles tool calling loop)`,
+      );
+    }
+
     try {
       const stream = await this.config.client.chat({
         model: this.modelId,
