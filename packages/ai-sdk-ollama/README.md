@@ -7,12 +7,13 @@
 
 A Vercel AI SDK v5+ provider for Ollama built on the official `ollama` package. Type safe, future proof, with cross provider compatibility and native Ollama features.
 
-> **Two Ways to Use**: This library enhances the standard AI SDK functions with automatic reliability improvements when you pass tools or schemas. For maximum reliability, use these drop-in replacements written specifically for Ollama:
+> **🚀 Reliable Tool Calling**: This provider includes built-in reliability features enabled by default, plus enhanced wrapper functions for guaranteed tool calling success:
 >
-> - `generateText` → `generateTextOllama`
-> - `generateObject` → `generateObjectOllama`
-> - `streamText` → `streamTextOllama`
-> - `streamObject` → `streamObjectOllama`
+> - **Standard**: `generateText({ model: ollama('llama3.2'), tools, prompt })` - works with built-in reliability
+> - **Enhanced**: `generateTextOllama({ model: ollama('llama3.2'), tools, prompt })` - reliable tool calling
+> - **Streaming**: `streamTextOllama()` - enhanced streaming with tool awareness
+>
+> **The Problem We Solve**: Standard Ollama providers often execute tools but return empty responses. Our enhanced functions guarantee complete, useful responses every time.
 
 ## Contents
 
@@ -30,6 +31,7 @@ A Vercel AI SDK v5+ provider for Ollama built on the official `ollama` package. 
     - [Cross Provider Compatibility](#cross-provider-compatibility)
     - [Native Ollama Power](#native-ollama-power)
     - [Tool Calling Support](#tool-calling-support)
+    - [Enhanced Tool Calling Wrappers](#enhanced-tool-calling-wrappers)
     - [Simple and Predictable](#simple-and-predictable)
   - [Advanced Features](#advanced-features)
     - [Custom Ollama Instance](#custom-ollama-instance)
@@ -239,6 +241,56 @@ const { text, toolCalls } = await generateText({
 ```
 
 > **Note on Tool Parameters**: Due to Zod version compatibility issues, tool schemas may not always convert properly. When this happens, Ollama may use different parameter names than defined in your schema. It's recommended to handle parameter variations in your tool's execute function (e.g., checking for both `location` and `city`).
+
+### Enhanced Tool Calling Wrappers
+
+For maximum tool calling reliability, use our enhanced wrapper functions that guarantee complete responses:
+
+```typescript
+import { ollama, generateTextOllama, streamTextOllama } from 'ai-sdk-ollama';
+import { tool } from 'ai';
+import { z } from 'zod';
+
+// Enhanced generateText with automatic response synthesis
+const result = await generateTextOllama({
+  model: ollama('llama3.2'),
+  prompt: 'What is 15 + 27? Use the math tool to calculate it.',
+  tools: {
+    math: tool({
+      description: 'Perform math calculations',
+      inputSchema: z.object({
+        operation: z.string().describe('Math operation like "15 + 27"'),
+      }),
+      execute: async ({ operation }) => {
+        return { result: eval(operation), operation };
+      },
+    }),
+  },
+  // Optional: Configure reliability behavior
+  enhancedOptions: {
+    enableSynthesis: true, // Default: true
+    maxSynthesisAttempts: 2, // Default: 2
+    minResponseLength: 10, // Default: 10
+  },
+});
+
+console.log(result.text); // "15 + 27 equals 42. Using the math tool, I calculated..."
+```
+
+**When to Use Enhanced Wrappers:**
+
+- **Critical tool calling scenarios** where you need guaranteed text responses
+- **Production applications** that can't handle empty responses after tool execution
+- **Complex multi-step tool interactions** requiring reliable synthesis
+
+**Standard vs Enhanced Comparison:**
+
+| Function                   | Standard `generateText`   | Enhanced `generateTextOllama`        |
+| -------------------------- | ------------------------- | ------------------------------------ |
+| **Simple prompts**         | ✅ Perfect                | ✅ Works (slight overhead)           |
+| **Tool calling**           | ⚠️ May return empty text  | ✅ **Guarantees complete responses** |
+| **Complete responses**     | ❌ Manual handling needed | ✅ **Automatic completion**          |
+| **Production reliability** | ⚠️ Unpredictable          | ✅ **Reliable**                      |
 
 ### Simple and Predictable
 
