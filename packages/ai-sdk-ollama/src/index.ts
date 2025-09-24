@@ -27,11 +27,11 @@ export type { ObjectGenerationOptions } from './utils/object-generation-reliabil
 
 // Enhanced wrapper functions for better Ollama tool calling reliability
 export {
-  generateTextOllama,
-  type GenerateTextOllamaOptions,
-} from './functions/generate-text-ollama';
+  generateText,
+  type GenerateTextOptions,
+} from './functions/generate-text';
 
 export {
-  streamTextOllama,
-  type StreamTextOllamaOptions,
-} from './functions/stream-text-ollama';
+  streamText,
+  type StreamTextOptions,
+} from './functions/stream-text';

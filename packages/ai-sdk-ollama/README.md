@@ -7,30 +7,74 @@
 
 A Vercel AI SDK v5+ provider for Ollama built on the official `ollama` package. Type safe, future proof, with cross provider compatibility and native Ollama features.
 
-> **🚀 Reliable Tool Calling**: This provider includes built-in reliability features enabled by default, plus enhanced wrapper functions for guaranteed tool calling success:
->
-> - **Standard**: `generateText({ model: ollama('llama3.2'), tools, prompt })` - works with built-in reliability
-> - **Enhanced**: `generateTextOllama({ model: ollama('llama3.2'), tools, prompt })` - reliable tool calling
-> - **Streaming**: `streamTextOllama()` - enhanced streaming with tool awareness
->
-> **The Problem We Solve**: Standard Ollama providers often execute tools but return empty responses. Our enhanced functions guarantee complete, useful responses every time.
+## Quick Start
+
+```bash
+npm install ai-sdk-ollama ai@^5.0.0
+```
+
+```typescript
+import { ollama } from 'ai-sdk-ollama';
+import { generateText } from 'ai';
+
+// Works in both Node.js and browsers
+const { text } = await generateText({
+  model: ollama('llama3.2'),
+  prompt: 'Write a haiku about coding',
+  temperature: 0.8,
+});
+
+console.log(text);
+```
+
+## Why Choose AI SDK Ollama?
+
+- ✅ **Solves tool calling problems** - Response synthesis for reliable tool execution
+- ✅ **Enhanced wrapper functions** - `generateText` and `streamText` guarantees complete responses
+- ✅ **Built-in reliability** - Default reliability features enabled automatically
+- ✅ **Cross-provider compatibility** - Drop-in replacement for OpenAI, Anthropic, etc.
+- ✅ **Type-safe** - Full TypeScript support with strict typing
+- ✅ **Cross-environment** - Works in Node.js and browsers automatically
+- ✅ **Native Ollama power** - Access advanced features like `mirostat`, `repeat_penalty`, `num_ctx`
+- ✅ **Production ready** - Handles the core Ollama limitations other providers struggle with
+
+## Enhanced Tool Calling
+
+> **🚀 The Problem We Solve**: Standard Ollama providers often execute tools but return empty responses. Our enhanced functions guarantee complete, useful responses every time.
+
+```typescript
+import { generateText, streamText } from 'ai-sdk-ollama';
+
+// ✅ Enhanced generateText - guaranteed complete responses
+const { text } = await generateText({
+  model: ollama('llama3.2'),
+  tools: { /* your tools */ },
+  prompt: 'Use the tools and explain the results'
+});
+
+// ✅ Enhanced streaming - tool-aware streaming
+const { textStream } = await streamText({
+  model: ollama('llama3.2'),
+  tools: { /* your tools */ },
+  prompt: 'Stream with tools'
+});
+```
 
 ## Contents
 
 - [AI SDK Ollama Provider](#ai-sdk-ollama-provider)
+  - [Quick Start](#quick-start)
+  - [Why Choose AI SDK Ollama?](#why-choose-ai-sdk-ollama)
+  - [Enhanced Tool Calling](#enhanced-tool-calling)
   - [Contents](#contents)
   - [Prerequisites](#prerequisites)
-  - [Quick Start](#quick-start)
-    - [Installation](#installation)
-    - [Basic Usage](#basic-usage)
   - [Browser Support](#browser-support)
     - [Browser Usage](#browser-usage)
     - [Explicit Browser Import](#explicit-browser-import)
     - [CORS Configuration](#cors-configuration)
-  - [Key Features](#key-features)
+  - [More Examples](#more-examples)
     - [Cross Provider Compatibility](#cross-provider-compatibility)
     - [Native Ollama Power](#native-ollama-power)
-    - [Tool Calling Support](#tool-calling-support)
     - [Enhanced Tool Calling Wrappers](#enhanced-tool-calling-wrappers)
     - [Simple and Predictable](#simple-and-predictable)
   - [Advanced Features](#advanced-features)
@@ -78,55 +122,12 @@ const { text: advancedText } = await generateText({
 - AI SDK v5+ (`ai` package)
 - TypeScript 5.9+ (for TypeScript users)
 
-## Quick Start
-
-### Installation
-
-```bash
-npm install ai-sdk-ollama ai@^5.0.0
-```
-
-Ensure you have Ollama running locally:
-
 ```bash
 # Install Ollama from ollama.com
 ollama serve
 
 # Pull a model
 ollama pull llama3.2
-```
-
-### Basic Usage
-
-```typescript
-import { ollama } from 'ai-sdk-ollama';
-import { generateText, streamText, embed } from 'ai';
-
-// Simple text generation
-const { text } = await generateText({
-  model: ollama('llama3.2'),
-  prompt: 'What is the capital of France?',
-});
-
-console.log(text); // "The capital of France is Paris."
-
-// Streaming responses
-const { textStream } = await streamText({
-  model: ollama('llama3.2'),
-  prompt: 'Tell me a story about a robot',
-});
-
-for await (const chunk of textStream) {
-  process.stdout.write(chunk);
-}
-
-// Embeddings
-const { embedding } = await embed({
-  model: ollama.embedding('nomic-embed-text'),
-  value: 'Hello world',
-});
-
-console.log(embedding.length); // 768 dimensions
 ```
 
 ## Browser Support
@@ -175,7 +176,7 @@ OLLAMA_ORIGINS="http://localhost:3000,https://myapp.com" ollama serve
 
 **Recommended**: Use a development proxy (like Vite proxy) to avoid CORS issues entirely. See the browser example for a complete working setup.
 
-## Key Features
+## More Examples
 
 ### Cross Provider Compatibility
 
@@ -212,47 +213,17 @@ const { text } = await generateText({
 
 > **Parameter Precedence**: When both AI SDK parameters and Ollama options are specified, **Ollama options take precedence**. For example, if you set `temperature: 0.5` in Ollama options and `temperature: 0.8` in the `generateText` call, the final value will be `0.5`. This allows you to use standard AI SDK parameters for portability while having fine-grained control with Ollama-specific options when needed.
 
-### Tool Calling Support
-
-Ollama supports tool calling with compatible models.
-
-```typescript
-import { z } from 'zod';
-import { generateText, tool } from 'ai';
-import { ollama } from 'ai-sdk-ollama';
-
-const { text, toolCalls } = await generateText({
-  model: ollama('llama3.2'),
-  prompt: 'What is the weather in San Francisco?',
-  tools: {
-    getWeather: tool({
-      description: 'Get current weather for a location',
-      inputSchema: z.object({
-        location: z.string().describe('City name'),
-        unit: z.enum(['celsius', 'fahrenheit']).optional(),
-      }),
-      execute: async ({ location, unit = 'celsius' }) => {
-        // Your actual weather API call here
-        return { temp: 18, unit, condition: 'sunny' };
-      },
-    }),
-  },
-});
-```
-
-> **Note on Tool Parameters**: Due to Zod version compatibility issues, tool schemas may not always convert properly. When this happens, Ollama may use different parameter names than defined in your schema. It's recommended to handle parameter variations in your tool's execute function (e.g., checking for both `location` and `city`).
-
 ### Enhanced Tool Calling Wrappers
 
 For maximum tool calling reliability, use our enhanced wrapper functions that guarantee complete responses:
 
 ```typescript
-import { ollama, generateTextOllama, streamTextOllama } from 'ai-sdk-ollama';
+import { ollama, generateText, streamText } from 'ai-sdk-ollama';
 import { tool } from 'ai';
 import { z } from 'zod';
 
 // Enhanced generateText with automatic response synthesis
-const result = await generateTextOllama({
+const result = await generateText({
   model: ollama('llama3.2'),
   prompt: 'What is 15 + 27? Use the math tool to calculate it.',
   tools: {
@@ -285,7 +256,7 @@ console.log(result.text); // "15 + 27 equals 42. Using the math tool, I calculat
 
 **Standard vs Enhanced Comparison:**
 
-| Function                   | Standard `generateText`   | Enhanced `generateTextOllama`        |
+| Function                   | Standard `generateText`   | Enhanced `generateText`        |
 | -------------------------- | ------------------------- | ------------------------------------ |
 | **Simple prompts**         | ✅ Perfect                | ✅ Works (slight overhead)           |
 | **Tool calling**           | ⚠️ May return empty text  | ✅ **Guarantees complete responses** |
