@@ -7,7 +7,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "ai": "^5.0.51",
+    "ai": "^5.0.52",
     "ai-sdk-ollama": "workspace:*",
     "ollama": "^0.5.18",
     "zod": "^4.1.11"
