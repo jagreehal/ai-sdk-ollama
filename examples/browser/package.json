@@ -14,7 +14,7 @@
     "test:integration:report": "playwright show-report"
   },
   "dependencies": {
-    "ai": "^5.0.51",
+    "ai": "^5.0.52",
     "ai-sdk-ollama": "workspace:*"
   },
   "devDependencies": {
