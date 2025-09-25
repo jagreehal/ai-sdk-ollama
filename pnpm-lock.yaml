@@ -73,8 +73,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/ai-sdk-ollama
       ollama:
-        specifier: ^0.5.18
-        version: 0.5.18
+        specifier: ^0.6.0
+        version: 0.6.0
       zod:
         specifier: ^4.1.11
         version: 4.1.11
@@ -104,8 +104,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.48(zod@4.1.11)
       ollama:
-        specifier: ^0.5.18
-        version: 0.5.18
+        specifier: ^0.6.0
+        version: 0.6.0
     devDependencies:
       '@arethetypeswrong/cli':
         specifier: ^0.18.2
@@ -1921,8 +1921,8 @@ packages:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
     engines: {node: '>=0.10.0'}
 
-  ollama@0.5.18:
-    resolution: {integrity: sha512-lTFqTf9bo7Cd3hpF6CviBe/DEhewjoZYd9N/uCe7O20qYTvGqrNOFOBDj3lbZgFWHUgDv5EeyusYxsZSLS8nvg==}
+  ollama@0.6.0:
+    resolution: {integrity: sha512-FHjdU2Ok5x2HZsxPui/MBJZ5J+HzmxoWYa/p9wk736eT+uAhS8nvIICar5YgwlG5MFNjDR6UA5F3RSKq+JseOA==}
 
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
@@ -4144,7 +4144,7 @@ snapshots:
 
   object-assign@4.1.1: {}
 
-  ollama@0.5.18:
+  ollama@0.6.0:
     dependencies:
       whatwg-fetch: 3.6.20
 
