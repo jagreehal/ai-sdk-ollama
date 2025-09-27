@@ -1243,23 +1243,6 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
       warnings,
     } = this.getCallOptions(options);
 
-    // Check if tools are being used with streaming
-    const functionTools = (options.tools ?? []).filter(
-      (tool): tool is LanguageModelV2FunctionTool => tool.type === 'function',
-    );
-
-    const hasTools = functionTools.length > 0;
-    const reliabilityEnabled =
-      hasTools && (this.settings.reliableToolCalling ?? true);
-
-    if (hasTools && reliabilityEnabled) {
-      // Note: Full tool calling reliability is handled by the AI SDK's streaming loop
-      // We can only enhance the individual stream responses here
-      console.log(
-        `🔧 Streaming with ${functionTools.length} tools (AI SDK handles tool calling loop)`,
-      );
-    }
-
     try {
       const stream = await this.config.client.chat({
         model: this.modelId,
@@ -1280,6 +1263,10 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
       // Capture settings for use in transform function
       const reasoningEnabled = this.settings.reasoning;
 
+      // Track text streaming state for UI message compatibility
+      let textStreamStarted = false;
+      let currentTextId: string | null = null;
+
       const transformStream = new TransformStream<
         ChatResponse,
         LanguageModelV2StreamPart
@@ -1298,10 +1285,28 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
               typeof chunk.message.content === 'string' &&
               chunk.message.content.length > 0
             ) {
+              // Start text streaming if not already started
+              if (!textStreamStarted) {
+                currentTextId = crypto.randomUUID();
+                controller.enqueue({
+                  type: 'text-start',
+                  id: currentTextId,
+                });
+                textStreamStarted = true;
+              }
+
               controller.enqueue({
                 type: 'text-delta',
-                id: crypto.randomUUID(),
+                id: currentTextId!,
                 delta: chunk.message.content,
+              });
+            }
+
+            // End text streaming if it was started
+            if (textStreamStarted && currentTextId) {
+              controller.enqueue({
+                type: 'text-end',
+                id: currentTextId,
               });
             }
 
@@ -1366,9 +1371,19 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
               typeof chunk.message.content === 'string' &&
               chunk.message.content.length > 0
             ) {
+              // Start text streaming if not already started
+              if (!textStreamStarted) {
+                currentTextId = crypto.randomUUID();
+                controller.enqueue({
+                  type: 'text-start',
+                  id: currentTextId,
+                });
+                textStreamStarted = true;
+              }
+
               controller.enqueue({
                 type: 'text-delta',
-                id: crypto.randomUUID(), // Generate unique ID for each text chunk
+                id: currentTextId!,
                 delta: chunk.message.content,
               });
             }

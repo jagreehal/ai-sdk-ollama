@@ -32,7 +32,7 @@ console.log(text);
 - ✅ **Solves tool calling problems** - Response synthesis for reliable tool execution
 - ✅ **Enhanced wrapper functions** - `generateText` and `streamText` guarantees complete responses
 - ✅ **Built-in reliability** - Default reliability features enabled automatically
-- ✅ **Cross-provider compatibility** - Drop-in replacement for OpenAI, Anthropic, etc.
+- ✅ **Web search and fetch tools** - Built-in web search and fetch tools powered by [Ollama's web search API](https://ollama.com/blog/web-search). Perfect for getting current information and reducing hallucinations.
 - ✅ **Type-safe** - Full TypeScript support with strict typing
 - ✅ **Cross-environment** - Works in Node.js and browsers automatically
 - ✅ **Native Ollama power** - Access advanced features like `mirostat`, `repeat_penalty`, `num_ctx`
@@ -67,6 +67,63 @@ const { textStream } = await streamText({
 ```
 
 ![Enhanced streamText Demo](media/streamText.gif)
+
+## Web Search Tools
+
+> **🌐 New in v0.9.0**: Built-in web search and fetch tools powered by [Ollama's web search API](https://ollama.com/blog/web-search). Perfect for getting current information and reducing hallucinations.
+
+```typescript
+import { generateText } from 'ai';
+import { ollama } from 'ai-sdk-ollama';
+
+// 🔍 Web search for current information
+const { text } = await generateText({
+  model: ollama('qwen3-coder:480b-cloud'), // Cloud models recommended for web search
+  prompt: 'What are the latest developments in AI this week?',
+  tools: {
+    webSearch: ollama.tools.webSearch({ maxResults: 5 }),
+  },
+});
+
+// 📄 Fetch specific web content
+const { text: summary } = await generateText({
+  model: ollama('gpt-oss:120b-cloud'),
+  prompt: 'Summarize this article: https://example.com/article',
+  tools: {
+    webFetch: ollama.tools.webFetch({ maxContentLength: 5000 }),
+  },
+});
+
+// 🔄 Combine search and fetch for comprehensive research
+const { text: research } = await generateText({
+  model: ollama('gpt-oss:120b-cloud'),
+  prompt: 'Research recent TypeScript updates and provide a detailed analysis',
+  tools: {
+    webSearch: ollama.tools.webSearch({ maxResults: 3 }),
+    webFetch: ollama.tools.webFetch(),
+  },
+});
+```
+
+### Web Search Prerequisites
+
+1. **Ollama API Key**: Set `OLLAMA_API_KEY` environment variable
+2. **Cloud Models**: Use cloud models for optimal web search performance:
+   - `qwen3-coder:480b-cloud` - Best for general web search
+   - `gpt-oss:120b-cloud` - Best for complex reasoning with web data
+
+```bash
+# Set your API key
+export OLLAMA_API_KEY="your_api_key_here"
+
+# Get your API key from: https://ollama.com/account
+
+# Run web search examples
+npx tsx examples/node/src/web-search-example.ts basic    # Run basic example only
+npx tsx examples/node/src/web-search-example.ts combined # Run combined search and fetch
+npx tsx examples/node/src/web-search-example.ts streaming # Run streaming example
+npx tsx examples/node/src/web-search-example.ts error    # Run error handling example
+```
 
 ## 100% Compatible with AI SDK
 
@@ -281,13 +338,16 @@ Complete working examples in [`examples/node`](./examples/node):
 
 ```bash
 # Run any example directly
-npx tsx examples/node/basic-chat.ts
-npx tsx examples/node/dual-parameter-example.ts
-npx tsx examples/node/tool-calling-example.ts
-npx tsx examples/node/tools-no-parameters.ts  # Fixes rival provider issues
-npx tsx examples/node/mcp-tools-example.ts     # Model Context Protocol integration
-npx tsx examples/node/embedding-example.ts     # Vector embeddings
-npx tsx examples/node/streaming-simple-test.ts
+npx tsx examples/node/src/basic-chat.ts
+npx tsx examples/node/src/dual-parameter-example.ts
+npx tsx examples/node/src/simple-tool-test.ts
+npx tsx examples/node/src/mcp-tools-example.ts     # Model Context Protocol integration
+npx tsx examples/node/src/embedding-example.ts     # Vector embeddings
+npx tsx examples/node/src/streaming-simple-test.ts
+npx tsx examples/node/src/web-search-example.ts    # Web search and fetch tools
+npx tsx examples/node/src/web-search-example.ts basic    # Run specific example to avoid rate limits
+npx tsx examples/node/src/reasoning-example.ts     # Chain-of-thought reasoning
+npx tsx examples/node/src/image-handling-example.ts # Vision models
 ```
 
 ### Interactive Browser Demo
@@ -322,6 +382,7 @@ Works with any model in your Ollama installation:
 - **Vision**: `llava`, `bakllava`, `llama3.2-vision`, `minicpm-v`
 - **Embeddings**: `nomic-embed-text`, `all-minilm`, `mxbai-embed-large`
 - **Reasoning**: `deepseek-r1:7b`, `deepseek-r1:1.5b`, `deepseek-r1:8b`
+- **Cloud Models** (for web search): `qwen3-coder:480b-cloud`, `gpt-oss:120b-cloud`
 
 ## Development & Contributing
 
@@ -339,7 +400,7 @@ pnpm build
 pnpm test
 
 # Run examples
-npx tsx examples/node/basic-chat.ts
+npx tsx examples/node/src/basic-chat.ts
 ```
 
 **Contributing**: Fork → feature branch → tests → PR. See [CLAUDE.md](./CLAUDE.md) for detailed development guidelines.

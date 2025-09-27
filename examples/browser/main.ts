@@ -1,5 +1,5 @@
 import { createOllama } from 'ai-sdk-ollama';
-import { generateText, streamText } from 'ai';
+import { generateText, streamText, readUIMessageStream } from 'ai';
 
 // Types
 interface OllamaModel {
@@ -30,6 +30,7 @@ const promptEl = document.getElementById('prompt') as HTMLTextAreaElement;
 const responseEl = document.getElementById('response') as HTMLDivElement;
 const generateBtn = document.getElementById('generateBtn') as HTMLButtonElement;
 const streamBtn = document.getElementById('streamBtn') as HTMLButtonElement;
+const uiStreamBtn = document.getElementById('uiStreamBtn') as HTMLButtonElement;
 const refreshModelsBtn = document.getElementById('refreshModelsBtn') as HTMLButtonElement;
 const clearBtn = document.getElementById('clearBtn') as HTMLButtonElement;
 const copyBtn = document.getElementById('copyBtn') as HTMLButtonElement;
@@ -369,6 +370,141 @@ async function handleStream(): Promise<void> {
   }
 }
 
+async function handleUIStream(): Promise<void> {
+  const prompt = promptEl.value.trim();
+  const selectedModel = modelEl.value;
+  
+  if (!prompt) {
+    responseEl.innerHTML = `
+      <div class="flex items-center gap-2 text-slate-400">
+        <div class="flex space-x-1">
+          <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+          <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+          <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+        </div>
+        <span class="text-xs">AI Response Terminal</span>
+      </div>
+      <div class="mt-4 text-amber-400">Please enter a prompt</div>
+    `;
+    return;
+  }
+  
+  if (!selectedModel) {
+    responseEl.innerHTML = `
+      <div class="flex items-center gap-2 text-slate-400">
+        <div class="flex space-x-1">
+          <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+          <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+          <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+        </div>
+        <span class="text-xs">AI Response Terminal</span>
+      </div>
+      <div class="mt-4 text-amber-400">Please select a model</div>
+    `;
+    return;
+  }
+  
+  generateBtn.disabled = true;
+  streamBtn.disabled = true;
+  if (uiStreamBtn) uiStreamBtn.disabled = true;
+  if (clearBtn) clearBtn.disabled = true;
+  
+  responseEl.innerHTML = `
+    <div class="flex items-center gap-2 text-slate-400">
+      <div class="flex space-x-1">
+        <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+        <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+      </div>
+      <span class="text-xs">AI Response Terminal</span>
+    </div>
+    <div class="mt-4 flex items-center gap-2 text-purple-400">
+      <div class="loading"></div>
+      <span>UI Streaming response...</span>
+    </div>
+  `;
+  
+  let streamContent = '';
+  
+  try {
+    const result = streamText({
+      model: ollamaProvider(selectedModel),
+      prompt: prompt,
+      temperature: 0.7,
+      maxOutputTokens: 500,
+    });
+    
+    console.log('result', result);
+    console.log('result.toUIMessageStream()', result.toUIMessageStream());
+    
+    updateStatus('UI Streaming...', 'connected');
+    
+    for await (const uiMessage of readUIMessageStream({
+      stream: result.toUIMessageStream(),
+    })) {
+      console.log('uiMessage', uiMessage);
+      const lastPart = uiMessage.parts[uiMessage.parts.length - 1];
+      if (lastPart && 'text' in lastPart) {
+        streamContent += lastPart.text;
+        responseEl.innerHTML = `
+          <div class="flex items-center gap-2 text-slate-400">
+            <div class="flex space-x-1">
+              <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+              <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+              <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+            </div>
+            <span class="text-xs">AI Response Terminal - UI Streaming...</span>
+          </div>
+          <div class="mt-4 text-slate-300">${streamContent.replace(/\n/g, '<br>')}<span class="animate-pulse">▊</span></div>
+        `;
+      }
+    }
+    
+    // Remove cursor after streaming is complete
+    responseEl.innerHTML = `
+      <div class="flex items-center gap-2 text-slate-400">
+        <div class="flex space-x-1">
+          <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+          <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+          <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+        </div>
+        <span class="text-xs">AI Response Terminal</span>
+      </div>
+      <div class="mt-4 text-slate-300">${streamContent.replace(/\n/g, '<br>')}</div>
+    `;
+    
+    updateStatus('UI Stream complete', 'connected');
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    responseEl.innerHTML = `
+      <div class="flex items-center gap-2 text-slate-400">
+        <div class="flex space-x-1">
+          <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+          <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+          <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+        </div>
+        <span class="text-xs">AI Response Terminal</span>
+      </div>
+      <div class="mt-4 text-red-400">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+          <strong>UI Stream Error:</strong>
+        </div>
+        <div class="mt-1 ml-6">${errorMessage}</div>
+      </div>
+    `;
+    updateStatus(`UI Stream failed: ${errorMessage}`, 'error');
+    console.error('UI Stream error:', error);
+  } finally {
+    generateBtn.disabled = false;
+    streamBtn.disabled = false;
+    if (uiStreamBtn) uiStreamBtn.disabled = false;
+    if (clearBtn) clearBtn.disabled = false;
+  }
+}
+
 // Clear response function
 function handleClear(): void {
   responseEl.innerHTML = `
@@ -402,6 +538,7 @@ function handleCopy(): void {
 // Event listeners
 generateBtn.addEventListener('click', handleGenerate);
 streamBtn.addEventListener('click', handleStream);
+if (uiStreamBtn) uiStreamBtn.addEventListener('click', handleUIStream);
 refreshModelsBtn.addEventListener('click', loadAvailableModels);
 if (clearBtn) clearBtn.addEventListener('click', handleClear);
 if (copyBtn) copyBtn.addEventListener('click', handleCopy);
@@ -446,8 +583,9 @@ setTimeout(() => {
           <span class="text-indigo-400 font-medium">Welcome to AI SDK Ollama!</span>
         </div>
         <div class="text-sm leading-relaxed">
-          • Enter your prompt above and click Generate or Stream<br>
+          • Enter your prompt above and click Generate, Stream, or UI Stream<br>
           • Use <kbd class="px-1 py-0.5 bg-slate-700 text-slate-300 rounded text-xs">Ctrl+Enter</kbd> (or <kbd class="px-1 py-0.5 bg-slate-700 text-slate-300 rounded text-xs">⌘+Enter</kbd>) to generate from the text area<br>
+          • UI Stream tests the readUIMessageStream functionality<br>
           • Make sure your Ollama server is running with CORS enabled<br>
           • Select a model from the configuration above to get started
         </div>

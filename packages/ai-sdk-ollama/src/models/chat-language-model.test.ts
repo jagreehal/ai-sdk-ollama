@@ -463,23 +463,32 @@ describe('OllamaChatLanguageModel', () => {
         chunks.push(chunk);
       }
 
-      expect(chunks).toHaveLength(4); // 3 text chunks (including final) + 1 finish chunk
+      expect(chunks).toHaveLength(6); // text-start + 3 text-delta + text-end + finish
       expect(chunks[0]).toEqual({
-        type: 'text-delta',
+        type: 'text-start',
         id: expect.any(String),
-        delta: 'Hello',
       });
+      const textStartId = (chunks[0] as { id: string }).id;
       expect(chunks[1]).toEqual({
         type: 'text-delta',
-        id: expect.any(String),
-        delta: ' world',
+        id: textStartId,
+        delta: 'Hello',
       });
       expect(chunks[2]).toEqual({
         type: 'text-delta',
-        id: expect.any(String),
-        delta: '!',
+        id: textStartId,
+        delta: ' world',
       });
       expect(chunks[3]).toEqual({
+        type: 'text-delta',
+        id: textStartId,
+        delta: '!',
+      });
+      expect(chunks[4]).toEqual({
+        type: 'text-end',
+        id: textStartId,
+      });
+      expect(chunks[5]).toEqual({
         type: 'finish',
         finishReason: 'stop',
         usage: {
@@ -942,6 +951,364 @@ describe('OllamaChatLanguageModel', () => {
       }
       expect(finish).toBeDefined();
       expect(finish?.finishReason).toBe('stop');
+    });
+  });
+
+  describe('UI Message Stream compatibility', () => {
+    it('should emit text-start, text-delta, and text-end for UI message streaming', async () => {
+      const mockStreamData = [
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: { role: 'assistant', content: 'Hello' },
+          done: false,
+          done_reason: '',
+          eval_count: 5,
+          prompt_eval_count: 3,
+          total_duration: 500_000_000,
+          load_duration: 50_000_000,
+          prompt_eval_duration: 100_000_000,
+          eval_duration: 350_000_000,
+        },
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: { role: 'assistant', content: ' world' },
+          done: false,
+          done_reason: '',
+          eval_count: 10,
+          prompt_eval_count: 3,
+          total_duration: 800_000_000,
+          load_duration: 50_000_000,
+          prompt_eval_duration: 100_000_000,
+          eval_duration: 650_000_000,
+        },
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: { role: 'assistant', content: '!' },
+          done: true,
+          done_reason: 'stop',
+          eval_count: 15,
+          prompt_eval_count: 8,
+          total_duration: 1_000_000_000,
+          load_duration: 100_000_000,
+          prompt_eval_duration: 200_000_000,
+          eval_duration: 700_000_000,
+        },
+      ];
+
+      const mockAsyncIterable = {
+        [Symbol.asyncIterator]: vi.fn().mockReturnValue({
+          next: vi
+            .fn()
+            .mockResolvedValueOnce({ value: mockStreamData[0], done: false })
+            .mockResolvedValueOnce({ value: mockStreamData[1], done: false })
+            .mockResolvedValueOnce({ value: mockStreamData[2], done: false })
+            .mockResolvedValueOnce({ done: true }),
+        }),
+      };
+
+      (
+        mockOllamaClient.chat as unknown as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(
+        mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
+      );
+
+      const options: LanguageModelV2CallOptions = {
+        prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
+      };
+
+      const { stream } = await model.doStream(options);
+      const chunks: LanguageModelV2StreamPart[] = [];
+
+      for await (const chunk of stream) {
+        chunks.push(chunk);
+      }
+
+      // Should have: text-start, text-delta, text-delta, text-delta, text-end, finish
+      expect(chunks).toHaveLength(6);
+
+      // Check text-start is emitted first
+      expect(chunks[0]).toEqual({
+        type: 'text-start',
+        id: expect.any(String),
+      });
+
+      // Check text-delta parts have the same ID
+      const textStartId = (chunks[0] as { id: string }).id;
+      expect(chunks[1]).toEqual({
+        type: 'text-delta',
+        id: textStartId,
+        delta: 'Hello',
+      });
+      expect(chunks[2]).toEqual({
+        type: 'text-delta',
+        id: textStartId,
+        delta: ' world',
+      });
+      expect(chunks[3]).toEqual({
+        type: 'text-delta',
+        id: textStartId,
+        delta: '!',
+      });
+
+      // Check text-end is emitted with the same ID
+      expect(chunks[4]).toEqual({
+        type: 'text-end',
+        id: textStartId,
+      });
+
+      // Check finish is emitted last
+      expect(chunks[5]).toEqual({
+        type: 'finish',
+        finishReason: 'stop',
+        usage: {
+          inputTokens: 8,
+          outputTokens: 15,
+          totalTokens: 23,
+        },
+      });
+    });
+
+    it('should handle empty content gracefully without text-start/end', async () => {
+      const mockStreamData = [
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: { role: 'assistant', content: '' },
+          done: true,
+          done_reason: 'stop',
+          eval_count: 0,
+          prompt_eval_count: 5,
+          total_duration: 1_000_000_000,
+          load_duration: 100_000_000,
+          prompt_eval_duration: 200_000_000,
+          eval_duration: 700_000_000,
+        },
+      ];
+
+      const mockAsyncIterable = {
+        [Symbol.asyncIterator]: vi.fn().mockReturnValue({
+          next: vi
+            .fn()
+            .mockResolvedValueOnce({ value: mockStreamData[0], done: false })
+            .mockResolvedValueOnce({ done: true }),
+        }),
+      };
+
+      (
+        mockOllamaClient.chat as unknown as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(
+        mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
+      );
+
+      const options: LanguageModelV2CallOptions = {
+        prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
+      };
+
+      const { stream } = await model.doStream(options);
+      const chunks: LanguageModelV2StreamPart[] = [];
+
+      for await (const chunk of stream) {
+        chunks.push(chunk);
+      }
+
+      // Should only have finish (no text parts since content is empty)
+      expect(chunks).toHaveLength(1);
+      expect(chunks[0]).toEqual({
+        type: 'finish',
+        finishReason: 'stop',
+        usage: {
+          inputTokens: 5,
+          outputTokens: 0,
+          totalTokens: 5,
+        },
+      });
+    });
+
+    it('should handle content only in final chunk', async () => {
+      const mockStreamData = [
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: { role: 'assistant', content: '' },
+          done: false,
+          done_reason: '',
+          eval_count: 5,
+          prompt_eval_count: 3,
+          total_duration: 500_000_000,
+          load_duration: 50_000_000,
+          prompt_eval_duration: 100_000_000,
+          eval_duration: 350_000_000,
+        },
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: { role: 'assistant', content: 'Complete response' },
+          done: true,
+          done_reason: 'stop',
+          eval_count: 15,
+          prompt_eval_count: 8,
+          total_duration: 1_000_000_000,
+          load_duration: 100_000_000,
+          prompt_eval_duration: 200_000_000,
+          eval_duration: 700_000_000,
+        },
+      ];
+
+      const mockAsyncIterable = {
+        [Symbol.asyncIterator]: vi.fn().mockReturnValue({
+          next: vi
+            .fn()
+            .mockResolvedValueOnce({ value: mockStreamData[0], done: false })
+            .mockResolvedValueOnce({ value: mockStreamData[1], done: false })
+            .mockResolvedValueOnce({ done: true }),
+        }),
+      };
+
+      (
+        mockOllamaClient.chat as unknown as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(
+        mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
+      );
+
+      const options: LanguageModelV2CallOptions = {
+        prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
+      };
+
+      const { stream } = await model.doStream(options);
+      const chunks: LanguageModelV2StreamPart[] = [];
+
+      for await (const chunk of stream) {
+        chunks.push(chunk);
+      }
+
+      // Should have: text-start, text-delta, text-end, finish
+      expect(chunks).toHaveLength(4);
+
+      // Check text-start is emitted when content appears in final chunk
+      expect(chunks[0]).toEqual({
+        type: 'text-start',
+        id: expect.any(String),
+      });
+
+      const textStartId = (chunks[0] as { id: string }).id;
+      expect(chunks[1]).toEqual({
+        type: 'text-delta',
+        id: textStartId,
+        delta: 'Complete response',
+      });
+
+      expect(chunks[2]).toEqual({
+        type: 'text-end',
+        id: textStartId,
+      });
+
+      expect(chunks[3]).toEqual({
+        type: 'finish',
+        finishReason: 'stop',
+        usage: {
+          inputTokens: 8,
+          outputTokens: 15,
+          totalTokens: 23,
+        },
+      });
+    });
+
+    it('should maintain consistent text ID across all text stream parts', async () => {
+      const mockStreamData = [
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: { role: 'assistant', content: 'Part' },
+          done: false,
+          done_reason: '',
+          eval_count: 5,
+          prompt_eval_count: 3,
+          total_duration: 500_000_000,
+          load_duration: 50_000_000,
+          prompt_eval_duration: 100_000_000,
+          eval_duration: 350_000_000,
+        },
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: { role: 'assistant', content: ' two' },
+          done: false,
+          done_reason: '',
+          eval_count: 10,
+          prompt_eval_count: 3,
+          total_duration: 800_000_000,
+          load_duration: 50_000_000,
+          prompt_eval_duration: 100_000_000,
+          eval_duration: 650_000_000,
+        },
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: { role: 'assistant', content: ' three' },
+          done: true,
+          done_reason: 'stop',
+          eval_count: 15,
+          prompt_eval_count: 8,
+          total_duration: 1_000_000_000,
+          load_duration: 100_000_000,
+          prompt_eval_duration: 200_000_000,
+          eval_duration: 700_000_000,
+        },
+      ];
+
+      const mockAsyncIterable = {
+        [Symbol.asyncIterator]: vi.fn().mockReturnValue({
+          next: vi
+            .fn()
+            .mockResolvedValueOnce({ value: mockStreamData[0], done: false })
+            .mockResolvedValueOnce({ value: mockStreamData[1], done: false })
+            .mockResolvedValueOnce({ value: mockStreamData[2], done: false })
+            .mockResolvedValueOnce({ done: true }),
+        }),
+      };
+
+      (
+        mockOllamaClient.chat as unknown as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(
+        mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
+      );
+
+      const options: LanguageModelV2CallOptions = {
+        prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
+      };
+
+      const { stream } = await model.doStream(options);
+      const chunks: LanguageModelV2StreamPart[] = [];
+
+      for await (const chunk of stream) {
+        chunks.push(chunk);
+      }
+
+      // Extract text-related chunks
+      const textStart = chunks.find((chunk) => chunk.type === 'text-start') as {
+        id: string;
+      };
+      const textDeltas = chunks.filter(
+        (chunk) => chunk.type === 'text-delta',
+      ) as { id: string; delta: string }[];
+      const textEnd = chunks.find((chunk) => chunk.type === 'text-end') as {
+        id: string;
+      };
+
+      // All text parts should have the same ID
+      const expectedId = textStart.id;
+      expect(textStart.id).toBe(expectedId);
+      for (const delta of textDeltas) {
+        expect(delta.id).toBe(expectedId);
+      }
+      expect(textEnd.id).toBe(expectedId);
+
+      // Verify the deltas combine to form the complete text
+      const completeText = textDeltas.map((delta) => delta.delta).join('');
+      expect(completeText).toBe('Part two three');
     });
   });
 });
