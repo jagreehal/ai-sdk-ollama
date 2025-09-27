@@ -7,6 +7,9 @@ import {
 import { Ollama, type Options as OllamaOptions } from 'ollama';
 import { OllamaChatLanguageModel } from './models/chat-language-model';
 import { OllamaEmbeddingModel } from './models/embedding-model';
+import { ollamaTools } from './ollama-tools';
+import type { WebSearchToolOptions } from './tool/web-search';
+import type { WebFetchToolOptions } from './tool/web-fetch';
 
 // Extend Ollama Options to include missing parameters
 export interface Options extends OllamaOptions {
@@ -84,6 +87,18 @@ export interface OllamaProvider extends ProviderV2 {
     modelId: string,
     settings?: OllamaEmbeddingSettings,
   ): EmbeddingModelV2<string>;
+
+  /**
+   * Ollama-specific tools that leverage web search capabilities
+   */
+  tools: {
+    webSearch: (
+      options?: WebSearchToolOptions,
+    ) => ReturnType<typeof ollamaTools.webSearch>;
+    webFetch: (
+      options?: WebFetchToolOptions,
+    ) => ReturnType<typeof ollamaTools.webFetch>;
+  };
 }
 
 export interface OllamaChatSettings {
@@ -289,6 +304,14 @@ export function createOllama(
       message: 'Image generation is not supported by Ollama',
     });
   };
+
+  // Create tools with the Ollama client injected - following AI SDK pattern
+  const toolsWithClient = {
+    webSearch: (options = {}) => ollamaTools.webSearch({ ...options, client }),
+    webFetch: (options = {}) => ollamaTools.webFetch({ ...options, client }),
+  };
+
+  provider.tools = toolsWithClient;
 
   return provider as OllamaProvider;
 }

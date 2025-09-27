@@ -83,8 +83,6 @@ export async function generateText(
     return result;
   }
 
-  console.log('🔧 Applying response synthesis for Ollama...');
-
   // Attempt synthesis with tool results
   for (let attempt = 1; attempt <= maxSynthesisAttempts; attempt++) {
     try {
@@ -120,8 +118,6 @@ ${synthesisPrompt}`;
         synthesisResult.text &&
         synthesisResult.text.trim().length >= minResponseLength
       ) {
-        console.log(`🔧 Response synthesis successful on attempt ${attempt}`);
-
         // Return enhanced result with original tool data + synthesized text
         return {
           ...result, // Preserve original tool calls and results
@@ -139,11 +135,9 @@ ${synthesisPrompt}`;
           },
         };
       }
-    } catch (error) {
-      console.warn(`🔧 Synthesis attempt ${attempt} failed:`, error);
+    } catch {
+      // Silently continue to next attempt
     }
   }
-
-  console.log('🔧 All synthesis attempts failed, returning original result');
   return result;
 }

@@ -62,19 +62,12 @@ export async function streamText(options: StreamTextOptions) {
   const { enhancedOptions = {}, ...streamTextOptions } = options;
 
   const {
-    enableToolLogging = true,
     enableStreamingSynthesis = true,
     minStreamLength = 10,
     synthesisTimeout = 3000,
   } = enhancedOptions;
 
   const hasTools = options.tools && Object.keys(options.tools).length > 0;
-
-  if (enableToolLogging && hasTools) {
-    console.log(
-      `🔧 Streaming with ${Object.keys(options.tools!).length} tools available`,
-    );
-  }
 
   // If no tools, just use standard streaming
   if (!hasTools || !enableStreamingSynthesis) {
@@ -188,18 +181,28 @@ Based on the tool results above, please provide a comprehensive response to the 
     async start(controller) {
       let streamTimeout: NodeJS.Timeout | null = null;
       let streamComplete = false;
+      let controllerClosed = false;
+
+      // Helper function to safely close controller
+      const safeClose = () => {
+        if (!controllerClosed) {
+          controllerClosed = true;
+          try {
+            controller.close();
+          } catch {
+            // Controller already closed, ignore
+          }
+        }
+      };
 
       // Set a timeout to detect if streaming stalls after tools
       const resetTimeout = () => {
         if (streamTimeout) clearTimeout(streamTimeout);
         streamTimeout = setTimeout(async () => {
-          if (!streamComplete && !synthesisApplied) {
-            console.log(
-              '🔧 Streaming stalled after tools - applying synthesis...',
-            );
+          if (!streamComplete && !synthesisApplied && !controllerClosed) {
             await applySynthesisIfNeeded(controller);
           }
-          controller.close();
+          safeClose();
         }, synthesisTimeout);
       };
 
@@ -215,10 +218,10 @@ Based on the tool results above, please provide a comprehensive response to the 
           if (done) {
             streamComplete = true;
             if (streamTimeout) clearTimeout(streamTimeout);
-            if (!synthesisApplied) {
+            if (!synthesisApplied && !controllerClosed) {
               await applySynthesisIfNeeded(controller);
             }
-            controller.close();
+            safeClose();
             break;
           }
 
@@ -229,17 +232,23 @@ Based on the tool results above, please provide a comprehensive response to the 
           }
         }
       } catch (error) {
-        controller.error(error);
+        if (!controllerClosed) {
+          controller.error(error);
+        }
       }
     },
   });
 
-  // Return enhanced result with our reliable stream
-  return {
-    ...streamResult,
-    textStream: enhancedTextStream,
-    // Ensure toolCalls and toolResults are available
-    toolCalls: streamResult.toolCalls,
-    toolResults: streamResult.toolResults,
-  };
+  // Return enhanced result with our reliable stream while preserving original prototype methods
+  const enhancedResult = Object.create(
+    Object.getPrototypeOf(streamResult),
+    Object.getOwnPropertyDescriptors(streamResult),
+  ) as typeof streamResult;
+
+  Object.defineProperty(enhancedResult, 'textStream', {
+    get: () => enhancedTextStream,
+    enumerable: true,
+  });
+
+  return enhancedResult;
 }

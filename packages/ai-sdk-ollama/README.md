@@ -32,7 +32,7 @@ console.log(text);
 - ✅ **Solves tool calling problems** - Response synthesis for reliable tool execution
 - ✅ **Enhanced wrapper functions** - `generateText` and `streamText` guarantees complete responses
 - ✅ **Built-in reliability** - Default reliability features enabled automatically
-- ✅ **Cross-provider compatibility** - Drop-in replacement for OpenAI, Anthropic, etc.
+- ✅ **Web search and fetch tools** - Built-in web search and fetch tools powered by [Ollama's web search API](https://ollama.com/blog/web-search). Perfect for getting current information and reducing hallucinations.
 - ✅ **Type-safe** - Full TypeScript support with strict typing
 - ✅ **Cross-environment** - Works in Node.js and browsers automatically
 - ✅ **Native Ollama power** - Access advanced features like `mirostat`, `repeat_penalty`, `num_ctx`
@@ -48,16 +48,71 @@ import { generateText, streamText } from 'ai-sdk-ollama';
 // ✅ Enhanced generateText - guaranteed complete responses
 const { text } = await generateText({
   model: ollama('llama3.2'),
-  tools: { /* your tools */ },
-  prompt: 'Use the tools and explain the results'
+  tools: {
+    /* your tools */
+  },
+  prompt: 'Use the tools and explain the results',
 });
 
 // ✅ Enhanced streaming - tool-aware streaming
 const { textStream } = await streamText({
   model: ollama('llama3.2'),
-  tools: { /* your tools */ },
-  prompt: 'Stream with tools'
+  tools: {
+    /* your tools */
+  },
+  prompt: 'Stream with tools',
 });
+```
+
+## Web Search Tools
+
+> **🌐 New in v0.9.0**: Built-in web search and fetch tools powered by [Ollama's web search API](https://ollama.com/blog/web-search). Perfect for getting current information and reducing hallucinations.
+
+```typescript
+import { generateText } from 'ai';
+import { ollama } from 'ai-sdk-ollama';
+
+// 🔍 Web search for current information
+const { text } = await generateText({
+  model: ollama('qwen3-coder:480b-cloud'), // Cloud models recommended for web search
+  prompt: 'What are the latest developments in AI this week?',
+  tools: {
+    webSearch: ollama.tools.webSearch({ maxResults: 5 }),
+  },
+});
+
+// 📄 Fetch specific web content
+const { text: summary } = await generateText({
+  model: ollama('gpt-oss:120b-cloud'),
+  prompt: 'Summarize this article: https://example.com/article',
+  tools: {
+    webFetch: ollama.tools.webFetch({ maxContentLength: 5000 }),
+  },
+});
+
+// 🔄 Combine search and fetch for comprehensive research
+const { text: research } = await generateText({
+  model: ollama('gpt-oss:120b-cloud'),
+  prompt: 'Research recent TypeScript updates and provide a detailed analysis',
+  tools: {
+    webSearch: ollama.tools.webSearch({ maxResults: 3 }),
+    webFetch: ollama.tools.webFetch(),
+  },
+});
+```
+
+### Web Search Prerequisites
+
+1. **Ollama API Key**: Set `OLLAMA_API_KEY` environment variable
+2. **Cloud Models**: Use cloud models for optimal web search performance:
+   - `qwen3-coder:480b-cloud` - Best for general web search
+   - `gpt-oss:120b-cloud` - Best for complex reasoning with web data
+
+```bash
+# Set your API key
+export OLLAMA_API_KEY="your_api_key_here"
+
+# Get your API key from: https://ollama.com/account
 ```
 
 ## Contents
@@ -66,6 +121,8 @@ const { textStream } = await streamText({
   - [Quick Start](#quick-start)
   - [Why Choose AI SDK Ollama?](#why-choose-ai-sdk-ollama)
   - [Enhanced Tool Calling](#enhanced-tool-calling)
+  - [Web Search Tools](#web-search-tools)
+    - [Web Search Prerequisites](#web-search-prerequisites)
   - [Contents](#contents)
   - [Prerequisites](#prerequisites)
   - [Browser Support](#browser-support)
@@ -256,7 +313,7 @@ console.log(result.text); // "15 + 27 equals 42. Using the math tool, I calculat
 
 **Standard vs Enhanced Comparison:**
 
-| Function                   | Standard `generateText`   | Enhanced `generateText`        |
+| Function                   | Standard `generateText`   | Enhanced `generateText`              |
 | -------------------------- | ------------------------- | ------------------------------------ |
 | **Simple prompts**         | ✅ Perfect                | ✅ Works (slight overhead)           |
 | **Tool calling**           | ⚠️ May return empty text  | ✅ **Guarantees complete responses** |
@@ -444,6 +501,7 @@ Works with any model in your Ollama installation:
 - **Vision**: `llava`, `bakllava`, `llama3.2-vision`, `minicpm-v`
 - **Embeddings**: `nomic-embed-text`, `all-minilm`, `mxbai-embed-large`
 - **Reasoning**: `deepseek-r1:7b`, `deepseek-r1:1.5b`, `deepseek-r1:8b`
+- **Cloud Models** (for web search): `qwen3-coder:480b-cloud`, `gpt-oss:120b-cloud`
 
 ## Testing
 
@@ -466,17 +524,19 @@ For detailed testing information, see [Integration Tests Documentation](./src/in
 
 ## Learn More
 
-📚 **[Examples Directory](./examples/)** - Comprehensive usage patterns with real working code
+📚 **[Examples Directory](../../examples/)** - Comprehensive usage patterns with real working code
 
-🚀 **[Quick Start Guide](./examples/basic-chat.ts)** - Get running in 2 minutes
+🚀 **[Quick Start Guide](../../examples/node/src/basic-chat.ts)** - Get running in 2 minutes
 
-⚙️ **[Dual Parameters Demo](./examples/dual-parameter-example.ts)** - See the key feature in action
+⚙️ **[Dual Parameters Demo](../../examples/node/src/dual-parameter-example.ts)** - See the key feature in action
 
-🔧 **[Tool Calling Guide](./examples/tool-calling-example.ts)** - Function calling with Ollama
+🔧 **[Tool Calling Guide](../../examples/node/src/simple-tool-test.ts)** - Function calling with Ollama
 
-🖼️ **[Image Processing Guide](./examples/image-handling-example.ts)** - Vision models with LLaVA
+🖼️ **[Image Processing Guide](../../examples/node/src/image-handling-example.ts)** - Vision models with LLaVA
 
-📡 **[Streaming Examples](./examples/streaming-simple-test.ts)** - Real-time responses
+📡 **[Streaming Examples](../../examples/node/src/streaming-simple-test.ts)** - Real-time responses
+
+🌐 **[Web Search Tools](../../examples/node/src/web-search-example.ts)** - Web search and fetch capabilities
 
 ## License
 

@@ -3,6 +3,7 @@ import { NoSuchModelError } from '@ai-sdk/provider';
 import { Ollama } from 'ollama/browser';
 import { OllamaChatLanguageModel } from './models/chat-language-model';
 import { OllamaEmbeddingModel } from './models/embedding-model';
+import { ollamaTools } from './ollama-tools';
 
 // Re-export all the types
 export type {
@@ -33,7 +34,8 @@ export function createOllama(
     host: options.baseURL,
     fetch: options.fetch,
     headers: options.headers,
-  }) as any; // Cast to any to bypass type checking differences
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  }) as any; // Cast to bypass type checking differences between browser and node versions
 
   const createChatModel = (
     modelId: string,
@@ -76,6 +78,14 @@ export function createOllama(
       message: 'Image generation is not supported by Ollama',
     });
   };
+
+  // Create tools with the Ollama client injected
+  const toolsWithClient = {
+    webSearch: (options = {}) => ollamaTools.webSearch({ ...options, client }),
+    webFetch: (options = {}) => ollamaTools.webFetch({ ...options, client }),
+  };
+
+  provider.tools = toolsWithClient;
 
   return provider as OllamaProvider;
 }

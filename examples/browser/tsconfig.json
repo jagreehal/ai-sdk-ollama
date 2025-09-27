@@ -13,11 +13,21 @@
     "isolatedModules": true,
     "noEmit": true,
 
+    /* JSX Support */
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+
+    /* Path mapping for shadcn/ui */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    },
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["main.ts"]
+  "include": ["main.ts", "components/**/*", "src/**/*"]
 }
