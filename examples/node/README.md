@@ -182,6 +182,56 @@ This example demonstrates how to use an existing Ollama client instance with the
 npx tsx examples/existing-client-example.ts
 ```
 
+## 🌐 **Web Search Examples**
+
+### **web-search-example.ts** - AI SDK Web Search Integration
+
+This example demonstrates how to use Ollama's web search capabilities with the AI SDK
+
+- Basic web search for current information
+- Combining web search and web fetch
+- Streaming with web search
+- Error handling and fallback behavior
+- Tool integration with AI SDK
+
+**Prerequisites**: Set `OLLAMA_API_KEY` environment variable
+
+```bash
+npx tsx examples/web-search-example.ts [basic|combined|streaming|error]
+```
+
+### **simple-web-search-examples.ts** - Direct Ollama Web Search
+
+This example provides direct implementations matching the official Ollama web search blog post patterns
+
+- Basic web search (exact match to blog post)
+- Web fetch for specific URLs
+- Simple search agent pattern
+- Direct Ollama JavaScript library usage
+
+**Prerequisites**: Set `OLLAMA_API_KEY` environment variable
+
+```bash
+npx tsx examples/simple-web-search-examples.ts [basic|fetch|agent|all]
+```
+
+### **ollama-web-search-examples.ts** - Advanced Search Agent
+
+This example demonstrates advanced search agent patterns with multi-turn interactions
+
+- Multi-turn search agent conversations
+- Tool integration with web search and fetch
+- Error handling and graceful degradation
+- Complex reasoning with search results
+
+**Prerequisites**: Set `OLLAMA_API_KEY` environment variable
+
+```bash
+npx tsx examples/ollama-web-search-examples.ts [basic|agent|fetch|error|all]
+```
+
+**Note**: Web search examples require an Ollama API key. Get yours from [ollama.com/account](https://ollama.com/account)
+
 ## Key Features Demonstrated
 
 ### Dual Parameter Support

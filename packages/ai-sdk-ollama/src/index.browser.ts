@@ -30,7 +30,4 @@ export {
   type GenerateTextOptions,
 } from './functions/generate-text';
 
-export {
-  streamText,
-  type StreamTextOptions,
-} from './functions/stream-text';
+export { streamText, type StreamTextOptions } from './functions/stream-text';

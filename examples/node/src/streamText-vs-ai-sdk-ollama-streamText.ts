@@ -127,7 +127,7 @@ async function testStandardStreamText(scenario: typeof streamScenarios[number]):
     const result = await streamText({
       model: ollama('llama3.2'),
       prompt: scenario.prompt,
-      tools: scenario.tools,
+      tools: scenario.tools as any,
     });
 
     let streamedText = '';
@@ -177,7 +177,7 @@ async function testStreamTextOllama(scenario: typeof streamScenarios[number]): P
     const result = await streamTextOllama({
       model: ollama('llama3.2'),
       prompt: scenario.prompt,
-      tools: scenario.tools,
+      tools: scenario.tools as any,
     });
 
     let streamedText = '';
