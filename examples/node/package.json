@@ -7,14 +7,14 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "ai": "^5.0.56",
+    "ai": "^5.0.57",
     "ai-sdk-ollama": "workspace:*",
     "dotenv": "^17.2.2",
     "ollama": "^0.6.0",
     "zod": "^4.1.11"
   },
   "devDependencies": {
-    "@types/node": "^24.5.2",
+    "@types/node": "^24.6.0",
     "rimraf": "^6.0.1",
     "tsx": "^4.20.6",
     "typescript": "^5.9.2"

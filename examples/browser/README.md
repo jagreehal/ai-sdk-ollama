@@ -1,13 +1,13 @@
 # AI SDK Ollama Browser Example
 
-A comprehensive, modern browser example demonstrating the ai-sdk-ollama provider with a beautiful UI and full Playwright test coverage.
+A modern React-based browser example demonstrating the ai-sdk-ollama provider with AI Elements and shadcn/ui components.
 
-- ✅ Browser-compatible Ollama client using `ollama/browser`
-- ✅ Text generation with `generateText()`
-- ✅ Streaming text with `streamText()`
-- ✅ Model configuration and parameter customization
-- ✅ Real-time model loading from Ollama API
-- ✅ Error handling and status updates
+- ✅ **React + AI Elements**: Modern component-based architecture
+- ✅ **AI SDK Integration**: Uses `useChat` hook with `toUIMessageStreamResponse`
+- ✅ **UI**: shadcn/ui components with Tailwind CSS
+- ✅ **Real-time Streaming**: Live text streaming with proper UI message handling
+- ✅ **Model Management**: Dynamic model loading and selection
+- ✅ **TypeScript**: Full type safety and IntelliSense support
 
 ## 📋 Prerequisites
 
@@ -54,52 +54,67 @@ The example will be available at **http://localhost:3000/** (port may vary if 30
 
 ## 💻 How It Works
 
-### Browser-Optimized Architecture
+### React + AI Elements Architecture
 
-The example uses the browser-specific build of ai-sdk-ollama with automatic environment detection:
+The example uses React with AI Elements for a modern, component-based approach:
 
-```javascript
-import { createOllama } from 'ai-sdk-ollama';
-import { generateText, streamText } from 'ai';
+```tsx
+import { useChat } from '@ai-sdk/react';
+import { Conversation, ConversationContent } from './components/ai-elements/conversation';
+import { Message, MessageContent } from './components/ai-elements/message';
+import { PromptInput, PromptInputTextarea } from './components/ai-elements/prompt-input';
 
-// Automatically uses 'ollama/browser' in browser environments
-const ollama = createOllama({
-  baseURL: window.location.origin, // Uses Vite proxy
-});
-
-// Works exactly like the Node.js version
-const { text } = await generateText({
-  model: ollama('llama3.2'),
-  prompt: 'Write a haiku about coding',
-  temperature: 0.7,
-  maxOutputTokens: 500,
-});
+function App() {
+  const { messages, sendMessage, status } = useChat();
+  
+  return (
+    <Conversation>
+      <ConversationContent>
+        {messages.map((message) => (
+          <Message key={message.id} from={message.role}>
+            <MessageContent>{message.content}</MessageContent>
+          </Message>
+        ))}
+      </ConversationContent>
+      <PromptInput onSubmit={handleSubmit}>
+        <PromptInputTextarea placeholder="Enter your message..." />
+      </PromptInput>
+    </Conversation>
+  );
+}
 ```
 
-### Vite Proxy Configuration
+### API Integration with AI Elements
 
-The included `vite.config.js` automatically handles CORS by proxying API requests:
+The example uses a custom Vite plugin to handle API routes with proper `toUIMessageStreamResponse`:
 
 ```javascript
-export default defineConfig({
-  server: {
-    port: 3000,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:11434',
-        changeOrigin: true,
-        secure: false,
-      },
+// vite-api-plugin.ts
+export function apiPlugin(): Plugin {
+  return {
+    name: 'api-plugin',
+    configureServer(server) {
+      server.middlewares.use('/api/chat', async (req, res, next) => {
+        const result = await streamText({
+          model: ollama(model),
+          messages: convertToModelMessages(messages),
+        });
+        
+        // Use AI Elements' toUIMessageStreamResponse
+        const response = result.toUIMessageStreamResponse();
+        // Forward response...
+      });
     },
-  },
-});
+  };
+}
 ```
 
-This means:
+This provides:
 
-- No need for `OLLAMA_ORIGINS=*` configuration
-- Seamless development experience
-- Production-ready proxy setup
+- **AI Elements Compatibility**: Proper `toUIMessageStreamResponse` integration
+- **Real-time Streaming**: Live UI message streaming
+- **No CORS Issues**: Seamless development experience
+- **Type Safety**: Full TypeScript support
 
 ## 🌐 Browser vs Node.js
 
