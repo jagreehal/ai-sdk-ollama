@@ -1,9 +1,13 @@
 import { defineConfig } from 'vite';
 import path from 'path';
 import tailwindcss from '@tailwindcss/vite';
+import { apiPlugin } from './vite-api-plugin';
 
 export default defineConfig({
-  plugins: [tailwindcss()],
+  plugins: [
+    tailwindcss(),
+    apiPlugin(),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./"),
@@ -13,11 +17,10 @@ export default defineConfig({
     port: 3000,
     // Proxy API requests to Ollama to avoid CORS issues
     proxy: {
-      '/api': {
+      '/api/tags': {
         target: 'http://localhost:11434',
         changeOrigin: true,
         secure: false,
-        // Don't rewrite the path - Ollama needs the full /api/* path
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
             console.log('Proxy error:', err);
@@ -30,6 +33,6 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['ai', 'ai-sdk-ollama']
+    include: ['ai', 'ai-sdk-ollama', 'react', 'react-dom', '@ai-sdk/react']
   }
 });
