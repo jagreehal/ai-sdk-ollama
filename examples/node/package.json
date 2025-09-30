@@ -9,7 +9,7 @@
   "dependencies": {
     "ai": "^5.0.57",
     "ai-sdk-ollama": "workspace:*",
-    "dotenv": "^17.2.2",
+    "dotenv": "^17.2.3",
     "ollama": "^0.6.0",
     "zod": "^4.1.11"
   },
