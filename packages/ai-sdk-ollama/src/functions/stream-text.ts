@@ -137,13 +137,26 @@ Based on the tool results above, please provide a comprehensive response to the 
 
       try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { tools, prompt, ...baseOptions } =
+        const { tools, prompt, messages, ...baseOptions } =
           streamTextOptions as Parameters<typeof _streamText>[0];
 
-        const synthesisStream = await _streamText({
-          ...baseOptions,
-          prompt: synthesisPrompt,
-        } as Parameters<typeof _streamText>[0]);
+        // Use messages pattern if original call used messages, otherwise use prompt
+        const synthesisOptions = messages
+          ? {
+              ...baseOptions,
+              messages: [
+                ...(messages || []),
+                { role: 'user' as const, content: synthesisPrompt },
+              ],
+            }
+          : {
+              ...baseOptions,
+              prompt: synthesisPrompt,
+            };
+
+        const synthesisStream = await _streamText(
+          synthesisOptions as Parameters<typeof _streamText>[0],
+        );
 
         // Stream the synthesis response in real-time
         const reader = synthesisStream.textStream.getReader();

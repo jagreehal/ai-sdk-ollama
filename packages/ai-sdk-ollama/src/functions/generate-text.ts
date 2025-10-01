@@ -107,12 +107,27 @@ ${toolContext}
 
 ${synthesisPrompt}`;
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { tools, prompt, messages, ...baseOptions } = generateTextOptions as Parameters<typeof _generateText>[0];
+
+      // Use messages pattern if original call used messages, otherwise use prompt
+      const synthesisOptions = messages
+        ? {
+            ...baseOptions,
+            messages: [
+              ...(messages || []),
+              { role: 'user' as const, content: fullSynthesisPrompt },
+            ],
+          }
+        : {
+            ...baseOptions,
+            prompt: fullSynthesisPrompt,
+          };
+
       // Generate synthesis response
-      const synthesisResult = await _generateText({
-        ...generateTextOptions,
-        prompt: fullSynthesisPrompt,
-        tools: undefined, // Don't use tools for synthesis
-      } as Parameters<typeof _generateText>[0]);
+      const synthesisResult = await _generateText(
+        synthesisOptions as Parameters<typeof _generateText>[0],
+      );
 
       if (
         synthesisResult.text &&
