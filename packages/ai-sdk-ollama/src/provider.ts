@@ -10,6 +10,7 @@ import { OllamaEmbeddingModel } from './models/embedding-model';
 import { ollamaTools } from './ollama-tools';
 import type { WebSearchToolOptions } from './tool/web-search';
 import type { WebFetchToolOptions } from './tool/web-fetch';
+import type { ObjectGenerationOptions } from './utils/object-generation-reliability';
 
 // Extend Ollama Options to include missing parameters
 export interface Options extends OllamaOptions {
@@ -164,39 +165,9 @@ export interface OllamaChatSettings {
   /**
    * Object generation reliability options. These override the sensible defaults used by the
    * built-in reliability layer (maxRetries=3, attemptRecovery=true, useFallbacks=true,
-   * fixTypeMismatches=true).
+   * fixTypeMismatches=true, enableTextRepair=true).
    */
-  objectGenerationOptions?: {
-    /**
-     * Maximum number of retry attempts for object generation
-     */
-    maxRetries?: number;
-
-    /**
-     * Whether to attempt schema recovery when validation fails
-     */
-    attemptRecovery?: boolean;
-
-    /**
-     * Whether to use fallback values for failed generations
-     */
-    useFallbacks?: boolean;
-
-    /**
-     * Custom fallback values for specific fields
-     */
-    fallbackValues?: Record<string, unknown>;
-
-    /**
-     * Timeout for object generation in milliseconds
-     */
-    generationTimeout?: number;
-
-    /**
-     * Whether to validate and fix type mismatches
-     */
-    fixTypeMismatches?: boolean;
-  };
+  objectGenerationOptions?: ObjectGenerationOptions;
 
   /**
    * Additional model parameters - re-exported from ollama-js
