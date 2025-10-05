@@ -22,10 +22,10 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.7",
-    "@eslint/js": "^9.36.0",
+    "@eslint/js": "^9.37.0",
     "@typescript-eslint/eslint-plugin": "^8.45.0",
     "@typescript-eslint/parser": "^8.45.0",
-    "eslint": "^9.36.0",
+    "eslint": "^9.37.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-unicorn": "^61.0.2",
     "prettier": "^3.6.2",
@@ -36,11 +36,24 @@
     "node": ">=22",
     "pnpm": ">=8"
   },
-  "packageManager": "pnpm@10.17.1",
+  "packageManager": "pnpm@10.18.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jagreehal/ai-sdk-ollama.git"
   },
-  "author": "Jag Reehal<jag@jagreehal.com> (https://jagreehal.com)",
-  "license": "MIT"
+  "author": "Jag Reehal <jag@jagreehal.com> (https://jagreehal.com)",
+  "license": "MIT",
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
+  },
+  "dependencies": {
+    "eslint-scope": "^8.4.0",
+    "eslint-visitor-keys": "^4.2.1"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/jagreehal/ai-sdk-ollama/issues"
+  },
+  "homepage": "https://github.com/jagreehal/ai-sdk-ollama#readme"
 }

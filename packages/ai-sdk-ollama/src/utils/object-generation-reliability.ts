@@ -89,11 +89,16 @@ export interface ObjectGenerationOptions {
 
   /**
    * Custom repair function for malformed JSON or validation errors
+   * If provided, this will be used instead of the default jsonrepair
    */
   repairText?: RepairTextFunction;
 
   /**
-   * Whether to enable built-in text repair for common JSON issues
+   * Whether to enable automatic JSON repair for malformed LLM outputs
+   * Default: true (enabled by default for better reliability)
+   * Handles 14+ types of JSON issues including Python constants, JSONP, comments,
+   * escaped quotes, URLs in strings, trailing commas, unquoted keys, etc.
+   * Set to false to disable all automatic repair
    */
   enableTextRepair?: boolean;
 }
@@ -125,7 +130,7 @@ const DEFAULT_OBJECT_GENERATION_OPTIONS: Required<
   attemptRecovery: true,
   useFallbacks: true,
   fixTypeMismatches: true,
-  enableTextRepair: true,
+  enableTextRepair: true, // Enabled by default
 };
 
 export function resolveObjectGenerationOptions(
@@ -403,6 +408,237 @@ export function fixTypeMismatches(
 }
 
 /**
+ * Handles common JSON issues from LLM outputs
+ */
+export async function enhancedRepairText(options: {
+  text: string;
+  error: Error;
+  schema?: JSONSchema7 | unknown;
+}): Promise<string | null> {
+  const { text } = options;
+  let repaired = text.trim();
+
+  try {
+    // 1. Extract JSON from markdown code blocks
+    const codeBlockMatch = repaired.match(
+      /```(?:json|javascript|js)?\s*(\{[\s\S]*?\}|\[[\s\S]*?\])\s*```/i,
+    );
+    if (codeBlockMatch && codeBlockMatch[1]) {
+      repaired = codeBlockMatch[1].trim();
+    }
+
+    // 2. Remove JSONP notation like callback({...})
+    repaired = repaired.replace(/^\w+\s*\((.*)\)\s*;?$/s, '$1');
+
+    // 3. Remove comments (// and /* */) but preserve them inside strings
+    // First remove block comments /* ... */ (these are safer to remove globally)
+    repaired = repaired.replaceAll(/\/\*[\s\S]*?\*\//g, '');
+
+    // For line comments, we need to be more careful to not remove // inside strings
+    // Split by lines and process each line
+    repaired = repaired.split('\n').map(line => {
+      // Walk through the line character by character to find the FIRST // that's OUTSIDE a string
+      let inSingleQuote = false;
+      let inDoubleQuote = false;
+      let escaped = false;
+      let commentStart = -1;
+
+      for (let i = 0; i < line.length - 1; i++) {
+        const char = line[i];
+        const nextChar = line[i + 1];
+
+        if (escaped) {
+          // Skip this character, it's escaped
+          escaped = false;
+          continue;
+        }
+
+        if (char === '\\') {
+          // Next character will be escaped
+          escaped = true;
+          continue;
+        }
+
+        // Track quote state
+        if (char === "'" && !inDoubleQuote) {
+          inSingleQuote = !inSingleQuote;
+        } else if (char === '"' && !inSingleQuote) {
+          inDoubleQuote = !inDoubleQuote;
+        }
+
+        // Check for // when we're NOT inside a string
+        if (char === '/' && nextChar === '/' && !inSingleQuote && !inDoubleQuote) {
+          commentStart = i;
+          break;
+        }
+      }
+
+      // If we found a comment outside of strings, remove it
+      if (commentStart !== -1) {
+        return line.slice(0, commentStart).trimEnd();
+      }
+
+      return line;
+    }).join('\n');
+
+    // 4. Replace Python constants
+    repaired = repaired.replaceAll(/\bNone\b/g, 'null');
+    repaired = repaired.replaceAll(/\bTrue\b/g, 'true');
+    repaired = repaired.replaceAll(/\bFalse\b/g, 'false');
+
+    // 5. Replace smart quotes with regular quotes
+    // Replace various forms of single quotes
+    repaired = repaired.replaceAll(/[\u2018\u2019\u0060\u00B4]/g, "'");
+    // Replace curly double quotes with regular double quotes
+    repaired = repaired.replaceAll(/[\u201C\u201D]/g, '"');
+
+    // 6. Fix single quotes to double quotes (for keys and string values)
+    // Walk through and convert single-quoted strings to double-quoted
+    // This properly handles escaped quotes and doesn't touch single quotes inside double-quoted strings
+    let result = '';
+    let i = 0;
+    let inDoubleQuote = false;
+    let escaped = false;
+
+    while (i < repaired.length) {
+      const char = repaired[i];
+
+      // Handle escape sequences
+      if (escaped) {
+        result += '\\' + char;
+        escaped = false;
+        i++;
+        continue;
+      }
+
+      if (char === '\\') {
+        escaped = true;
+        i++;
+        continue;
+      }
+
+      // Track when we're inside double-quoted strings
+      if (char === '"' && !escaped) {
+        inDoubleQuote = !inDoubleQuote;
+        result += char;
+        i++;
+        continue;
+      }
+
+      // Only convert single quotes when we're NOT inside a double-quoted string
+      if (char === "'" && !inDoubleQuote) {
+        // Start of single-quoted string - convert to double quotes
+        result += '"';
+        i++;
+        let singleQuoteEscaped = false;
+        while (i < repaired.length) {
+          const innerChar = repaired[i];
+
+          if (singleQuoteEscaped) {
+            // Keep escaped characters, but change \' to just '
+            result +=
+              innerChar === "'"
+                ? "'" // Don't need to escape single quote in double-quoted string
+                : '\\' + innerChar;
+            singleQuoteEscaped = false;
+            i++;
+            continue;
+          }
+
+          if (innerChar === '\\') {
+            singleQuoteEscaped = true;
+            i++;
+            continue;
+          }
+
+          if (innerChar === "'") {
+            // End of single-quoted string
+            result += '"';
+            i++;
+            break;
+          }
+
+          // Need to escape double quotes when converting from single to double quotes
+          result += innerChar === '"' ? String.raw`\"` : innerChar;
+          i++;
+        }
+        continue;
+      }
+
+      // Regular character
+      result += char;
+      i++;
+    }
+    repaired = result;
+
+    // 7. Fix unquoted keys
+    repaired = repaired.replaceAll(
+      /([{,]\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:/g,
+      '$1"$2":',
+    );
+
+    // 8. Remove trailing commas before closing braces/brackets
+    repaired = repaired.replaceAll(/,(\s*[}\]])/g, '$1');
+
+    // 9. Remove leading commas after opening braces/brackets
+    repaired = repaired.replaceAll(/([{[]\s*),/g, '$1');
+
+    // 10. Fix special whitespace characters (non-breaking space, etc.)
+    repaired = repaired.replaceAll(/[\u00A0\u2000-\u200A\u202F\u205F\u3000]/g, ' ');
+
+    // 11. Handle common ellipsis patterns [...] or {...} that models sometimes add
+    repaired = repaired.replaceAll(/,?\s*\.\.\.[\s,]*/g, '');
+
+    // 12. Fix incomplete objects - count and balance braces
+    const openBraces = (repaired.match(/\{/g) || []).length;
+    const closeBraces = (repaired.match(/\}/g) || []).length;
+    if (openBraces > closeBraces) {
+      repaired += '}'.repeat(openBraces - closeBraces);
+    }
+
+    // 13. Fix incomplete arrays - count and balance brackets
+    const openBrackets = (repaired.match(/\[/g) || []).length;
+    const closeBrackets = (repaired.match(/\]/g) || []).length;
+    if (openBrackets > closeBrackets) {
+      repaired += ']'.repeat(openBrackets - closeBrackets);
+    }
+
+    // 14. Validate the repaired JSON
+    JSON.parse(repaired);
+    return repaired;
+  } catch {
+    // If enhanced repair fails, try basic extraction
+    try {
+      // Extract the first valid JSON object or array
+      const jsonMatch = text.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+      if (jsonMatch) {
+        let extracted = jsonMatch[0];
+
+        // Apply basic fixes
+        extracted = extracted.replaceAll(/,(\s*[}\]])/g, '$1');
+        extracted = extracted.replaceAll('\'', '"');
+        extracted = extracted.replaceAll(/([{,]\s*)([a-zA-Z_$]\w*)\s*:/g, '$1"$2":');
+
+        // Balance braces
+        const openBraces = (extracted.match(/\{/g) || []).length;
+        const closeBraces = (extracted.match(/\}/g) || []).length;
+        if (openBraces > closeBraces) {
+          extracted += '}'.repeat(openBraces - closeBraces);
+        }
+
+        JSON.parse(extracted);
+        return extracted;
+      }
+    } catch {
+      // All repair attempts failed
+      return null;
+    }
+  }
+
+  return null;
+}
+
+/**
  * Built-in text repair function for common JSON and Ollama output issues
  */
 export async function builtInRepairText(options: {
@@ -475,6 +711,26 @@ export async function builtInRepairText(options: {
 }
 
 /**
+ * Get the appropriate repair function based on options
+ */
+export function getRepairFunction(
+  options: ObjectGenerationOptions = {},
+): RepairTextFunction | undefined {
+  // If custom repair function is provided, use it
+  if (options.repairText) {
+    return options.repairText;
+  }
+
+  // If text repair is disabled, return undefined
+  if (options.enableTextRepair === false) {
+    return undefined;
+  }
+
+  // Use enhanced repair by default
+  return enhancedRepairText;
+}
+
+/**
  * Parse JSON with repair functionality
  */
 export async function parseJSONWithRepair(
@@ -532,9 +788,7 @@ export async function attemptSchemaRecovery(
   let wasRepaired = false;
 
   if (typeof rawObject === 'string') {
-    const repairFunction =
-      options.repairText ||
-      (options.enableTextRepair ? builtInRepairText : undefined);
+    const repairFunction = getRepairFunction(options);
     const parseResult = await parseJSONWithRepair(
       rawObject,
       repairFunction,

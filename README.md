@@ -32,6 +32,7 @@ console.log(text);
 - ✅ **Solves tool calling problems** - Response synthesis for reliable tool execution
 - ✅ **Enhanced wrapper functions** - `generateText` and `streamText` guarantees complete responses
 - ✅ **Built-in reliability** - Default reliability features enabled automatically
+- ✅ **Automatic JSON repair** - Fixes malformed JSON from LLM outputs (trailing commas, comments, URLs, Python constants, etc.)
 - ✅ **Web search and fetch tools** - Built-in web search and fetch tools powered by [Ollama's web search API](https://ollama.com/blog/web-search). Perfect for getting current information and reducing hallucinations.
 - ✅ **Type-safe** - Full TypeScript support with strict typing
 - ✅ **Cross-environment** - Works in Node.js and browsers automatically

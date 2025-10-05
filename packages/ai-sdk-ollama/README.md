@@ -32,6 +32,7 @@ console.log(text);
 - ✅ **Solves tool calling problems** - Response synthesis for reliable tool execution
 - ✅ **Enhanced wrapper functions** - `generateText` and `streamText` guarantees complete responses
 - ✅ **Built-in reliability** - Default reliability features enabled automatically
+- ✅ **Automatic JSON repair** - Fixes 14+ types of malformed JSON from LLM outputs (trailing commas, comments, URLs, Python constants, etc.)
 - ✅ **Web search and fetch tools** - Built-in web search and fetch tools powered by [Ollama's web search API](https://ollama.com/blog/web-search). Perfect for getting current information and reducing hallucinations.
 - ✅ **Type-safe** - Full TypeScript support with strict typing
 - ✅ **Cross-environment** - Works in Node.js and browsers automatically
@@ -139,6 +140,7 @@ export OLLAMA_API_KEY="your_api_key_here"
     - [Using Existing Ollama Client](#using-existing-ollama-client)
     - [Structured Output](#structured-output)
     - [Auto-Detection of Structured Outputs](#auto-detection-of-structured-outputs)
+    - [Automatic JSON Repair](#automatic-json-repair)
     - [Reasoning Support](#reasoning-support)
   - [Common Issues](#common-issues)
   - [Supported Models](#supported-models)
@@ -439,6 +441,83 @@ const { object } = await generateObject({
 const { text } = await generateText({
   model: ollama('llama3.2', { structuredOutputs: true }),
   prompt: 'Generate JSON with a message field',
+});
+```
+
+### Automatic JSON Repair
+
+> **🔧 Enhanced Reliability**: Built-in JSON repair automatically fixes malformed LLM outputs for object generation.
+
+The provider includes automatic JSON repair that handles 14+ types of common JSON issues from LLM outputs:
+
+```typescript
+import { generateObject } from 'ai';
+import { z } from 'zod';
+
+// JSON repair is enabled by default for all object generation
+const { object } = await generateObject({
+  model: ollama('llama3.2'),
+  schema: z.object({
+    name: z.string(),
+    email: z.string().email(),
+    age: z.number(),
+  }),
+  prompt: 'Generate a person profile',
+  // reliableObjectGeneration: true is the default
+});
+
+// Automatically handles:
+// ✅ Trailing commas: {"name": "John",}
+// ✅ Single quotes: {'name': 'John'}
+// ✅ Unquoted keys: {name: "John"}
+// ✅ Python constants: {active: True, value: None}
+// ✅ Comments: {"name": "John" // comment}
+// ✅ URLs in strings: {"url": "https://example.com" // comment}
+// ✅ Escaped quotes: {"text": "It's // fine"}
+// ✅ JSONP wrappers: callback({"name": "John"})
+// ✅ Markdown code blocks: ```json\n{...}\n```
+// ✅ Incomplete objects/arrays
+// ✅ Smart quotes and special characters
+// ✅ And more...
+```
+
+**Control Options:**
+
+```typescript
+// Disable all reliability features (not recommended)
+const { object } = await generateObject({
+  model: ollama('llama3.2', {
+    reliableObjectGeneration: false, // Everything off
+  }),
+  schema: z.object({ message: z.string() }),
+  prompt: 'Generate a message',
+});
+
+// Fine-grained control: disable only repair, keep retries
+const { object: withRetries } = await generateObject({
+  model: ollama('llama3.2', {
+    reliableObjectGeneration: true,
+    objectGenerationOptions: {
+      enableTextRepair: false, // Disable repair only
+      maxRetries: 3, // But keep retries
+    },
+  }),
+  schema: z.object({ message: z.string() }),
+  prompt: 'Generate a message',
+});
+
+// Custom repair function (advanced)
+const { object: custom } = await generateObject({
+  model: ollama('llama3.2', {
+    objectGenerationOptions: {
+      repairText: async ({ text, error }) => {
+        // Your custom repair logic
+        return text.replace(/,(\s*[}\]])/g, '$1');
+      },
+    },
+  }),
+  schema: z.object({ message: z.string() }),
+  prompt: 'Generate a message',
 });
 ```
 
