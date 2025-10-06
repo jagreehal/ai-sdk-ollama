@@ -271,4 +271,7 @@ async function runAllStreamingTests() {
 }
 
 // Run all tests
-runAllStreamingTests().catch(console.error);
+runAllStreamingTests().catch((error) => {
+  console.error('Streaming tests failed:', error);
+  process.exit(1);
+});

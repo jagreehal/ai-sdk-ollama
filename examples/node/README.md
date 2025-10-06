@@ -71,6 +71,19 @@ This example demonstrates tool calling with Ollama models
 npx tsx examples/tool-calling-example.ts
 ```
 
+### **test-enhanced-structured-output.ts** - Advanced Tool + Structured Output
+
+This example demonstrates the `enableToolsWithStructuredOutput` feature
+
+- Standard behavior: tools bypassed when using experimental_output
+- Enhanced behavior: tools called AND structured output generated
+- Comparison between standard and enhanced modes
+- Real data from tools used in structured output
+
+```bash
+npx tsx examples/test-enhanced-structured-output.ts
+```
+
 ### **image-handling-example.ts** - Image Processing
 
 This example demonstrates image handling capabilities with AI SDK v5 format

@@ -37,7 +37,11 @@ async function minimalStreamTest() {
 
   } catch (error) {
     console.log(`Error: ${error}`);
+    throw error;
   }
 }
 
-minimalStreamTest();
+minimalStreamTest().catch((error) => {
+  console.error('Minimal stream test failed:', error);
+  process.exit(1);
+});

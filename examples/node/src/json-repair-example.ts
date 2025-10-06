@@ -134,4 +134,7 @@ async function main() {
   }
 }
 
-main();
+main().catch((error) => {
+  console.error('JSON repair example failed:', error);
+  process.exit(1);
+});

@@ -1,6 +1,7 @@
 // Browser-specific provider that uses ollama/browser
 import { NoSuchModelError } from '@ai-sdk/provider';
-import { Ollama } from 'ollama/browser';
+import { Ollama as OllamaBrowser } from 'ollama/browser';
+import type { Ollama } from 'ollama';
 import { OllamaChatLanguageModel } from './models/chat-language-model';
 import { OllamaEmbeddingModel } from './models/embedding-model';
 import { ollamaTools } from './ollama-tools';
@@ -30,12 +31,13 @@ import type {
 export function createOllama(
   options: OllamaProviderSettings = {},
 ): OllamaProvider {
-  const client = new Ollama({
+  // Create browser-compatible Ollama client
+  // Cast to Ollama type for compatibility with shared model code
+  const client = new OllamaBrowser({
     host: options.baseURL,
     fetch: options.fetch,
     headers: options.headers,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }) as any; // Cast to bypass type checking differences between browser and node versions
+  }) as unknown as Ollama;
 
   const createChatModel = (
     modelId: string,
