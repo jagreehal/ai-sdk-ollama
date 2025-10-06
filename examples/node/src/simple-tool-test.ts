@@ -40,8 +40,12 @@ async function testNonStreamingTools() {
 
     } catch (error) {
       console.log(`   ❌ Error: ${error}`);
+      throw error;
     }
   }
 }
 
-testNonStreamingTools().catch(console.error);
+testNonStreamingTools().catch((error) => {
+  console.error('Tool test failed:', error);
+  process.exit(1);
+});

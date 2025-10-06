@@ -23,4 +23,7 @@ async function main() {
   console.log('\n');
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error('GPT OSS example failed:', error);
+  process.exit(1);
+});

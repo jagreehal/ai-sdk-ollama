@@ -27,51 +27,101 @@ const { text } = await generateText({
 console.log(text);
 ```
 
-## Why Choose AI SDK Ollama?
+## Key Features
 
-- ✅ **Solves tool calling problems** - Response synthesis for reliable tool execution
-- ✅ **Enhanced wrapper functions** - `generateText` and `streamText` guarantees complete responses
-- ✅ **Built-in reliability** - Default reliability features enabled automatically
-- ✅ **Automatic JSON repair** - Fixes malformed JSON from LLM outputs (trailing commas, comments, URLs, Python constants, etc.)
-- ✅ **Web search and fetch tools** - Built-in web search and fetch tools powered by [Ollama's web search API](https://ollama.com/blog/web-search). Perfect for getting current information and reducing hallucinations.
-- ✅ **Type-safe** - Full TypeScript support with strict typing
-- ✅ **Cross-environment** - Works in Node.js and browsers automatically
-- ✅ **Native Ollama power** - Access advanced features like `mirostat`, `repeat_penalty`, `num_ctx`
-- ✅ **Production ready** - Handles the core Ollama limitations other providers struggle with
+- **Tool calling reliability** - Enhanced response synthesis for consistent tool execution
+- **Wrapper functions** - `generateText` and `streamText` with improved response handling
+- **Built-in reliability** - Default reliability features enabled automatically
+- **Automatic JSON repair** - Handles common JSON formatting issues from LLM outputs
+- **Web search integration** - Built-in web search and fetch tools powered by [Ollama's web search API](https://ollama.com/blog/web-search)
+- **Type-safe** - Full TypeScript support with strict typing
+- **Cross-environment** - Works in Node.js and browsers automatically
+- **Native Ollama features** - Access to advanced options like `mirostat`, `repeat_penalty`, `num_ctx`
+- **Production ready** - Addresses common Ollama integration challenges
 
 ## Enhanced Tool Calling
 
-> **🚀 The Problem We Solve**: Standard Ollama providers often execute tools but return empty responses. Our enhanced functions guarantee complete, useful responses every time.
+> **Tool Calling Enhancement**: Standard Ollama providers may execute tools but return incomplete responses. Our enhanced functions provide more reliable response synthesis.
 
 ```typescript
 import { generateText, streamText } from 'ai-sdk-ollama';
 
-// ✅ Enhanced generateText - guaranteed complete responses
+// Enhanced generateText with reliable response synthesis
 const { text } = await generateText({
   model: ollama('llama3.2'),
   tools: { /* your tools */ },
   prompt: 'Use the tools and explain the results'
 });
-// ✅ Always returns complete, useful text
-```
 
-![Enhanced generateText Demo](media/generateText.gif)
-
-```typescript
-// ✅ Enhanced streaming - tool-aware streaming
+// Enhanced streaming with tool execution
 const { textStream } = await streamText({
   model: ollama('llama3.2'),
   tools: { /* your tools */ },
   prompt: 'Stream with tools'
 });
-// ✅ Reliable streaming with tool execution
 ```
 
-![Enhanced streamText Demo](media/streamText.gif)
+### Combining Tools with Structured Output
+
+> **Advanced Feature**: The `enableToolsWithStructuredOutput` option allows you to use both tool calling and structured output together, which is typically not possible with standard AI SDK implementations.
+
+```typescript
+import { generateText } from 'ai-sdk-ollama';
+import { Output, tool } from 'ai';
+import { z } from 'zod';
+
+const weatherTool = tool({
+  description: 'Get current weather for a location',
+  inputSchema: z.object({
+    location: z.string().describe('City name'),
+  }),
+  execute: async ({ location }) => ({
+    location,
+    temperature: 22,
+    condition: 'sunny',
+    humidity: 60,
+  }),
+});
+
+// Standard behavior: tools are bypassed when using experimental_output
+const standardResult = await generateText({
+  model: ollama('llama3.2'),
+  prompt: 'Get weather for San Francisco and provide a structured summary',
+  tools: { getWeather: weatherTool },
+  experimental_output: Output.object({
+    schema: z.object({
+      location: z.string(),
+      temperature: z.number(),
+      summary: z.string(),
+    }),
+  }),
+  toolChoice: 'required',
+});
+// Result: 0 tool calls, model generates placeholder data
+
+// Enhanced behavior: tools are called AND structured output is generated
+const enhancedResult = await generateText({
+  model: ollama('llama3.2'),
+  prompt: 'Get weather for San Francisco and provide a structured summary',
+  tools: { getWeather: weatherTool },
+  experimental_output: Output.object({
+    schema: z.object({
+      location: z.string(),
+      temperature: z.number(),
+      summary: z.string(),
+    }),
+  }),
+  toolChoice: 'required',
+  enhancedOptions: {
+    enableToolsWithStructuredOutput: true, // Enable both features together
+  },
+});
+// Result: 1 tool call, real data from tool used in structured output
+```
 
 ## Web Search Tools
 
-> **🌐 New in v0.9.0**: Built-in web search and fetch tools powered by [Ollama's web search API](https://ollama.com/blog/web-search). Perfect for getting current information and reducing hallucinations.
+> **Web Search Integration**: Built-in web search and fetch tools powered by [Ollama's web search API](https://ollama.com/blog/web-search). Useful for accessing current information.
 
 ```typescript
 import { generateText } from 'ai';
@@ -126,7 +176,7 @@ npx tsx examples/node/src/web-search-example.ts streaming # Run streaming exampl
 npx tsx examples/node/src/web-search-example.ts error    # Run error handling example
 ```
 
-## 100% Compatible with AI SDK
+## AI SDK Compatibility
 
 ```typescript
 import { ollama } from 'ai-sdk-ollama';
@@ -212,7 +262,7 @@ const { text } = await generateText({
 // Use other providers like OpenAI DALL-E for image generation
 ```
 
-## More Examples
+## Additional Examples
 
 ### Advanced Ollama Features
 
@@ -365,19 +415,15 @@ Features real-time text generation, model configuration UI, and proper CORS setu
 
 ## Documentation & API Reference
 
-📚 **[Full Documentation](./packages/ai-sdk-ollama/README.md)** - Complete API reference and advanced features
-
-🔧 **[Custom Ollama Instance](./packages/ai-sdk-ollama/README.md#custom-ollama-instance)** - Connect to remote Ollama servers
-
-🛠️ **[Tool Calling Guide](./packages/ai-sdk-ollama/README.md#tool-calling-support)** - Function calling with Ollama models
-
-🧠 **[Reasoning Support](./packages/ai-sdk-ollama/README.md#reasoning-support)** - Chain-of-thought with DeepSeek-R1
-
-🌐 **[Browser Setup](./packages/ai-sdk-ollama/README.md#browser-support)** - CORS configuration and proxy setup
+- **[Full Documentation](./packages/ai-sdk-ollama/README.md)** - Complete API reference and advanced features
+- **[Custom Ollama Instance](./packages/ai-sdk-ollama/README.md#custom-ollama-instance)** - Connect to remote Ollama servers
+- **[Tool Calling Guide](./packages/ai-sdk-ollama/README.md#tool-calling-support)** - Function calling with Ollama models
+- **[Reasoning Support](./packages/ai-sdk-ollama/README.md#reasoning-support)** - Chain-of-thought with DeepSeek-R1
+- **[Browser Setup](./packages/ai-sdk-ollama/README.md#browser-support)** - CORS configuration and proxy setup
 
 ## Supported Models
 
-Works with any model in your Ollama installation:
+Compatible with any model in your Ollama installation:
 
 - **Chat**: `llama3.2`, `mistral`, `phi4-mini`, `qwen2.5`, `codellama`
 - **Vision**: `llava`, `bakllava`, `llama3.2-vision`, `minicpm-v`
@@ -387,7 +433,7 @@ Works with any model in your Ollama installation:
 
 ## Development & Contributing
 
-This is a monorepo using pnpm workspaces and Turborepo. Quick commands:
+This project uses pnpm workspaces and Turborepo. Quick commands:
 
 ```bash
 # Clone and setup
@@ -404,7 +450,7 @@ pnpm test
 npx tsx examples/node/src/basic-chat.ts
 ```
 
-**Contributing**: Fork → feature branch → tests → PR. See [CLAUDE.md](./CLAUDE.md) for detailed development guidelines.
+**Contributing**: Fork → feature branch → tests → PR. See [CLAUDE.md](./CLAUDE.md) for development guidelines.
 
 MIT © [Jag Reehal](https://jagreehal.com)
 

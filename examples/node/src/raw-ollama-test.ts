@@ -89,7 +89,11 @@ async function testDirectOllamaToolCalls() {
 
   } catch (error) {
     console.error('Error:', error);
+    throw error;
   }
 }
 
-testDirectOllamaToolCalls().catch(console.error);
+testDirectOllamaToolCalls().catch((error) => {
+  console.error('Direct Ollama test failed:', error);
+  process.exit(1);
+});

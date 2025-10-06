@@ -36,6 +36,7 @@ async function main() {
     console.log(standardText);
   } catch (error) {
     console.error('Error:', error);
+    throw error;
   }
 
   // Example 2: Native Ollama Options (Ollama-Specific Features)
@@ -79,6 +80,7 @@ async function main() {
     console.log(ollamaText);
   } catch (error) {
     console.error('Error:', error);
+    throw error;
   }
 
   // Example 3: Hybrid Approach (Both AI SDK + Ollama Options)
@@ -116,6 +118,7 @@ async function main() {
     );
   } catch (error) {
     console.error('Error:', error);
+    throw error;
   }
 
   // Example 4: Future Compatibility Demo
@@ -151,6 +154,7 @@ async function main() {
     console.log(futureText);
   } catch (error) {
     console.error('Error:', error);
+    throw error;
   }
 
   console.log('\n' + '='.repeat(50));
@@ -168,4 +172,7 @@ async function main() {
   );
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error('Dual parameter example failed:', error);
+  process.exit(1);
+});

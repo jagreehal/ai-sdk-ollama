@@ -422,4 +422,7 @@ async function demonstrateMCPTools() {
 }
 
 // Run the demonstration
-demonstrateMCPTools().catch(console.error);
+demonstrateMCPTools().catch((error) => {
+  console.error('MCP demonstration failed:', error);
+  process.exit(1);
+});

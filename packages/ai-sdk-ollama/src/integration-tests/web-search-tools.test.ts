@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { describe, expect, it, beforeAll } from 'vitest';
 import { generateText } from 'ai';
 import { ollama } from '../index';
@@ -22,7 +22,7 @@ describe('Web Search Tools Integration', () => {
           'Search for recent news about artificial intelligence and provide a brief summary.',
         tools: {
           webSearch: ollama.tools.webSearch,
-        } as any,
+        },
       });
 
       expect(result.text).toBeDefined();
@@ -44,7 +44,7 @@ describe('Web Search Tools Integration', () => {
         prompt: 'Fetch the content from https://example.com and summarize it.',
         tools: {
           webFetch: ollama.tools.webFetch,
-        } as any,
+        },
       });
 
       expect(result.text).toBeDefined();
@@ -68,7 +68,7 @@ describe('Web Search Tools Integration', () => {
         tools: {
           webSearch: ollama.tools.webSearch,
           webFetch: ollama.tools.webFetch,
-        } as any,
+        },
       });
 
       expect(result.text).toBeDefined();
@@ -92,7 +92,7 @@ describe('Web Search Tools Integration', () => {
           'Try to fetch content from https://this-domain-definitely-does-not-exist-123456.com and explain what happened.',
         tools: {
           webFetch: ollama.tools.webFetch,
-        } as any,
+        },
       });
 
       expect(result.text).toBeDefined();

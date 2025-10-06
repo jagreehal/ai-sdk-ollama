@@ -7,7 +7,7 @@ import { OllamaError } from '../utils/ollama-error';
 const mockWebFetch = vi.fn();
 const mockClient = {
   webFetch: mockWebFetch,
-} as any;
+};
 
 describe('webFetch', () => {
   beforeEach(() => {
@@ -68,9 +68,9 @@ describe('webFetch', () => {
       { toolCallId: 'test', messages: [], abortSignal: undefined },
     );
 
-    expect((result as any).content).toHaveLength(124); // 100 chars + "\n\n[Content truncated...]"
-    expect((result as any).content).toContain('[Content truncated...]');
-    expect((result as any).contentLength).toBe(124);
+    expect(result.content).toHaveLength(124); // 100 chars + "\n\n[Content truncated...]"
+    expect(result.content).toContain('[Content truncated...]');
+    expect(result.contentLength).toBe(124);
   });
 
   it('handles missing client gracefully', async () => {
@@ -139,7 +139,7 @@ describe('webFetch', () => {
         { toolCallId: 'test', messages: [], abortSignal: undefined },
       );
 
-      expect((result as any).error).toBe(testCase.expectedMessage);
+      expect(result.error).toBe(testCase.expectedMessage);
       vi.clearAllMocks();
     }
   });
@@ -190,7 +190,7 @@ describe('webFetch', () => {
       { toolCallId: 'test', messages: [], abortSignal: abortController.signal },
     );
 
-    expect((result as any).error).toBe('Web fetch request was cancelled.');
+    expect(result.error).toBe('Web fetch request was cancelled.');
   });
 
   it('validates input schema', () => {
@@ -199,18 +199,18 @@ describe('webFetch', () => {
 
     // Test valid input
     expect(() =>
-      (schema as any).parse({ url: 'https://example.com' }),
+      schema.parse({ url: 'https://example.com' }),
     ).not.toThrow();
     expect(() =>
-      (schema as any).parse({ url: 'http://test.org/path?param=value' }),
+      schema.parse({ url: 'http://test.org/path?param=value' }),
     ).not.toThrow();
 
     // Test invalid input
-    expect(() => (schema as any).parse({ url: 'not-a-url' })).toThrow(); // Invalid URL
+    expect(() => schema.parse({ url: 'not-a-url' })).toThrow(); // Invalid URL
     expect(() =>
-      (schema as any).parse({ url: 'ftp://example.com' }),
+      schema.parse({ url: 'ftp://example.com' }),
     ).not.toThrow(); // FTP URLs are actually valid URLs
-    expect(() => (schema as any).parse({})).toThrow(); // Missing URL
+    expect(() => schema.parse({})).toThrow(); // Missing URL
   });
 
   it('uses default maxContentLength when not specified', async () => {
@@ -223,7 +223,7 @@ describe('webFetch', () => {
       { toolCallId: 'test', messages: [], abortSignal: undefined },
     );
 
-    expect((result as any).content).toHaveLength(10_024); // 10_000 + "\n\n[Content truncated...]"
-    expect((result as any).content).toContain('[Content truncated...]');
+    expect(result.content).toHaveLength(10_024); // 10_000 + "\n\n[Content truncated...]"
+    expect(result.content).toContain('[Content truncated...]');
   });
 });

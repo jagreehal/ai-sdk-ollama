@@ -100,4 +100,7 @@ async function debugGptOssToolCalling() {
   }
 }
 
-debugGptOssToolCalling().catch(console.error);
+debugGptOssToolCalling().catch((error) => {
+  console.error('Debug GPT OSS tools failed:', error);
+  process.exit(1);
+});

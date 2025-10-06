@@ -134,6 +134,7 @@ export OLLAMA_API_KEY="your_api_key_here"
     - [Cross Provider Compatibility](#cross-provider-compatibility)
     - [Native Ollama Power](#native-ollama-power)
     - [Enhanced Tool Calling Wrappers](#enhanced-tool-calling-wrappers)
+    - [Combining Tools with Structured Output](#combining-tools-with-structured-output)
     - [Simple and Predictable](#simple-and-predictable)
   - [Advanced Features](#advanced-features)
     - [Custom Ollama Instance](#custom-ollama-instance)
@@ -305,6 +306,64 @@ const result = await generateText({
 });
 
 console.log(result.text); // "15 + 27 equals 42. Using the math tool, I calculated..."
+```
+
+### Combining Tools with Structured Output
+
+The `enableToolsWithStructuredOutput` option allows you to use both tool calling and structured output together:
+
+```typescript
+import { generateText } from 'ai-sdk-ollama';
+import { Output, tool } from 'ai';
+import { z } from 'zod';
+
+const weatherTool = tool({
+  description: 'Get current weather for a location',
+  inputSchema: z.object({
+    location: z.string().describe('City name'),
+  }),
+  execute: async ({ location }) => ({
+    location,
+    temperature: 22,
+    condition: 'sunny',
+    humidity: 60,
+  }),
+});
+
+// Standard behavior: tools are bypassed when using experimental_output
+const standardResult = await generateText({
+  model: ollama('llama3.2'),
+  prompt: 'Get weather for San Francisco and provide a structured summary',
+  tools: { getWeather: weatherTool },
+  experimental_output: Output.object({
+    schema: z.object({
+      location: z.string(),
+      temperature: z.number(),
+      summary: z.string(),
+    }),
+  }),
+  toolChoice: 'required',
+});
+// Result: 0 tool calls, model generates placeholder data
+
+// Enhanced behavior: tools are called AND structured output is generated
+const enhancedResult = await generateText({
+  model: ollama('llama3.2'),
+  prompt: 'Get weather for San Francisco and provide a structured summary',
+  tools: { getWeather: weatherTool },
+  experimental_output: Output.object({
+    schema: z.object({
+      location: z.string(),
+      temperature: z.number(),
+      summary: z.string(),
+    }),
+  }),
+  toolChoice: 'required',
+  enhancedOptions: {
+    enableToolsWithStructuredOutput: true, // Enable both features together
+  },
+});
+// Result: 1 tool call, real data from tool used in structured output
 ```
 
 **When to Use Enhanced Wrappers:**

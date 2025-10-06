@@ -7,7 +7,7 @@ import { OllamaError } from '../utils/ollama-error';
 const mockWebSearch = vi.fn();
 const mockClient = {
   webSearch: mockWebSearch,
-} as any;
+};
 
 describe('webSearch', () => {
   beforeEach(() => {
@@ -154,7 +154,7 @@ describe('webSearch', () => {
       { toolCallId: 'test', messages: [], abortSignal: undefined },
     );
 
-    expect((result as any).results).toEqual(expect.any(Array));
+    expect(result.results).toEqual(expect.any(Array));
   });
 
   it('respects timeout option', async () => {
@@ -178,19 +178,19 @@ describe('webSearch', () => {
     const schema = tool.inputSchema;
 
     // Test valid input
-    expect(() => (schema as any).parse({ query: 'valid query' })).not.toThrow();
+    expect(() => schema.parse({ query: 'valid query' })).not.toThrow();
     expect(() =>
-      (schema as any).parse({ query: 'valid query', maxResults: 10 }),
+      schema.parse({ query: 'valid query', maxResults: 10 }),
     ).not.toThrow();
 
     // Test invalid input
-    expect(() => (schema as any).parse({ query: '' })).toThrow(); // Empty query
-    expect(() => (schema as any).parse({ query: 'a'.repeat(501) })).toThrow(); // Too long
+    expect(() => schema.parse({ query: '' })).toThrow(); // Empty query
+    expect(() => schema.parse({ query: 'a'.repeat(501) })).toThrow(); // Too long
     expect(() =>
-      (schema as any).parse({ query: 'valid', maxResults: 0 }),
+      schema.parse({ query: 'valid', maxResults: 0 }),
     ).toThrow(); // Invalid max results
     expect(() =>
-      (schema as any).parse({ query: 'valid', maxResults: 21 }),
+      schema.parse({ query: 'valid', maxResults: 21 }),
     ).toThrow(); // Too many results
   });
 });

@@ -89,6 +89,7 @@ async function debugStreamingVsGenerate(modelName: string) {
 
   } catch (error) {
     console.log(`   ❌ Error: ${error}`);
+    throw error;
   }
 }
 
@@ -103,4 +104,7 @@ async function runStreamingDebug() {
   }
 }
 
-runStreamingDebug().catch(console.error);
+runStreamingDebug().catch((error) => {
+  console.error('Streaming debug failed:', error);
+  process.exit(1);
+});
