@@ -7,7 +7,7 @@ import { OllamaError } from '../utils/ollama-error';
 const mockWebFetch = vi.fn();
 const mockClient = {
   webFetch: mockWebFetch,
-};
+} as any; // Type assertion to avoid full Ollama interface requirements
 
 describe('webFetch', () => {
   beforeEach(() => {
@@ -68,9 +68,9 @@ describe('webFetch', () => {
       { toolCallId: 'test', messages: [], abortSignal: undefined },
     );
 
-    expect(result.content).toHaveLength(124); // 100 chars + "\n\n[Content truncated...]"
-    expect(result.content).toContain('[Content truncated...]');
-    expect(result.contentLength).toBe(124);
+    expect((result as any).content).toHaveLength(124); // 100 chars + "\n\n[Content truncated...]"
+    expect((result as any).content).toContain('[Content truncated...]');
+    expect((result as any).contentLength).toBe(124);
   });
 
   it('handles missing client gracefully', async () => {
@@ -139,7 +139,7 @@ describe('webFetch', () => {
         { toolCallId: 'test', messages: [], abortSignal: undefined },
       );
 
-      expect(result.error).toBe(testCase.expectedMessage);
+      expect((result as any).error).toBe(testCase.expectedMessage);
       vi.clearAllMocks();
     }
   });
@@ -190,12 +190,12 @@ describe('webFetch', () => {
       { toolCallId: 'test', messages: [], abortSignal: abortController.signal },
     );
 
-    expect(result.error).toBe('Web fetch request was cancelled.');
+    expect((result as any).error).toBe('Web fetch request was cancelled.');
   });
 
   it('validates input schema', () => {
     const tool = webFetch({ client: mockClient });
-    const schema = tool.inputSchema;
+    const schema = tool.inputSchema as any; // Type assertion for schema parsing
 
     // Test valid input
     expect(() =>
@@ -223,7 +223,7 @@ describe('webFetch', () => {
       { toolCallId: 'test', messages: [], abortSignal: undefined },
     );
 
-    expect(result.content).toHaveLength(10_024); // 10_000 + "\n\n[Content truncated...]"
-    expect(result.content).toContain('[Content truncated...]');
+    expect((result as any).content).toHaveLength(10_024); // 10_000 + "\n\n[Content truncated...]"
+    expect((result as any).content).toContain('[Content truncated...]');
   });
 });

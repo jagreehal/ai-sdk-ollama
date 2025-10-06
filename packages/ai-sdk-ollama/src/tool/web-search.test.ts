@@ -7,7 +7,7 @@ import { OllamaError } from '../utils/ollama-error';
 const mockWebSearch = vi.fn();
 const mockClient = {
   webSearch: mockWebSearch,
-};
+} as any; // Type assertion to avoid full Ollama interface requirements
 
 describe('webSearch', () => {
   beforeEach(() => {
@@ -154,7 +154,7 @@ describe('webSearch', () => {
       { toolCallId: 'test', messages: [], abortSignal: undefined },
     );
 
-    expect(result.results).toEqual(expect.any(Array));
+    expect((result as any).results).toEqual(expect.any(Array));
   });
 
   it('respects timeout option', async () => {
@@ -175,7 +175,7 @@ describe('webSearch', () => {
 
   it('validates input schema', () => {
     const tool = webSearch({ client: mockClient });
-    const schema = tool.inputSchema;
+    const schema = tool.inputSchema as any; // Type assertion for schema parsing
 
     // Test valid input
     expect(() => schema.parse({ query: 'valid query' })).not.toThrow();

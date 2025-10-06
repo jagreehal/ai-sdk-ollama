@@ -44,7 +44,7 @@ describe('Web Search Tools Integration', () => {
         model: ollama('gpt-oss:120b-cloud'),
         prompt: 'Fetch the content from https://example.com and summarize it.',
         tools: {
-          webFetch: ollama.tools.webFetch,
+          webFetch: ollama.tools.webFetch(),
         },
       });
 
@@ -67,8 +67,8 @@ describe('Web Search Tools Integration', () => {
         prompt:
           'Search for recent articles about TypeScript, then fetch and summarize the most relevant one.',
         tools: {
-          webSearch: ollama.tools.webSearch,
-          webFetch: ollama.tools.webFetch,
+          webSearch: ollama.tools.webSearch(),
+          webFetch: ollama.tools.webFetch(),
         },
       });
 
@@ -92,7 +92,7 @@ describe('Web Search Tools Integration', () => {
         prompt:
           'Try to fetch content from https://this-domain-definitely-does-not-exist-123456.com and explain what happened.',
         tools: {
-          webFetch: ollama.tools.webFetch,
+          webFetch: ollama.tools.webFetch(),
         },
       });
 
