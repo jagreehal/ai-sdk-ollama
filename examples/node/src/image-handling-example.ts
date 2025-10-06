@@ -210,4 +210,7 @@ async function main() {
   console.log('\n🎉 Image processing is fully functional with LLaVA!');
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error('Image handling example failed:', error);
+  process.exit(1);
+});

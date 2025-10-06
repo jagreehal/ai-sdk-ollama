@@ -84,7 +84,11 @@ async function testEmbedding() {
       console.log('\n💡 Note: The dimensions parameter may not be supported by all models.');
       console.log('   Check your model documentation for supported parameters.');
     }
+    throw error;
   }
 }
 
-testEmbedding();
+testEmbedding().catch((error) => {
+  console.error('Embedding test failed:', error);
+  process.exit(1);
+});

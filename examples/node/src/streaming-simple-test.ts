@@ -245,4 +245,7 @@ async function runStreamingTests() {
 }
 
 // Run the tests
-runStreamingTests().catch(console.error);
+runStreamingTests().catch((error) => {
+  console.error('Test suite failed:', error);
+  process.exit(1);
+});

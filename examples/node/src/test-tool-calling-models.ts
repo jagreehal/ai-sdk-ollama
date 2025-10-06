@@ -93,4 +93,7 @@ async function runToolCallingTests() {
 }
 
 // Run the test
-runToolCallingTests().catch(console.error);
+runToolCallingTests().catch((error) => {
+  console.error('Tool calling tests failed:', error);
+  process.exit(1);
+});

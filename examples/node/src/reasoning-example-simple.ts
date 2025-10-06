@@ -34,4 +34,7 @@ async function main() {
   console.log(resultNoReasoning.text);
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error('Reasoning example simple failed:', error);
+  process.exit(1);
+});

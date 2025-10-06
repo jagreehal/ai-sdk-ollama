@@ -81,4 +81,7 @@ async function runComparison() {
   }
 }
 
-runComparison().catch(console.error);
+runComparison().catch((error) => {
+  console.error('Stream vs generate test failed:', error);
+  process.exit(1);
+});

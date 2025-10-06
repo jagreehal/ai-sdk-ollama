@@ -7,7 +7,7 @@ import { OllamaError } from '../utils/ollama-error';
 const mockWebFetch = vi.fn();
 const mockClient = {
   webFetch: mockWebFetch,
-} as any;
+} as any; // Type assertion to avoid full Ollama interface requirements
 
 describe('webFetch', () => {
   beforeEach(() => {
@@ -195,22 +195,22 @@ describe('webFetch', () => {
 
   it('validates input schema', () => {
     const tool = webFetch({ client: mockClient });
-    const schema = tool.inputSchema;
+    const schema = tool.inputSchema as any; // Type assertion for schema parsing
 
     // Test valid input
     expect(() =>
-      (schema as any).parse({ url: 'https://example.com' }),
+      schema.parse({ url: 'https://example.com' }),
     ).not.toThrow();
     expect(() =>
-      (schema as any).parse({ url: 'http://test.org/path?param=value' }),
+      schema.parse({ url: 'http://test.org/path?param=value' }),
     ).not.toThrow();
 
     // Test invalid input
-    expect(() => (schema as any).parse({ url: 'not-a-url' })).toThrow(); // Invalid URL
+    expect(() => schema.parse({ url: 'not-a-url' })).toThrow(); // Invalid URL
     expect(() =>
-      (schema as any).parse({ url: 'ftp://example.com' }),
+      schema.parse({ url: 'ftp://example.com' }),
     ).not.toThrow(); // FTP URLs are actually valid URLs
-    expect(() => (schema as any).parse({})).toThrow(); // Missing URL
+    expect(() => schema.parse({})).toThrow(); // Missing URL
   });
 
   it('uses default maxContentLength when not specified', async () => {

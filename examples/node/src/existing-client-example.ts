@@ -65,7 +65,11 @@ async function main() {
     }
   } catch (error) {
     console.error('Error:', error);
+    throw error;
   }
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error('Existing client example failed:', error);
+  process.exit(1);
+});

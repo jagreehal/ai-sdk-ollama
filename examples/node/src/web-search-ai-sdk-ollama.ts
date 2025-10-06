@@ -50,7 +50,7 @@ function displayToolExecution(result: any) {
 
       if (result.toolResults && result.toolResults.length > 0) {
         result.toolResults.forEach((toolResult: any) => {
-          const output = toolResult.output as any;
+          const output = toolResult.output;
           if (toolResult.toolName === 'webSearch') {
             if (output && 'results' in output && output.results && output.results.length > 0) {
               console.log(colors.green(`   ✅ Search: ${output.results.length} results`));
@@ -102,6 +102,7 @@ async function basicWebSearchExample() {
     return result;
   } catch (error) {
     console.error(colors.red('❌ Error:'), error);
+    throw error;
   }
 }
 
@@ -128,6 +129,7 @@ async function webFetchOnlyExample() {
     return result;
   } catch (error) {
     console.error(colors.red('❌ Error:'), error);
+    throw error;
   }
 }
 
@@ -155,6 +157,7 @@ async function combinedSearchAndFetchExample() {
     return result;
   } catch (error) {
     console.error(colors.red('❌ Error:'), error);
+    throw error;
   }
 }
 
@@ -251,6 +254,7 @@ async function errorHandlingExample() {
     return result;
   } catch (error) {
     console.error(colors.red('❌ Error:'), error);
+    throw error;
   }
 }
 

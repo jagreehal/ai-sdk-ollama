@@ -62,7 +62,7 @@ async function testCorrectToolBehavior(modelName: string) {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.log(`   ❌ ${modelName} failed: ${errorMessage}`);
-    return { success: false, error: errorMessage };
+    throw error;
   }
 }
 
@@ -104,4 +104,7 @@ async function runCorrectedTests() {
   console.log('   • Your AI SDK provider handles this properly');
 }
 
-runCorrectedTests().catch(console.error);
+runCorrectedTests().catch((error) => {
+  console.error('Corrected tool test failed:', error);
+  process.exit(1);
+});

@@ -63,4 +63,7 @@ Test it with factorial(5) and verify the result step by step.`,
   console.log('Result (no reasoning visible):', result4.text);
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error('Reasoning example failed:', error);
+  process.exit(1);
+});

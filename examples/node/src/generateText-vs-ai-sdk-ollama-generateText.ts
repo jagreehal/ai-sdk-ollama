@@ -135,7 +135,7 @@ async function testStandardGenerateText(scenario: typeof testScenarios[number]):
     const result = await generateText({
       model: ollama('llama3.2'),
       prompt: scenario.prompt,
-      tools: scenario.tools as any,
+      tools: scenario.tools,
     });
 
     const success = result.toolCalls && result.toolCalls.length > 0 && result.text && result.text.length > 0;
@@ -167,7 +167,7 @@ async function testGenerateTextOllama(scenario: typeof testScenarios[number]): P
     const result = await generateTextOllama({
       model: ollama('llama3.2'),
       prompt: scenario.prompt,
-      tools: scenario.tools as any,
+      tools: scenario.tools,
     });
 
     // Enhanced function success: just needs text response (tools are handled internally)
@@ -254,4 +254,7 @@ async function runComparison() {
 }
 
 // Run the comparison
-runComparison().catch(console.error);
+runComparison().catch((error) => {
+  console.error('Comparison failed:', error);
+  process.exit(1);
+});
