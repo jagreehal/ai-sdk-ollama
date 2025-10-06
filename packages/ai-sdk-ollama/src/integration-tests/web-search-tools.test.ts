@@ -21,6 +21,7 @@ describe('Web Search Tools Integration', () => {
         prompt:
           'Search for recent news about artificial intelligence and provide a brief summary.',
         tools: {
+          // @ts-expect-error - ollama.tools.webSearch is not typed
           webSearch: ollama.tools.webSearch,
         },
       });

@@ -7,7 +7,7 @@
  */
 
 import { ollama, streamText as streamTextOllama } from 'ai-sdk-ollama';
-import { streamText, tool } from 'ai';
+import { streamText, tool, type ToolSet } from 'ai';
 import { z } from 'zod';
 import { styleText } from 'util';
 
@@ -177,7 +177,7 @@ async function testStreamTextOllama(scenario: typeof streamScenarios[number]): P
     const result = await streamTextOllama({
       model: ollama('llama3.2'),
       prompt: scenario.prompt,
-      tools: scenario.tools,
+      tools: scenario.tools as Parameters<typeof streamTextOllama>[0]['tools'],
     });
 
     let streamedText = '';

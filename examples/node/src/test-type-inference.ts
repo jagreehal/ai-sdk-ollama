@@ -1,4 +1,4 @@
-import { generateText as aiGenerateText, tool, Output } from 'ai';
+import { generateText as aiGenerateText, tool } from 'ai';
 import { ollama, generateText as ollamaGenerateText } from 'ai-sdk-ollama';
 import { z } from 'zod';
 
@@ -41,7 +41,7 @@ async function testOllamaGenerateText() {
     model: ollama('llama3.2'),
     prompt: 'Test',
     tools: {
-      getWeather: weatherTool, // Does this need as any?
+      getWeather: weatherTool,
     },
   });
 
