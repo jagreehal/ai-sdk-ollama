@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.0
+
+### Minor Changes
+
+- 7bb9fdd: update deps
+
 ## 0.12.0
 
 ### Minor Changes
