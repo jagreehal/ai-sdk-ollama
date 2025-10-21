@@ -1,12 +1,19 @@
 /**
- * 🚀 AI-SDK-OLLAMA: The Tool Calling Problem & Solution Demo
+ * 🚀 AI-SDK-OLLAMA: Tool Calling Enhancement Demo
  *
- * THE PROBLEM: Standard Ollama providers execute tools but return EMPTY responses
- * THE SOLUTION: ai-sdk-ollama provides enhanced generateText that guarantees complete, useful responses
+ * GOOD NEWS: ai-sdk-ollama now works with standard AI SDK generateText!
+ * - Tools execute properly ✅
+ * - Multi-turn conversations work ✅
+ * - Text responses are generated ✅
+ *
+ * EVEN BETTER: ai-sdk-ollama's enhanced generateText provides synthesis for more reliable responses
+ * - Some Ollama models occasionally return empty text after tool execution
+ * - The enhanced version adds intelligent synthesis to guarantee useful responses
+ * - This comparison shows both approaches working
  */
 
 import { ollama, generateText as generateTextOllama } from 'ai-sdk-ollama';
-import { generateText, tool } from 'ai';
+import { generateText, tool, stepCountIs } from 'ai';
 import { z } from 'zod';
 import { styleText } from 'util';
 
@@ -136,14 +143,29 @@ async function testStandardGenerateText(scenario: typeof testScenarios[number]):
       model: ollama('llama3.2'),
       prompt: scenario.prompt,
       tools: scenario.tools,
+      stopWhen: stepCountIs(5), // Enable multi-turn tool calling
     });
 
-    const success = result.toolCalls && result.toolCalls.length > 0 && result.text && result.text.length > 0;
+    // Check if tools were called in ANY step (not just the last one)
+    const toolsWereCalled = result.steps?.some(step =>
+      step.toolCalls && step.toolCalls.length > 0
+    ) ?? false;
+
+    const success = toolsWereCalled && result.text && result.text.length > 0;
+
+    // Count total tool calls across all steps
+    const totalToolCalls = result.steps?.reduce((sum, step) =>
+      sum + (step.toolCalls?.length || 0), 0
+    ) || 0;
+
+    const totalToolResults = result.steps?.reduce((sum, step) =>
+      sum + (step.toolResults?.length || 0), 0
+    ) || 0;
 
     return {
       success: Boolean(success),
-      toolCalls: result.toolCalls?.length || 0,
-      toolResults: result.toolResults?.length || 0,
+      toolCalls: totalToolCalls,
+      toolResults: totalToolResults,
       textLength: result.text?.length || 0,
       text: result.text || '',
       error: null,
@@ -170,13 +192,28 @@ async function testGenerateTextOllama(scenario: typeof testScenarios[number]): P
       tools: scenario.tools,
     });
 
-    // Enhanced function success: just needs text response (tools are handled internally)
+    // Check if tools were called in ANY step (not just the last one)
+    const toolsWereCalled =
+      result.steps?.some((step) => step.toolCalls && step.toolCalls.length > 0) ??
+      false;
+
+    // Count total tool calls across all steps
+    const totalToolCalls =
+      result.steps?.reduce((sum, step) => sum + (step.toolCalls?.length || 0), 0) ||
+      0;
+
+    const totalToolResults =
+      result.steps?.reduce(
+        (sum, step) => sum + (step.toolResults?.length || 0),
+        0,
+      ) || 0;
+
     const success = result.text && result.text.length > 0;
 
     return {
       success: Boolean(success),
-      toolCalls: result.toolCalls?.length || 0,
-      toolResults: result.toolResults?.length || 0,
+      toolCalls: totalToolCalls,
+      toolResults: totalToolResults,
       textLength: result.text?.length || 0,
       text: result.text || '',
       error: null,
@@ -198,7 +235,7 @@ async function testGenerateTextOllama(scenario: typeof testScenarios[number]): P
 async function runComparison() {
   console.log('\n' + '='.repeat(70));
   console.log(styleText(['bold', 'magenta'], '🚀 AI SDK Ollama: Tool Calling Comparison'));
-  console.log(styleText('dim', 'Comparing standard generateText vs ai-sdk-ollama generateText'));
+  console.log(styleText('dim', 'Standard AI SDK vs Enhanced with Synthesis'));
   console.log('='.repeat(70) + '\n');
 
   let standardSuccessCount = 0;
@@ -230,16 +267,22 @@ async function runComparison() {
   console.log(styleText(['bold', 'yellow'], '📊 Results Summary'));
   console.log('='.repeat(70));
 
-  console.log(`\n${styleText(['bold', 'red'], '❌ Standard generateText:')} ${standardSuccessCount}/${testScenarios.length} scenarios worked`);
-  console.log(`${styleText(['bold', 'green'], '✅ ai-sdk-ollama generateText:')} ${enhancedSuccessCount}/${testScenarios.length} scenarios worked`);
+  const standardColor = standardSuccessCount === testScenarios.length ? 'green' : 'red';
+  const standardEmoji = standardSuccessCount === testScenarios.length ? '✅' : '❌';
+  const enhancedColor = enhancedSuccessCount === testScenarios.length ? 'green' : 'red';
+  const enhancedEmoji = enhancedSuccessCount === testScenarios.length ? '✅' : '❌';
+
+  console.log(`\n${styleText(['bold', standardColor], `${standardEmoji} Standard generateText:`)} ${standardSuccessCount}/${testScenarios.length} scenarios worked`);
+  console.log(`${styleText(['bold', enhancedColor], `${enhancedEmoji} ai-sdk-ollama generateText:`)} ${enhancedSuccessCount}/${testScenarios.length} scenarios worked`);
 
   const successRate = Math.round((enhancedSuccessCount / testScenarios.length) * 100);
   console.log(`\n${styleText(['bold', 'magenta'], '🎯 Success rate:')} ${successRate}% with ai-sdk-ollama generateText`);
 
   console.log('\n' + styleText(['bold', 'cyan'], '💡 Key takeaways:'));
-  console.log('• Standard functions often return empty responses after tool execution');
-  console.log('• ai-sdk-ollama\'s generateText provides reliable, complete responses');
-  console.log('• For production tool calling with Ollama, use ai-sdk-ollama');
+  console.log('• Standard generateText now works with ai-sdk-ollama provider!');
+  console.log('• Both approaches execute tools and generate responses');
+  console.log('• Enhanced generateText adds synthesis for more consistent results');
+  console.log('• Use standard for compatibility, enhanced for guaranteed synthesis');
 
   console.log('\n' + '='.repeat(70));
   console.log(styleText(['bold', 'green'], '🚀 Get started:'));

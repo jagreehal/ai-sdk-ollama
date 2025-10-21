@@ -1,13 +1,19 @@
 /**
  * 🚀 AI-SDK-OLLAMA: Streaming Tool Calling Comparison
  *
- * THE PROBLEM: Standard streamText executes tools but streams no final text
- * THE SOLUTION: ai-sdk-ollama provides enhanced streamText with reliable streaming responses
+ * GOOD NEWS: ai-sdk-ollama now works with standard AI SDK streamText!
+ * - Tools execute properly ✅
+ * - Multi-turn conversations work ✅
+ * - Text streams correctly ✅
  *
+ * EVEN BETTER: ai-sdk-ollama's enhanced streamText provides synthesis for more reliable streaming
+ * - Some Ollama models occasionally stream no text after tool execution
+ * - The enhanced version adds intelligent synthesis to guarantee streaming responses
+ * - This comparison shows both approaches working
  */
 
 import { ollama, streamText as streamTextOllama } from 'ai-sdk-ollama';
-import { streamText, tool, type ToolSet } from 'ai';
+import { streamText, tool, stepCountIs, type ToolSet } from 'ai';
 import { z } from 'zod';
 import { styleText } from 'util';
 
@@ -128,6 +134,7 @@ async function testStandardStreamText(scenario: typeof streamScenarios[number]):
       model: ollama('llama3.2'),
       prompt: scenario.prompt,
       tools: scenario.tools,
+      stopWhen: stepCountIs(5), // Enable multi-turn tool calling
     });
 
     let streamedText = '';
@@ -143,12 +150,23 @@ async function testStandardStreamText(scenario: typeof streamScenarios[number]):
 
     // Get final result for tool info
     const finalResult = await result;
-    const resolvedToolCalls = await finalResult.toolCalls;
-    const resolvedToolResults = await finalResult.toolResults;
-    const toolCalls = resolvedToolCalls?.length || 0;
-    const toolResults = resolvedToolResults?.length || 0;
 
-    const success = toolCalls > 0 && streamedText.length > 0;
+    // Check if tools were called in ANY step (not just the last one)
+    const allSteps = await finalResult.steps;
+    const toolsWereCalled = allSteps?.some(step =>
+      step.toolCalls && step.toolCalls.length > 0
+    ) ?? false;
+
+    // Count total tool calls across all steps
+    const toolCalls = allSteps?.reduce((sum, step) =>
+      sum + (step.toolCalls?.length || 0), 0
+    ) || 0;
+
+    const toolResults = allSteps?.reduce((sum, step) =>
+      sum + (step.toolResults?.length || 0), 0
+    ) || 0;
+
+    const success = toolsWereCalled && streamedText.length > 0;
 
     return {
       success: Boolean(success),
@@ -193,12 +211,25 @@ async function testStreamTextOllama(scenario: typeof streamScenarios[number]): P
 
     // Get final result for tool info
     const finalResult = await result;
-    const resolvedToolCalls = await finalResult.toolCalls;
-    const resolvedToolResults = await finalResult.toolResults;
-    const toolCalls = resolvedToolCalls?.length || 0;
-    const toolResults = resolvedToolResults?.length || 0;
 
-    const success = streamedText.length > 0;
+    // Check if tools were called in ANY step (not just the last one)
+    const allSteps = await finalResult.steps;
+    const toolsWereCalled =
+      allSteps?.some((step) => step.toolCalls && step.toolCalls.length > 0) ??
+      false;
+
+    // Count total tool calls across all steps
+    const toolCalls =
+      allSteps?.reduce((sum, step) => sum + (step.toolCalls?.length || 0), 0) ||
+      0;
+
+    const toolResults =
+      allSteps?.reduce(
+        (sum, step) => sum + (step.toolResults?.length || 0),
+        0,
+      ) || 0;
+
+    const success = toolsWereCalled && streamedText.length > 0;
 
     return {
       success: Boolean(success),
@@ -223,7 +254,7 @@ async function testStreamTextOllama(scenario: typeof streamScenarios[number]): P
 async function runStreamingComparison() {
   console.log('\n' + '='.repeat(70));
   console.log(styleText(['bold', 'magenta'], '🚀 AI SDK Ollama: Streaming Tool Calling Comparison'));
-  console.log(styleText('dim', 'Comparing standard streamText vs ai-sdk-ollama streamText'));
+  console.log(styleText('dim', 'Standard AI SDK vs Enhanced with Synthesis'));
   console.log('='.repeat(70) + '\n');
 
   let standardSuccessCount = 0;
@@ -255,16 +286,22 @@ async function runStreamingComparison() {
   console.log(styleText(['bold', 'yellow'], '📊 Streaming Results Summary'));
   console.log('='.repeat(70));
 
-  console.log(`\n${styleText(['bold', 'red'], '❌ Standard streamText:')} ${standardSuccessCount}/${streamScenarios.length} scenarios worked`);
-  console.log(`${styleText(['bold', 'green'], '✅ ai-sdk-ollama streamText:')} ${enhancedSuccessCount}/${streamScenarios.length} scenarios worked`);
+  const standardColor = standardSuccessCount === streamScenarios.length ? 'green' : 'red';
+  const standardEmoji = standardSuccessCount === streamScenarios.length ? '✅' : '❌';
+  const enhancedColor = enhancedSuccessCount === streamScenarios.length ? 'green' : 'red';
+  const enhancedEmoji = enhancedSuccessCount === streamScenarios.length ? '✅' : '❌';
+
+  console.log(`\n${styleText(['bold', standardColor], `${standardEmoji} Standard streamText:`)} ${standardSuccessCount}/${streamScenarios.length} scenarios worked`);
+  console.log(`${styleText(['bold', enhancedColor], `${enhancedEmoji} ai-sdk-ollama streamText:`)} ${enhancedSuccessCount}/${streamScenarios.length} scenarios worked`);
 
   const successRate = Math.round((enhancedSuccessCount / streamScenarios.length) * 100);
   console.log(`\n${styleText(['bold', 'magenta'], '🎯 Success rate:')} ${successRate}% with ai-sdk-ollama streamText`);
 
   console.log('\n' + styleText(['bold', 'cyan'], '💡 Key takeaways:'));
-  console.log('• Standard streaming often executes tools but streams no final text');
-  console.log('• ai-sdk-ollama\'s streamText provides reliable, real-time streaming responses');
-  console.log('• For production streaming with tools, use ai-sdk-ollama');
+  console.log('• Standard streamText now works with ai-sdk-ollama provider!');
+  console.log('• Both approaches execute tools and stream responses');
+  console.log('• Enhanced streamText adds synthesis for more consistent streaming');
+  console.log('• Use standard for compatibility, enhanced for guaranteed synthesis');
 
   console.log('\n' + '='.repeat(70));
   console.log(styleText(['bold', 'green'], '🚀 Get started:'));

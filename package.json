@@ -23,8 +23,8 @@
   "devDependencies": {
     "@changesets/cli": "^2.29.7",
     "@eslint/js": "^9.38.0",
-    "@typescript-eslint/eslint-plugin": "^8.46.1",
-    "@typescript-eslint/parser": "^8.46.1",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
     "eslint": "^9.38.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-unicorn": "^61.0.2",
@@ -36,7 +36,7 @@
     "node": ">=22",
     "pnpm": ">=8"
   },
-  "packageManager": "pnpm@10.18.2",
+  "packageManager": "pnpm@10.19.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jagreehal/ai-sdk-ollama.git"
