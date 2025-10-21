@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { enhancedRepairText, getRepairFunction } from './object-generation-reliability';
+import {
+  enhancedRepairText,
+  getRepairFunction,
+} from './object-generation-reliability';
 
 describe('Enhanced JSON Repair', () => {
   describe('enhancedRepairText', () => {
@@ -108,7 +111,8 @@ describe('Enhanced JSON Repair', () => {
     });
 
     it('should fix Python constants', async () => {
-      const input = '{name: "John", active: True, value: None, disabled: False}';
+      const input =
+        '{name: "John", active: True, value: None, disabled: False}';
       const result = await enhancedRepairText({
         text: input,
         error: new Error('test'),

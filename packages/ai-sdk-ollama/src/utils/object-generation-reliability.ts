@@ -436,50 +436,58 @@ export async function enhancedRepairText(options: {
 
     // For line comments, we need to be more careful to not remove // inside strings
     // Split by lines and process each line
-    repaired = repaired.split('\n').map(line => {
-      // Walk through the line character by character to find the FIRST // that's OUTSIDE a string
-      let inSingleQuote = false;
-      let inDoubleQuote = false;
-      let escaped = false;
-      let commentStart = -1;
+    repaired = repaired
+      .split('\n')
+      .map((line) => {
+        // Walk through the line character by character to find the FIRST // that's OUTSIDE a string
+        let inSingleQuote = false;
+        let inDoubleQuote = false;
+        let escaped = false;
+        let commentStart = -1;
 
-      for (let i = 0; i < line.length - 1; i++) {
-        const char = line[i];
-        const nextChar = line[i + 1];
+        for (let i = 0; i < line.length - 1; i++) {
+          const char = line[i];
+          const nextChar = line[i + 1];
 
-        if (escaped) {
-          // Skip this character, it's escaped
-          escaped = false;
-          continue;
+          if (escaped) {
+            // Skip this character, it's escaped
+            escaped = false;
+            continue;
+          }
+
+          if (char === '\\') {
+            // Next character will be escaped
+            escaped = true;
+            continue;
+          }
+
+          // Track quote state
+          if (char === "'" && !inDoubleQuote) {
+            inSingleQuote = !inSingleQuote;
+          } else if (char === '"' && !inSingleQuote) {
+            inDoubleQuote = !inDoubleQuote;
+          }
+
+          // Check for // when we're NOT inside a string
+          if (
+            char === '/' &&
+            nextChar === '/' &&
+            !inSingleQuote &&
+            !inDoubleQuote
+          ) {
+            commentStart = i;
+            break;
+          }
         }
 
-        if (char === '\\') {
-          // Next character will be escaped
-          escaped = true;
-          continue;
+        // If we found a comment outside of strings, remove it
+        if (commentStart !== -1) {
+          return line.slice(0, commentStart).trimEnd();
         }
 
-        // Track quote state
-        if (char === "'" && !inDoubleQuote) {
-          inSingleQuote = !inSingleQuote;
-        } else if (char === '"' && !inSingleQuote) {
-          inDoubleQuote = !inDoubleQuote;
-        }
-
-        // Check for // when we're NOT inside a string
-        if (char === '/' && nextChar === '/' && !inSingleQuote && !inDoubleQuote) {
-          commentStart = i;
-          break;
-        }
-      }
-
-      // If we found a comment outside of strings, remove it
-      if (commentStart !== -1) {
-        return line.slice(0, commentStart).trimEnd();
-      }
-
-      return line;
-    }).join('\n');
+        return line;
+      })
+      .join('\n');
 
     // 4. Replace Python constants
     repaired = repaired.replaceAll(/\bNone\b/g, 'null');
@@ -584,7 +592,10 @@ export async function enhancedRepairText(options: {
     repaired = repaired.replaceAll(/([{[]\s*),/g, '$1');
 
     // 10. Fix special whitespace characters (non-breaking space, etc.)
-    repaired = repaired.replaceAll(/[\u00A0\u2000-\u200A\u202F\u205F\u3000]/g, ' ');
+    repaired = repaired.replaceAll(
+      /[\u00A0\u2000-\u200A\u202F\u205F\u3000]/g,
+      ' ',
+    );
 
     // 11. Handle common ellipsis patterns [...] or {...} that models sometimes add
     repaired = repaired.replaceAll(/,?\s*\.\.\.[\s,]*/g, '');
@@ -616,8 +627,11 @@ export async function enhancedRepairText(options: {
 
         // Apply basic fixes
         extracted = extracted.replaceAll(/,(\s*[}\]])/g, '$1');
-        extracted = extracted.replaceAll('\'', '"');
-        extracted = extracted.replaceAll(/([{,]\s*)([a-zA-Z_$]\w*)\s*:/g, '$1"$2":');
+        extracted = extracted.replaceAll("'", '"');
+        extracted = extracted.replaceAll(
+          /([{,]\s*)([a-zA-Z_$]\w*)\s*:/g,
+          '$1"$2":',
+        );
 
         // Balance braces
         const openBraces = (extracted.match(/\{/g) || []).length;

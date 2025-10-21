@@ -5,7 +5,7 @@
  * when tools execute but no text is streamed, then providing synthesis.
  */
 
-import { streamText as _streamText } from 'ai';
+import { streamText as _streamText, stepCountIs } from 'ai';
 import type { LanguageModel } from 'ai';
 
 export interface StreamTextOptions {
@@ -75,9 +75,11 @@ export async function streamText(options: StreamTextOptions) {
   }
 
   // Enhanced streaming with tool calling reliability
-  const streamResult = await _streamText(
-    streamTextOptions as Parameters<typeof _streamText>[0],
-  );
+  // Enable multi-turn tool calling with stopWhen
+  const streamResult = await _streamText({
+    ...(streamTextOptions as Parameters<typeof _streamText>[0]),
+    stopWhen: stepCountIs(5), // Enable multi-turn tool calling
+  });
 
   // Create enhanced stream that detects tool execution without text streaming
   let streamedContent = '';

@@ -1,4 +1,3 @@
- 
 import { describe, expect, it, beforeAll } from 'vitest';
 import { generateText } from 'ai';
 import { ollama } from '../index';

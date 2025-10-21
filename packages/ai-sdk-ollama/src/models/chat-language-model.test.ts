@@ -252,6 +252,13 @@ describe('OllamaChatLanguageModel', () => {
     });
 
     it('should force completion when tool calls succeed without final text', async () => {
+      // Create model with reliableToolCalling enabled for this test
+      const reliableModel = new OllamaChatLanguageModel(
+        'llama3.2',
+        { reliableToolCalling: true },
+        { client: mockOllamaClient, provider: 'ollama' },
+      );
+
       const toolExecute = vi.fn().mockResolvedValue({
         temperature: 20,
         unit: 'celsius',
@@ -328,7 +335,7 @@ describe('OllamaChatLanguageModel', () => {
         ],
       };
 
-      const result = await model.doGenerate(options);
+      const result = await reliableModel.doGenerate(options);
 
       expect(toolExecute).toHaveBeenCalledWith(
         expect.objectContaining({ location: 'San Francisco' }),

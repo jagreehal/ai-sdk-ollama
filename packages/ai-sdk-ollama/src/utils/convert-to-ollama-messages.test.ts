@@ -256,7 +256,17 @@ describe('convertToOllamaChatMessages', () => {
       expect(result).toEqual([
         {
           role: 'assistant',
-          content: 'Let me check the weather for you.\n[Tool Call: getWeather]',
+          content: 'Let me check the weather for you.',
+          tool_calls: [
+            {
+              id: '123',
+              type: 'function',
+              function: {
+                name: 'getWeather',
+                arguments: { location: 'New York' },
+              },
+            },
+          ],
         },
       ]);
     });
@@ -287,7 +297,25 @@ describe('convertToOllamaChatMessages', () => {
       expect(result).toEqual([
         {
           role: 'assistant',
-          content: '[Tool Call: getWeather]\n[Tool Call: getTime]',
+          content: '',
+          tool_calls: [
+            {
+              id: '1',
+              type: 'function',
+              function: {
+                name: 'getWeather',
+                arguments: { location: 'NYC' },
+              },
+            },
+            {
+              id: '2',
+              type: 'function',
+              function: {
+                name: 'getTime',
+                arguments: { timezone: 'EST' },
+              },
+            },
+          ],
         },
       ]);
     });
@@ -334,8 +362,9 @@ describe('convertToOllamaChatMessages', () => {
 
       expect(result).toEqual([
         {
-          role: 'user',
-          content: '[Tool Result]: {"temperature":72,"condition":"sunny"}',
+          role: 'tool',
+          content: '{"temperature":72,"condition":"sunny"}',
+          tool_name: 'getWeather',
         },
       ]);
     });
@@ -359,8 +388,9 @@ describe('convertToOllamaChatMessages', () => {
 
       expect(result).toEqual([
         {
-          role: 'user',
-          content: '[Tool Result]: 2:30 PM EST',
+          role: 'tool',
+          content: '2:30 PM EST',
+          tool_name: 'getTime',
         },
       ]);
     });
@@ -424,16 +454,28 @@ describe('convertToOllamaChatMessages', () => {
           role: 'user',
         },
         {
-          content: 'Let me check that for you.\n[Tool Call: getWeather]',
+          content: 'Let me check that for you.',
           role: 'assistant',
+          tool_calls: [
+            {
+              id: '1',
+              type: 'function',
+              function: {
+                name: 'getWeather',
+                arguments: { location: 'current' },
+              },
+            },
+          ],
         },
         {
-          content: '[Tool Result]: {"temp":75,"condition":"partly cloudy"}',
-          role: 'user',
+          content: '{"temp":75,"condition":"partly cloudy"}',
+          role: 'tool',
+          tool_name: 'getWeather',
         },
         {
           role: 'assistant',
           content: 'The weather is 75°F and partly cloudy.',
+          tool_calls: undefined,
         },
       ]);
     });
@@ -607,10 +649,16 @@ describe('convertToOllamaChatMessages', () => {
       },
     ]);
 
-    expect(result).toHaveLength(1);
+    expect(result).toHaveLength(2);
     expect(result[0]).toEqual({
-      role: 'user',
-      content: '[Tool Result]: Weather data retrieved\nTemperature: 72°F',
+      role: 'tool',
+      content: 'Weather data retrieved',
+      tool_name: 'weather',
+    });
+    expect(result[1]).toEqual({
+      role: 'tool',
+      content: 'Temperature: 72°F',
+      tool_name: 'weather',
     });
   });
 

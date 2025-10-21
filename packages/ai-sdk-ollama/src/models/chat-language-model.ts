@@ -473,10 +473,11 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
       (tool): tool is LanguageModelV2FunctionTool => tool.type === 'function',
     );
 
-    // Use reliability features for tool calling when enabled
-    // The AI SDK handles the tool calling loop, but we can enhance it with force completion
+    // Use reliability features for tool calling when explicitly enabled
+    // By default (false), let the AI SDK handle the multi-turn tool calling flow naturally
+    // This ensures compatibility with standard AI SDK patterns
     const reliabilityEnabled =
-      functionTools.length > 0 && (this.settings.reliableToolCalling ?? true);
+      functionTools.length > 0 && (this.settings.reliableToolCalling ?? false);
 
     if (reliabilityEnabled) {
       try {
@@ -583,11 +584,17 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
         }
       }
 
+      // Determine finish reason - if we have tool calls, return 'tool-calls' to continue conversation
+      const finishReason: LanguageModelV2FinishReason =
+        parsedToolCalls.length > 0
+          ? 'tool-calls'
+          : (mapOllamaFinishReason(
+              response.done_reason,
+            ) as LanguageModelV2FinishReason);
+
       return {
         content,
-        finishReason: mapOllamaFinishReason(
-          response.done_reason,
-        ) as LanguageModelV2FinishReason,
+        finishReason,
         usage: {
           inputTokens: response.prompt_eval_count || 0,
           outputTokens: response.eval_count || 0,
@@ -1267,6 +1274,9 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
       let textStreamStarted = false;
       let currentTextId: string | null = null;
 
+      // Track if we've seen tool calls to set correct finish reason
+      let hasToolCalls = false;
+
       const transformStream = new TransformStream<
         ChatResponse,
         LanguageModelV2StreamPart
@@ -1317,9 +1327,12 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
               totalTokens:
                 (chunk.prompt_eval_count || 0) + (chunk.eval_count || 0),
             };
-            finishReason = mapOllamaFinishReason(
-              chunk.done_reason,
-            ) as LanguageModelV2FinishReason;
+            // If we saw tool calls, set finish reason to 'tool-calls' to continue conversation
+            finishReason = hasToolCalls
+              ? 'tool-calls'
+              : (mapOllamaFinishReason(
+                  chunk.done_reason,
+                ) as LanguageModelV2FinishReason);
 
             controller.enqueue({
               type: 'finish',
@@ -1353,6 +1366,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
               chunk.message.tool_calls &&
               chunk.message.tool_calls.length > 0
             ) {
+              hasToolCalls = true; // Track that we've seen tool calls
               for (const toolCall of chunk.message.tool_calls) {
                 const toolInput = toolCall.function.arguments || {};
 
