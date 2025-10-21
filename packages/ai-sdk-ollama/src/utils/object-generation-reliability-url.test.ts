@@ -129,7 +129,8 @@ describe('Enhanced JSON Repair - URL Handling', () => {
   });
 
   it('should handle multiple // on same line - preserve in string, remove comment', async () => {
-    const input = '{"url": "https://example.com", "path": "//cdn.example.com" // comment here}';
+    const input =
+      '{"url": "https://example.com", "path": "//cdn.example.com" // comment here}';
     const result = await enhancedRepairText({
       text: input,
       error: new Error('test'),

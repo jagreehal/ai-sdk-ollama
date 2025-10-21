@@ -5,7 +5,7 @@
  * that addresses the core Ollama limitation: tools execute but no final text is generated.
  */
 
-import { generateText as _generateText } from 'ai';
+import { generateText as _generateText, stepCountIs } from 'ai';
 import type { ToolSet } from 'ai';
 
 /**
@@ -66,10 +66,10 @@ export type GenerateTextOptions<
 
 /**
  * Enhanced generateText function with Ollama-specific reliability improvements
- * 
+ *
  * This function applies synthesis by default when tools execute but return empty responses.
  * The enhancement preserves the original response prototype and all methods/getters.
- * 
+ *
  * Type parameters are inferred from the options, preserving AI SDK's type inference.
  */
 export async function generateText<
@@ -89,7 +89,9 @@ export async function generateText<
     enableToolsWithStructuredOutput = false,
   } = enhancedOptions;
 
-  const hasTools = generateTextOptions.tools && Object.keys(generateTextOptions.tools).length > 0;
+  const hasTools =
+    generateTextOptions.tools &&
+    Object.keys(generateTextOptions.tools).length > 0;
 
   // EXPERIMENTAL: Support tools with structured output (opt-in only)
   const hasExperimentalOutput = 'experimental_output' in generateTextOptions;
@@ -134,7 +136,9 @@ export async function generateText<
       };
 
       // Phase 2: Generate structured output with tool context
-      const structuredResult = await _generateText(_generateTextOptions as Parameters<typeof _generateText>[0]);
+      const structuredResult = await _generateText(
+        _generateTextOptions as Parameters<typeof _generateText>[0],
+      );
 
       // Preserve original prototype while merging properties
       const enhancedResult = Object.create(
@@ -143,12 +147,30 @@ export async function generateText<
       ) as typeof structuredResult;
 
       // Override properties with tool metadata
-      Object.defineProperty(enhancedResult, 'toolCalls', { value: toolResult.toolCalls, enumerable: true });
-      Object.defineProperty(enhancedResult, 'toolResults', { value: toolResult.toolResults, enumerable: true });
-      Object.defineProperty(enhancedResult, 'staticToolCalls', { value: toolResult.staticToolCalls, enumerable: true });
-      Object.defineProperty(enhancedResult, 'dynamicToolCalls', { value: toolResult.dynamicToolCalls, enumerable: true });
-      Object.defineProperty(enhancedResult, 'staticToolResults', { value: toolResult.staticToolResults, enumerable: true });
-      Object.defineProperty(enhancedResult, 'dynamicToolResults', { value: toolResult.dynamicToolResults, enumerable: true });
+      Object.defineProperty(enhancedResult, 'toolCalls', {
+        value: toolResult.toolCalls,
+        enumerable: true,
+      });
+      Object.defineProperty(enhancedResult, 'toolResults', {
+        value: toolResult.toolResults,
+        enumerable: true,
+      });
+      Object.defineProperty(enhancedResult, 'staticToolCalls', {
+        value: toolResult.staticToolCalls,
+        enumerable: true,
+      });
+      Object.defineProperty(enhancedResult, 'dynamicToolCalls', {
+        value: toolResult.dynamicToolCalls,
+        enumerable: true,
+      });
+      Object.defineProperty(enhancedResult, 'staticToolResults', {
+        value: toolResult.staticToolResults,
+        enumerable: true,
+      });
+      Object.defineProperty(enhancedResult, 'dynamicToolResults', {
+        value: toolResult.dynamicToolResults,
+        enumerable: true,
+      });
       Object.defineProperty(enhancedResult, 'usage', {
         value: {
           inputTokens:
@@ -164,34 +186,58 @@ export async function generateText<
         enumerable: true,
       });
 
-      return enhancedResult as unknown as Awaited<ReturnType<typeof _generateText<TOOLS, OUTPUT, OUTPUT_PARTIAL>>>;
+      return enhancedResult as unknown as Awaited<
+        ReturnType<typeof _generateText<TOOLS, OUTPUT, OUTPUT_PARTIAL>>
+      >;
     }
   }
 
-  // First, try standard generateText
-  const result = await _generateText(
-    generateTextOptions as Parameters<typeof _generateText>[0],
-  );
+  // First, try standard generateText with multi-turn tool calling enabled
+  const result = await _generateText({
+    ...(generateTextOptions as Parameters<typeof _generateText>[0]),
+    stopWhen: stepCountIs(5), // Enable multi-turn tool calling
+  });
 
   // Check if we need synthesis (tools called but no meaningful text)
-  const toolsWereCalled = result.toolCalls && result.toolCalls.length > 0;
+  // Check across all steps to see if any tools were called
+  const toolsWereCalled =
+    result.steps?.some((step) => step.toolCalls && step.toolCalls.length > 0) ??
+    false;
   const hasMinimalText =
     !result.text || result.text.trim().length < minResponseLength;
 
   if (!hasTools || !toolsWereCalled || !hasMinimalText || !enableSynthesis) {
-    return result as unknown as ReturnType<typeof _generateText<TOOLS, OUTPUT, OUTPUT_PARTIAL>>;
+    return result as unknown as ReturnType<
+      typeof _generateText<TOOLS, OUTPUT, OUTPUT_PARTIAL>
+    >;
   }
 
   // Attempt synthesis with tool results
   for (let attempt = 1; attempt <= maxSynthesisAttempts; attempt++) {
     try {
-      // Build synthesis prompt with tool context
+      // Build synthesis prompt with tool context from all steps
+      const allToolCalls: Array<{ toolName: string; result: unknown }> = [];
+
+      if (result.steps) {
+        for (const step of result.steps) {
+          if (step.toolCalls && step.toolResults) {
+            for (let i = 0; i < step.toolCalls.length; i++) {
+              const toolCall = step.toolCalls[i];
+              const toolResult = step.toolResults[i];
+              if (toolCall && toolResult) {
+                allToolCalls.push({
+                  toolName: toolCall.toolName,
+                  result: toolResult,
+                });
+              }
+            }
+          }
+        }
+      }
+
       const toolContext =
-        result.toolResults
-          ?.map(
-            (tr, i) =>
-              `${result.toolCalls?.[i]?.toolName || 'Tool'}: ${JSON.stringify(tr)}`,
-          )
+        allToolCalls
+          .map((tc) => `${tc.toolName}: ${JSON.stringify(tc.result)}`)
           .join('\n') || '';
 
       const originalPrompt =
@@ -207,7 +253,8 @@ ${toolContext}
 ${synthesisPrompt}`;
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { tools, prompt, messages, ...baseOptions } = generateTextOptions as Parameters<typeof _generateText>[0];
+      const { tools, prompt, messages, ...baseOptions } =
+        generateTextOptions as Parameters<typeof _generateText>[0];
 
       // Use messages pattern if original call used messages, otherwise use prompt
       const synthesisOptions = messages
@@ -239,7 +286,10 @@ ${synthesisPrompt}`;
         ) as typeof result;
 
         // Override text and usage properties
-        Object.defineProperty(enhancedResult, 'text', { value: synthesisResult.text, enumerable: true });
+        Object.defineProperty(enhancedResult, 'text', {
+          value: synthesisResult.text,
+          enumerable: true,
+        });
         Object.defineProperty(enhancedResult, 'usage', {
           value: {
             inputTokens:
@@ -255,12 +305,16 @@ ${synthesisPrompt}`;
           enumerable: true,
         });
 
-        return enhancedResult as unknown as ReturnType<typeof _generateText<TOOLS, OUTPUT, OUTPUT_PARTIAL>>;
+        return enhancedResult as unknown as ReturnType<
+          typeof _generateText<TOOLS, OUTPUT, OUTPUT_PARTIAL>
+        >;
       }
     } catch {
       // Silently continue to next attempt
     }
   }
 
-  return result as unknown as ReturnType<typeof _generateText<TOOLS, OUTPUT, OUTPUT_PARTIAL>>;
+  return result as unknown as ReturnType<
+    typeof _generateText<TOOLS, OUTPUT, OUTPUT_PARTIAL>
+  >;
 }

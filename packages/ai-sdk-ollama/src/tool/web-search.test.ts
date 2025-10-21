@@ -186,11 +186,7 @@ describe('webSearch', () => {
     // Test invalid input
     expect(() => schema.parse({ query: '' })).toThrow(); // Empty query
     expect(() => schema.parse({ query: 'a'.repeat(501) })).toThrow(); // Too long
-    expect(() =>
-      schema.parse({ query: 'valid', maxResults: 0 }),
-    ).toThrow(); // Invalid max results
-    expect(() =>
-      schema.parse({ query: 'valid', maxResults: 21 }),
-    ).toThrow(); // Too many results
+    expect(() => schema.parse({ query: 'valid', maxResults: 0 })).toThrow(); // Invalid max results
+    expect(() => schema.parse({ query: 'valid', maxResults: 21 })).toThrow(); // Too many results
   });
 });

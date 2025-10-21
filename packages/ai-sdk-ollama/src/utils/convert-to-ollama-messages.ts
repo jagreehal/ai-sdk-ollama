@@ -92,11 +92,19 @@ export function convertToOllamaChatMessages(
 
       case 'assistant': {
         let content = '';
+        const toolCalls: Array<{
+          id?: string;
+          type: 'function';
+          function: {
+            name: string;
+            arguments: Record<string, unknown>;
+          };
+        }> = [];
 
         if (typeof message.content === 'string') {
           content = message.content;
         } else {
-          // Enhanced content handling with better tool call support
+          // Enhanced content handling with proper tool call support
           const textParts = message.content
             .filter((part) => part.type === 'text')
             .map((part) => part.text)
@@ -110,17 +118,29 @@ export function convertToOllamaChatMessages(
           // Combine text and reasoning
           content = [textParts, reasoningParts].filter(Boolean).join('\n');
 
-          // Handle tool calls if present
-          const toolCalls = message.content.filter(
-            (part) => part.type === 'tool-call',
-          );
-          if (toolCalls.length > 0) {
-            // For now, we'll append tool calls as text since Ollama doesn't have native support
-            const toolCallText = toolCalls
-              .map((tc) => `[Tool Call: ${tc.toolName}]`)
-              .join('\n');
-            if (toolCallText) {
-              content = content ? `${content}\n${toolCallText}` : toolCallText;
+          // Handle tool calls properly - Ollama DOES support native tool calls
+          for (const part of message.content) {
+            if (part.type === 'tool-call') {
+              // Parse the input - it should be a JSON string from AI SDK
+              let args: Record<string, unknown>;
+              try {
+                args =
+                  typeof part.input === 'string'
+                    ? JSON.parse(part.input)
+                    : (part.input as Record<string, unknown>);
+              } catch (error) {
+                console.warn('Failed to parse tool call input:', error);
+                args = {};
+              }
+
+              toolCalls.push({
+                id: part.toolCallId,
+                type: 'function',
+                function: {
+                  name: part.toolName,
+                  arguments: args,
+                },
+              });
             }
           }
         }
@@ -128,35 +148,35 @@ export function convertToOllamaChatMessages(
         messages.push({
           role: 'assistant',
           content: content || '', // Ensure content is never undefined
+          tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
         });
         break;
       }
 
       case 'tool': {
-        // Enhanced tool result handling
+        // Handle tool result messages - Ollama supports native tool role with tool_name
         if (typeof message.content === 'string') {
           messages.push({
-            role: 'user', // Ollama doesn't have native tool role, so we use user
-            content: `[Tool Result]: ${message.content}`,
+            role: 'tool',
+            content: message.content,
           });
         } else {
           // Handle multi-part tool results
-          const toolResultParts = message.content
-            .filter((part) => part.type === 'tool-result')
-            .map((part) => {
-              if (part.output.type === 'text') {
-                return part.output.value;
-              } else if (part.output.type === 'json') {
-                return JSON.stringify(part.output.value);
-              }
-              return String(part.output.value);
-            })
-            .join('\n');
+          for (const part of message.content) {
+            if (part.type === 'tool-result') {
+              const contentValue =
+                part.output.type === 'text' || part.output.type === 'error-text'
+                  ? part.output.value
+                  : JSON.stringify(part.output.value);
 
-          messages.push({
-            role: 'user',
-            content: `[Tool Result]: ${toolResultParts || ''}`,
-          });
+              // Ollama's Message interface supports tool_name field for tool results
+              messages.push({
+                role: 'tool',
+                content: contentValue,
+                tool_name: part.toolName,
+              });
+            }
+          }
         }
         break;
       }

@@ -198,18 +198,14 @@ describe('webFetch', () => {
     const schema = tool.inputSchema as any; // Type assertion for schema parsing
 
     // Test valid input
-    expect(() =>
-      schema.parse({ url: 'https://example.com' }),
-    ).not.toThrow();
+    expect(() => schema.parse({ url: 'https://example.com' })).not.toThrow();
     expect(() =>
       schema.parse({ url: 'http://test.org/path?param=value' }),
     ).not.toThrow();
 
     // Test invalid input
     expect(() => schema.parse({ url: 'not-a-url' })).toThrow(); // Invalid URL
-    expect(() =>
-      schema.parse({ url: 'ftp://example.com' }),
-    ).not.toThrow(); // FTP URLs are actually valid URLs
+    expect(() => schema.parse({ url: 'ftp://example.com' })).not.toThrow(); // FTP URLs are actually valid URLs
     expect(() => schema.parse({})).toThrow(); // Missing URL
   });
 
