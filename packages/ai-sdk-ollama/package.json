@@ -1,6 +1,6 @@
 {
   "name": "ai-sdk-ollama",
-  "version": "0.13.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "Vercel AI SDK Provider for Ollama using official ollama-js library",
   "main": "./dist/index.js",
