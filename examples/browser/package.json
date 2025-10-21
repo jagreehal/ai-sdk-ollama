@@ -26,7 +26,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@radix-ui/react-use-controllable-state": "^1.2.2",
-    "@tailwindcss/vite": "^4.1.14",
+    "@tailwindcss/vite": "^4.1.15",
     "ai": "^5.0.75",
     "ai-sdk-ollama": "workspace:*",
     "class-variance-authority": "^0.7.1",
