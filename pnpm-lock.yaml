@@ -170,8 +170,8 @@ importers:
         specifier: ^17.2.3
         version: 17.2.3
       ollama:
-        specifier: ^0.6.0
-        version: 0.6.0
+        specifier: ^0.6.2
+        version: 0.6.2
       zod:
         specifier: ^4.1.12
         version: 4.1.12
@@ -201,8 +201,8 @@ importers:
         specifier: ^5.0.69
         version: 5.0.69(zod@4.1.12)
       ollama:
-        specifier: ^0.6.0
-        version: 0.6.0
+        specifier: ^0.6.2
+        version: 0.6.2
     devDependencies:
       '@arethetypeswrong/cli':
         specifier: ^0.18.2
@@ -267,12 +267,6 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/gateway@2.0.2':
-    resolution: {integrity: sha512-25F1qPqZxOw9IcV9OQCL29hV4HAFLw5bFWlzQLBi5aDhEZsTMT2rMi3umSqNaUxrrw+dLRtjOL7RbHC+WjbA/A==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
   '@ai-sdk/gateway@2.0.3':
     resolution: {integrity: sha512-/vCoMKtod+A74/BbkWsaAflWKz1ovhX5lmJpIaXQXtd6gyexZncjotBTbFM8rVJT9LKJ/Kx7iVVo3vh+KT+IJg==}
     engines: {node: '>=18'}
@@ -281,12 +275,6 @@ packages:
 
   '@ai-sdk/provider-utils@3.0.12':
     resolution: {integrity: sha512-ZtbdvYxdMoria+2SlNarEk6Hlgyf+zzcznlD55EAl+7VZvJaSg2sqPvwArY7L6TfDEDJsnCq0fdhBSkYo0Xqdg==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
-  '@ai-sdk/provider-utils@3.0.13':
-    resolution: {integrity: sha512-aXFLBLRPTUYA853MJliItefSXeJPl+mg0KSjbToP41kJ+banBmHO8ZPGLJhNqGlCU82o11TYN7G05EREKX8CkA==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -2058,12 +2046,6 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  ai@5.0.81:
-    resolution: {integrity: sha512-SB7oMC9QSpIu1VLswFTZuhhpfQfrGtFBUbWLtHBkhjWZIQskjtcdEhB+N4yO9hscdc2wYtjw/tacgoxX93QWFw==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
   ai@5.0.82:
     resolution: {integrity: sha512-wmZZfsU40qB77umrcj3YzMSk6cUP5gxLXZDPfiSQLBLegTVXPUdSJC603tR7JB5JkhBDzN5VLaliuRKQGKpUXg==}
     engines: {node: '>=18'}
@@ -3390,8 +3372,8 @@ packages:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
     engines: {node: '>=0.10.0'}
 
-  ollama@0.6.0:
-    resolution: {integrity: sha512-FHjdU2Ok5x2HZsxPui/MBJZ5J+HzmxoWYa/p9wk736eT+uAhS8nvIICar5YgwlG5MFNjDR6UA5F3RSKq+JseOA==}
+  ollama@0.6.2:
+    resolution: {integrity: sha512-VcPZpBuz3kdoJIcyWpiDS1MSDSZKyQPM6f9wi405vdLOB5yZWiQ+m7NSTrYsntQyCp/s/Yy0quKiYerhq7Liog==}
 
   oniguruma-parser@0.12.1:
     resolution: {integrity: sha512-8Unqkvk1RYc6yq2WBYRj4hdnsAxVze8i7iPfQr8e4uSP3tRv0rpZcbGUDvxfQQcdwHt/e9PrMvGCsa8OqG9X3w==}
@@ -4309,13 +4291,6 @@ snapshots:
       '@vercel/oidc': 3.0.2
       zod: 4.1.12
 
-  '@ai-sdk/gateway@2.0.2(zod@4.1.12)':
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.13(zod@4.1.12)
-      '@vercel/oidc': 3.0.3
-      zod: 4.1.12
-
   '@ai-sdk/gateway@2.0.3(zod@4.1.12)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
@@ -4324,13 +4299,6 @@ snapshots:
       zod: 4.1.12
 
   '@ai-sdk/provider-utils@3.0.12(zod@4.1.12)':
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
-      eventsource-parser: 3.0.6
-      zod: 4.1.12
-
-  '@ai-sdk/provider-utils@3.0.13(zod@4.1.12)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
       '@standard-schema/spec': 1.0.0
@@ -5949,14 +5917,6 @@ snapshots:
       '@ai-sdk/gateway': 1.0.39(zod@4.1.12)
       '@ai-sdk/provider': 2.0.0
       '@ai-sdk/provider-utils': 3.0.12(zod@4.1.12)
-      '@opentelemetry/api': 1.9.0
-      zod: 4.1.12
-
-  ai@5.0.81(zod@4.1.12):
-    dependencies:
-      '@ai-sdk/gateway': 2.0.2(zod@4.1.12)
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.13(zod@4.1.12)
       '@opentelemetry/api': 1.9.0
       zod: 4.1.12
 
@@ -7614,7 +7574,7 @@ snapshots:
 
   object-assign@4.1.1: {}
 
-  ollama@0.6.0:
+  ollama@0.6.2:
     dependencies:
       whatwg-fetch: 3.6.20
 
