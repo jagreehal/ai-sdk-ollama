@@ -10,7 +10,7 @@
     "ai": "^5.0.82",
     "ai-sdk-ollama": "workspace:*",
     "dotenv": "^17.2.3",
-    "ollama": "^0.6.0",
+    "ollama": "^0.6.2",
     "zod": "^4.1.12"
   },
   "devDependencies": {
