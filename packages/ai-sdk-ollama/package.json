@@ -84,11 +84,11 @@
   ],
   "dependencies": {
     "@ai-sdk/provider": "^2.0.0",
-    "@ai-sdk/provider-utils": "^3.0.14",
+    "@ai-sdk/provider-utils": "^3.0.15",
     "ollama": "^0.6.2"
   },
   "peerDependencies": {
-    "ai": "^5.0.69"
+    "ai": "^5.0.86"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
@@ -107,7 +107,7 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.2",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^4.0.5",
+    "vitest": "^4.0.6",
     "zod": "^4.1.12"
   },
   "engines": {
