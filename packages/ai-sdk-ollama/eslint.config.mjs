@@ -19,6 +19,7 @@ export default tseslint.config(
       'unicorn/no-null': 'off',
       'unicorn/prefer-top-level-await': 'off',
       'unicorn/no-nested-ternary': 'off',
+      'unicorn/no-immediate-mutation': 'off',
     },
   },
 );
