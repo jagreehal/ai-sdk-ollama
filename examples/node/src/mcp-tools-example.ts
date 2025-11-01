@@ -6,31 +6,51 @@
  * of tools and integrations.
  *
  * Prerequisites:
- * 1. Install and start an MCP server (we'll create a simple one for this example)
- * 2. The AI SDK's experimental_createMCPClient to connect to the server
+ * 1. Install @ai-sdk/mcp: npm install @ai-sdk/mcp
+ * 2. This example creates a simple MCP server for demonstration
+ * 3. In production, you'd connect to real MCP servers (file systems, databases, APIs, etc.)
  *
  * About MCP:
  * - Model Context Protocol is an open standard for connecting AI apps to tools
  * - Enables secure, two-way communication between apps and data sources
  * - Supports various transports: stdio, SSE, HTTP
+ * - Uses experimental_createMCPClient from @ai-sdk/mcp
+ *
+ * Documentation:
+ * - https://ai-sdk.dev/docs/reference/ai-sdk-core/create-mcp-client
+ * - https://modelcontextprotocol.info
  */
 
 import { ollama } from 'ai-sdk-ollama';
-import { generateText, experimental_createMCPClient } from 'ai';
-import { spawn } from 'child_process';
-import { z } from 'zod';
+import { generateText } from 'ai';
+import { experimental_createMCPClient } from '@ai-sdk/mcp';
+import { Experimental_StdioMCPTransport } from '@ai-sdk/mcp/mcp-stdio';
 
-// Simple mock MCP server for demonstration
-// In practice, you'd connect to real MCP servers like file systems, databases, APIs, etc.
-class SimpleMCPServer {
-  private process: any;
+async function demonstrateMCPTools() {
+  console.log('🔗 MCP (Model Context Protocol) Tools with Ollama\n');
+  console.log('='.repeat(60));
+  console.log(
+    'This example shows how to use MCP tools with the Ollama provider.',
+  );
+  console.log(
+    'MCP enables connecting to external tools and services securely.',
+  );
+  console.log('='.repeat(60));
 
-  async start() {
-    console.log('🚀 Starting simple MCP server...');
+  let mcpClient: Awaited<ReturnType<typeof experimental_createMCPClient>> | null = null;
 
-    // Create a mock MCP server that responds to stdio
-    // This simulates what a real MCP server would provide
-    const serverCode = `
+  try {
+
+    console.log('\n📌 Step 1: Creating MCP Client Connection');
+
+    // Create MCP client with stdio transport (connecting to our local server)
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      const os = await import('os');
+
+      const serverPath = path.join(os.tmpdir(), 'simple-mcp-server.js');
+      const serverCode = `
 const readline = require('readline');
 const rl = readline.createInterface({
   input: process.stdin,
@@ -82,8 +102,34 @@ rl.on('line', (input) => {
   try {
     const request = JSON.parse(input);
     
+    // Handle MCP initialization
+    if (request.method === 'initialize') {
+      const response = {
+        jsonrpc: '2.0',
+        id: request.id,
+        result: {
+          protocolVersion: '2024-11-05',
+          capabilities: {
+            tools: {}
+          },
+          serverInfo: {
+            name: 'simple-mcp-server',
+            version: '1.0.0'
+          }
+        }
+      };
+      console.log(JSON.stringify(response));
+      return;
+    }
+    
+    // Handle initialized notification (sent after initialize)
+    if (request.method === 'notifications/initialized') {
+      return; // No response needed for notifications
+    }
+    
     if (request.method === 'tools/list') {
       const response = {
+        jsonrpc: '2.0',
         id: request.id,
         result: {
           tools: Object.values(tools)
@@ -132,6 +178,7 @@ rl.on('line', (input) => {
       }
       
       const response = {
+        jsonrpc: '2.0',
         id: request.id,
         result: { content: [{ type: 'text', text: JSON.stringify(result) }] }
       };
@@ -139,7 +186,8 @@ rl.on('line', (input) => {
     }
   } catch (error) {
     const response = {
-      id: request.id || 'unknown',
+      jsonrpc: '2.0',
+      id: request?.id || 'unknown',
       error: { code: -1, message: error.message }
     };
     console.log(JSON.stringify(response));
@@ -147,149 +195,27 @@ rl.on('line', (input) => {
 });
 `;
 
-    // Write the server code to a temporary file and run it
-    const fs = await import('fs');
-    const path = await import('path');
-    const os = await import('os');
+      // Write the server code to a temporary file
+      fs.writeFileSync(serverPath, serverCode);
 
-    const serverPath = path.join(os.tmpdir(), 'simple-mcp-server.js');
-    fs.writeFileSync(serverPath, serverCode);
-
-    this.process = spawn('node', [serverPath], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-
-    console.log('✅ Simple MCP server started');
-    return this.process;
-  }
-
-  stop() {
-    if (this.process) {
-      this.process.kill();
-      console.log('🛑 MCP server stopped');
-    }
-  }
-}
-
-async function demonstrateMCPTools() {
-  console.log('🔗 MCP (Model Context Protocol) Tools with Ollama\n');
-  console.log('='.repeat(60));
-  console.log(
-    'This example shows how to use MCP tools with the Ollama provider.',
-  );
-  console.log(
-    'MCP enables connecting to external tools and services securely.',
-  );
-  console.log('='.repeat(60));
-
-  let mcpServer: SimpleMCPServer | null = null;
-  let mcpClient: any = null;
-
-  try {
-    // Start a simple MCP server for demonstration
-    mcpServer = new SimpleMCPServer();
-    const serverProcess = await mcpServer.start();
-
-    // Wait a moment for the server to be ready
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    console.log('\n📌 Step 1: Creating MCP Client Connection');
-
-    // Create MCP client with stdio transport (connecting to our local server)
-    try {
-      // Note: In a real scenario, you'd use:
-      // mcpClient = await experimental_createMCPClient({
-      //   transport: new StdioClientTransport({
-      //     command: 'path/to/mcp-server',
-      //     args: []
-      //   })
-      // });
-
-      // For this example, we'll simulate the MCP client response
-      console.log('✅ MCP client created (simulated)');
-      console.log('📋 Available tools from MCP server:');
-      console.log('   • calculator - Perform mathematical calculations');
-      console.log('   • getTime - Get current time information');
-      console.log('   • weatherMock - Get mock weather data');
-
-      // Import the tool function for proper AI SDK integration
-      const { tool } = await import('ai');
-
-      // Simulate getting tools from MCP server
-      const mcpTools = {
-        calculator: tool({
-          description: 'Perform basic mathematical calculations',
-          inputSchema: z.object({
-            operation: z.enum(['add', 'subtract', 'multiply', 'divide']),
-            a: z.number(),
-            b: z.number(),
-          }),
-          execute: async ({
-            operation,
-            a,
-            b,
-          }: {
-            operation: string;
-            a: number;
-            b: number;
-          }) => {
-            console.log(`🧮 Executing calculator: ${a} ${operation} ${b}`);
-            switch (operation) {
-              case 'add':
-                return `The result of ${a} + ${b} is ${a + b}`;
-              case 'subtract':
-                return `The result of ${a} - ${b} is ${a - b}`;
-              case 'multiply':
-                return `The result of ${a} × ${b} is ${a * b}`;
-              case 'divide':
-                return b !== 0
-                  ? `The result of ${a} ÷ ${b} is ${a / b}`
-                  : 'Error: Division by zero';
-              default:
-                return 'Unknown operation';
-            }
-          },
+      // Create MCP client using the actual API
+      mcpClient = await experimental_createMCPClient({
+        transport: new Experimental_StdioMCPTransport({
+          command: 'node',
+          args: [serverPath],
         }),
-        getTime: tool({
-          description: 'Get current time and date information',
-          inputSchema: z.object({
-            timezone: z.string().optional(),
-          }),
-          execute: async ({ timezone }: { timezone?: string }) => {
-            console.log('🕐 Executing getTime tool');
-            const now = new Date();
-            const tz =
-              timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
-            return `Current time: ${now.toLocaleString()} (${tz}). ISO format: ${now.toISOString()}`;
-          },
-        }),
-        weatherMock: tool({
-          description: 'Get mock weather information for a location',
-          inputSchema: z.object({
-            location: z.string(),
-            units: z.enum(['metric', 'imperial']).optional(),
-          }),
-          execute: async ({
-            location,
-            units = 'imperial',
-          }: {
-            location: string;
-            units?: string;
-          }) => {
-            console.log(`🌤️ Executing weather lookup for ${location}`);
-            const temps: Record<string, number> = {
-              'New York': 72,
-              London: 59,
-              Tokyo: 79,
-              Paris: 66,
-            };
-            const temp = temps[location] || 70;
-            const actualTemp =
-              units === 'metric' ? Math.round(((temp - 32) * 5) / 9) : temp;
-            return `Weather in ${location}: ${actualTemp}°${units === 'metric' ? 'C' : 'F'}, partly cloudy, 65% humidity`;
-          },
-        }),
-      };
+      });
+
+      console.log('✅ MCP client created');
+      console.log('📋 Fetching available tools from MCP server...');
+
+      // Get tools from the MCP server
+      const mcpTools = await mcpClient.tools();
+
+      console.log('✅ Tools retrieved from MCP server:');
+      console.log(
+        `   • ${Object.keys(mcpTools).join(', ')} - Available from MCP server`,
+      );
 
       console.log('\n📌 Step 2: Using MCP Tools with Ollama');
       console.log(
@@ -366,11 +292,10 @@ async function demonstrateMCPTools() {
       }
     } catch (clientError) {
       console.error('❌ MCP client creation failed:', clientError);
-      console.log('\n📝 Note: This example uses simulated MCP tools.');
-      console.log('In a real scenario, you would:');
-      console.log('1. Install and configure actual MCP servers');
-      console.log('2. Use experimental_createMCPClient with proper transport');
-      console.log('3. Connect to services like file systems, databases, APIs');
+      console.log(
+        '\n📝 Note: Make sure you have @ai-sdk/mcp installed and the MCP server is running correctly.',
+      );
+      throw clientError;
     }
   } catch (error) {
     console.error('❌ Error in MCP demonstration:', error);
@@ -385,9 +310,6 @@ async function demonstrateMCPTools() {
       }
     }
 
-    if (mcpServer) {
-      mcpServer.stop();
-    }
   }
 
   console.log('\n' + '='.repeat(60));
@@ -409,8 +331,8 @@ async function demonstrateMCPTools() {
 
   console.log('\n📚 NEXT STEPS:');
   console.log('   1. Install real MCP servers from the MCP ecosystem');
-  console.log('   2. Configure transport (stdio, SSE, or HTTP)');
-  console.log('   3. Use experimental_createMCPClient for production');
+  console.log('   2. Configure transport using Experimental_StdioMCPTransport or SSE/HTTP');
+  console.log('   3. Connect using experimental_createMCPClient (as shown in this example)');
   console.log('   4. Explore the growing MCP server ecosystem');
 
   console.log('\n🌐 LEARN MORE:');

@@ -1,4 +1,4 @@
-import { beforeEach, vi } from 'vitest';
+import { beforeEach, vi, type Mock } from 'vitest';
 
 // Mock console methods during tests to avoid noise
 beforeEach(() => {
@@ -31,7 +31,7 @@ export const createMockStreamResponse = (chunks: string[]): Response => {
   });
 };
 
-export const mockFetch = vi.fn();
+export const mockFetch: Mock = vi.fn();
 
 // Set up global fetch mock
 globalThis.fetch = mockFetch;
