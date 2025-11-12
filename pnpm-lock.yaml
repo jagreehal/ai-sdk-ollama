@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       eslint-scope:
-        specifier: ^8.4.0
-        version: 8.4.0
+        specifier: ^9.0.0
+        version: 9.0.0
       eslint-visitor-keys:
         specifier: ^5.0.0
         version: 5.0.0
@@ -2662,6 +2662,10 @@ packages:
   eslint-scope@8.4.0:
     resolution: {integrity: sha512-sNXOfKCn74rt8RICKMvJS7XKV/Xk9kA7DyJr8mJik3S7Cwgy3qlkkmyS2uQB3jiJg6VNdZd/pDBJu0nvG2NlTg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  eslint-scope@9.0.0:
+    resolution: {integrity: sha512-+Yh0LeQKq+mW/tQArNj67tljR3L1HajDTQPuZOEwC00oBdoIDQrr89yBgjAlzAwRrY/5zDkM3v99iGHwz9y0dw==}
+    engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
   eslint-visitor-keys@3.4.3:
     resolution: {integrity: sha512-wpc+LXeiyiisxPlEkUzU6svyS1frIO3Mgxj1fdy7Pm8Ygzguax2N3Fa/D/ag1WqbOprdI+uY6wMUl8/a2G+iag==}
@@ -6651,6 +6655,11 @@ snapshots:
       strip-indent: 4.1.1
 
   eslint-scope@8.4.0:
+    dependencies:
+      esrecurse: 4.3.0
+      estraverse: 5.3.0
+
+  eslint-scope@9.0.0:
     dependencies:
       esrecurse: 4.3.0
       estraverse: 5.3.0
