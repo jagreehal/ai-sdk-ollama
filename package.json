@@ -48,7 +48,7 @@
     "example": "examples"
   },
   "dependencies": {
-    "eslint-scope": "^8.4.0",
+    "eslint-scope": "^9.0.0",
     "eslint-visitor-keys": "^5.0.0"
   },
   "keywords": [],
