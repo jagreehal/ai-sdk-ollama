@@ -18,7 +18,8 @@
     "type-check": "turbo type-check",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && changeset publish",
+    "quality": "pnpm test && pnpm lint && pnpm build"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.7",
@@ -36,7 +37,7 @@
     "node": ">=22",
     "pnpm": ">=8"
   },
-  "packageManager": "pnpm@10.20.0",
+  "packageManager": "pnpm@10.22.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jagreehal/ai-sdk-ollama.git"
