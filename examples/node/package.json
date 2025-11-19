@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@ai-sdk/mcp": "^0.0.8",
-    "ai": "^5.0.95",
+    "ai": "^5.0.97",
     "ai-sdk-ollama": "workspace:*",
     "dotenv": "^17.2.3",
     "ollama": "^0.6.3",
@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
-    "rimraf": "^6.1.0",
+    "rimraf": "^6.1.2",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   }
