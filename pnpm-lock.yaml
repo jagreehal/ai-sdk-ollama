@@ -115,8 +115,8 @@ importers:
         specifier: ^16.1.0
         version: 16.1.0(react@19.2.0)
       streamdown:
-        specifier: ^1.6.6
-        version: 1.6.6(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.2.0)(unified@11.0.5)
+        specifier: ^1.6.7
+        version: 1.6.7(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.2.0)(unified@11.0.5)
       tailwind-merge:
         specifier: ^3.4.0
         version: 3.4.0
@@ -3938,8 +3938,8 @@ packages:
   std-env@3.10.0:
     resolution: {integrity: sha512-5GS12FdOZNliM5mAOxFRg7Ir0pWz8MdpYm6AY6VPkGpbA7ZzmbzNcBJQ0GPvvyWgcY7QAhCgf9Uy89I03faLkg==}
 
-  streamdown@1.6.6:
-    resolution: {integrity: sha512-LYKkpGwQblgItdlIkfuJMQGVP6H6fiUHZK5bm3gH3dmMmI06cNigmX8G1dJAZREqbYJSl3pcsnnS8EDzFO2vrQ==}
+  streamdown@1.6.7:
+    resolution: {integrity: sha512-oEcGqYIsBdSOWNzx5PGvHCsLfPcHsDV+2GZfpLTpV1mmO1lAk1gzPlpUWxDjI9+Gx+9v3uFDlMEgEF/4eJH3NA==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
 
@@ -8322,7 +8322,7 @@ snapshots:
 
   std-env@3.10.0: {}
 
-  streamdown@1.6.6(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.2.0)(unified@11.0.5):
+  streamdown@1.6.7(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.2.0)(unified@11.0.5):
     dependencies:
       clsx: 2.1.1
       hast: 1.0.0
