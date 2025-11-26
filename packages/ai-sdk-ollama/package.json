@@ -97,7 +97,7 @@
     "@total-typescript/tsconfig": "^1.0.4",
     "@types/eslint-config-prettier": "^6.11.3",
     "@types/node": "^24.10.1",
-    "@typescript-eslint/eslint-plugin": "^8.47.0",
+    "@typescript-eslint/eslint-plugin": "^8.48.0",
     "@typescript-eslint/parser": "^8.48.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-unicorn": "^62.0.0",
