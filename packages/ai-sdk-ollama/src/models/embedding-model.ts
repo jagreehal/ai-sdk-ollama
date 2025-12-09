@@ -1,4 +1,9 @@
-import { EmbeddingModelV2, EmbeddingModelV2Embedding } from '@ai-sdk/provider';
+import {
+  EmbeddingModelV3,
+  EmbeddingModelV3Embedding,
+  SharedV2ProviderMetadata,
+  SharedV3ProviderOptions,
+} from '@ai-sdk/provider';
 import { Ollama } from 'ollama';
 import { OllamaEmbeddingSettings } from '../provider';
 import { OllamaError } from '../utils/ollama-error';
@@ -8,8 +13,8 @@ export interface OllamaEmbeddingConfig {
   provider: string;
 }
 
-export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
-  readonly specificationVersion = 'v2' as const;
+export class OllamaEmbeddingModel implements EmbeddingModelV3 {
+  readonly specificationVersion = 'v3' as const;
   readonly modelId: string;
   readonly maxEmbeddingsPerCall = 2048;
   readonly supportsParallelCalls = true;
@@ -29,8 +34,13 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
   async doEmbed(params: {
     values: string[];
     abortSignal?: AbortSignal;
+    providerOptions?: SharedV3ProviderOptions;
+    headers?: Record<string, string | undefined>;
   }): Promise<{
-    embeddings: EmbeddingModelV2Embedding[];
+    embeddings: EmbeddingModelV3Embedding[];
+    usage?: { tokens: number };
+    providerMetadata?: SharedV2ProviderMetadata;
+    response?: { headers?: Record<string, string>; body?: unknown };
   }> {
     const { values, abortSignal } = params;
     if (values.length > this.maxEmbeddingsPerCall) {
@@ -45,7 +55,8 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
     }
 
     try {
-      const embeddings: EmbeddingModelV2Embedding[] = [];
+      const embeddings: EmbeddingModelV3Embedding[] = [];
+      let totalTokens = 0;
 
       // Ollama's embed API currently only supports single prompts
       // So we need to make multiple requests
@@ -78,6 +89,14 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
 
         embeddings.push(response.embeddings[0] as number[]);
 
+        // Track token usage if available (Ollama may not always provide this)
+        // Note: Ollama's embed response doesn't currently include token counts
+        // but we track it for future compatibility
+        if ((response as { prompt_eval_count?: number }).prompt_eval_count) {
+          totalTokens += (response as { prompt_eval_count: number })
+            .prompt_eval_count;
+        }
+
         // Check if we should abort
         if (abortSignal?.aborted) {
           throw new Error('Embedding generation aborted');
@@ -92,6 +111,12 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
 
       return {
         embeddings,
+        usage: totalTokens > 0 ? { tokens: totalTokens } : undefined,
+        providerMetadata: {
+          ollama: {
+            model: this.modelId,
+          },
+        },
       };
     } catch (error) {
       if (error instanceof OllamaError) {

@@ -1,8 +1,8 @@
-import { LanguageModelV2FinishReason } from '@ai-sdk/provider';
+import { LanguageModelV3FinishReason } from '@ai-sdk/provider';
 
 export function mapOllamaFinishReason(
   reason?: string | null,
-): LanguageModelV2FinishReason {
+): LanguageModelV3FinishReason {
   if (!reason) return 'unknown';
 
   switch (reason) {

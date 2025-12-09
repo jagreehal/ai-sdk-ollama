@@ -24,7 +24,7 @@ describe('OllamaEmbeddingModel', () => {
 
   describe('initialization', () => {
     it('should initialize with correct properties', () => {
-      expect(model.specificationVersion).toBe('v2');
+      expect(model.specificationVersion).toBe('v3');
       expect(model.modelId).toBe('nomic-embed-text');
       expect(model.provider).toBe('ollama');
       expect(model.maxEmbeddingsPerCall).toBe(2048);

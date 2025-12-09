@@ -1,7 +1,7 @@
 import {
-  LanguageModelV2,
-  EmbeddingModelV2,
-  ProviderV2,
+  LanguageModelV3,
+  EmbeddingModelV3,
+  ProviderV3,
   NoSuchModelError,
 } from '@ai-sdk/provider';
 import { Ollama, type Options as OllamaOptions } from 'ollama';
@@ -46,16 +46,16 @@ export interface OllamaProviderSettings {
   client?: Ollama;
 }
 
-export interface OllamaProvider extends ProviderV2 {
+export interface OllamaProvider extends ProviderV3 {
   /**
    * Create a language model instance
    */
-  (modelId: string, settings?: OllamaChatSettings): LanguageModelV2;
+  (modelId: string, settings?: OllamaChatSettings): LanguageModelV3;
 
   /**
    * Create a language model instance with the `chat` method
    */
-  chat(modelId: string, settings?: OllamaChatSettings): LanguageModelV2;
+  chat(modelId: string, settings?: OllamaChatSettings): LanguageModelV3;
 
   /**
    * Create a language model instance with the `languageModel` method
@@ -63,7 +63,7 @@ export interface OllamaProvider extends ProviderV2 {
   languageModel(
     modelId: string,
     settings?: OllamaChatSettings,
-  ): LanguageModelV2;
+  ): LanguageModelV3;
 
   /**
    * Create an embedding model instance
@@ -71,7 +71,7 @@ export interface OllamaProvider extends ProviderV2 {
   embedding(
     modelId: string,
     settings?: OllamaEmbeddingSettings,
-  ): EmbeddingModelV2<string>;
+  ): EmbeddingModelV3;
 
   /**
    * Create an embedding model instance with the `textEmbedding` method
@@ -79,7 +79,7 @@ export interface OllamaProvider extends ProviderV2 {
   textEmbedding(
     modelId: string,
     settings?: OllamaEmbeddingSettings,
-  ): EmbeddingModelV2<string>;
+  ): EmbeddingModelV3;
 
   /**
    * Create an embedding model instance with the `textEmbeddingModel` method
@@ -87,7 +87,7 @@ export interface OllamaProvider extends ProviderV2 {
   textEmbeddingModel(
     modelId: string,
     settings?: OllamaEmbeddingSettings,
-  ): EmbeddingModelV2<string>;
+  ): EmbeddingModelV3;
 
   /**
    * Ollama-specific tools that leverage web search capabilities
@@ -284,7 +284,7 @@ export function createOllama(
 
   provider.tools = toolsWithClient;
 
-  return provider as OllamaProvider;
+  return provider as unknown as OllamaProvider;
 }
 
 /**

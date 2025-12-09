@@ -89,7 +89,7 @@ export function createOllama(
 
   provider.tools = toolsWithClient;
 
-  return provider as OllamaProvider;
+  return provider as unknown as OllamaProvider;
 }
 
 /**

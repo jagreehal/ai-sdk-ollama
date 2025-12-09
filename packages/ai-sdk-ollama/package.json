@@ -83,12 +83,12 @@
     "tool-calling"
   ],
   "dependencies": {
-    "@ai-sdk/provider": "^2.0.0",
-    "@ai-sdk/provider-utils": "^3.0.17",
+    "@ai-sdk/provider": "^3.0.0-beta.23",
+    "@ai-sdk/provider-utils": "^4.0.0-beta.42",
     "ollama": "^0.6.3"
   },
   "peerDependencies": {
-    "ai": "^5.0.97"
+    "ai": "^6.0.0-beta.0"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
@@ -97,18 +97,18 @@
     "@total-typescript/tsconfig": "^1.0.4",
     "@types/eslint-config-prettier": "^6.11.3",
     "@types/node": "^24.10.1",
-    "@typescript-eslint/eslint-plugin": "^8.47.0",
-    "@typescript-eslint/parser": "^8.47.0",
+    "@typescript-eslint/eslint-plugin": "^8.48.1",
+    "@typescript-eslint/parser": "^8.48.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-unicorn": "^62.0.0",
-    "prettier": "^3.6.2",
+    "prettier": "^3.7.4",
     "rimraf": "^6.1.2",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.47.0",
+    "typescript-eslint": "^8.48.1",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^4.0.10",
-    "zod": "^4.1.12"
+    "vitest": "^4.0.15",
+    "zod": "^4.1.13"
   },
   "engines": {
     "node": ">=22"

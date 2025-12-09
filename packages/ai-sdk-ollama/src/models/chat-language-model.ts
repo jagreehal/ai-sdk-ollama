@@ -1,16 +1,17 @@
 import {
-  LanguageModelV2,
-  LanguageModelV2CallOptions,
-  LanguageModelV2CallWarning,
-  LanguageModelV2FinishReason,
-  LanguageModelV2StreamPart,
-  LanguageModelV2Usage,
-  LanguageModelV2Content,
+  LanguageModelV3,
+  LanguageModelV3CallOptions,
+  LanguageModelV3FinishReason,
+  LanguageModelV3StreamPart,
+  LanguageModelV3Usage,
+  LanguageModelV3Content,
   JSONValue,
-  LanguageModelV2FunctionTool,
-  LanguageModelV2Prompt,
-  LanguageModelV2TextPart,
+  LanguageModelV3FunctionTool,
+  LanguageModelV3Prompt,
+  LanguageModelV3TextPart,
   JSONSchema7,
+  SharedV2ProviderMetadata,
+  SharedV3Warning,
 } from '@ai-sdk/provider';
 import { Ollama, Message as OllamaMessage, ChatResponse, Tool } from 'ollama';
 import { OllamaChatSettings } from '../provider';
@@ -37,13 +38,13 @@ import {
 } from '../utils/object-generation-reliability';
 
 type GenerateResult = {
-  content: LanguageModelV2Content[];
-  finishReason: LanguageModelV2FinishReason;
-  usage: LanguageModelV2Usage;
-  providerMetadata?: Record<string, Record<string, JSONValue>>;
-  request?: { body: string };
+  content: LanguageModelV3Content[];
+  finishReason: LanguageModelV3FinishReason;
+  usage: LanguageModelV3Usage;
+  providerMetadata?: SharedV2ProviderMetadata;
+  request?: { body?: unknown };
   response?: { id?: string; timestamp?: Date; modelId?: string };
-  warnings: LanguageModelV2CallWarning[];
+  warnings: SharedV3Warning[];
 };
 
 interface ParsedToolCall {
@@ -85,8 +86,8 @@ function buildContent(
   includeReasoning: boolean,
   text: string | undefined,
   toolCalls: ParsedToolCall[],
-): LanguageModelV2Content[] {
-  const content: LanguageModelV2Content[] = [];
+): LanguageModelV3Content[] {
+  const content: LanguageModelV3Content[] = [];
 
   if (reasoning && includeReasoning) {
     content.push({ type: 'reasoning', text: reasoning });
@@ -108,19 +109,28 @@ function buildContent(
   return content;
 }
 
-function aggregateUsage(...responses: ChatResponse[]): LanguageModelV2Usage {
-  let inputTokens = 0;
-  let outputTokens = 0;
+function aggregateUsage(...responses: ChatResponse[]): LanguageModelV3Usage {
+  let inputTokens: number | undefined;
+  let outputTokens: number | undefined;
 
   for (const response of responses) {
-    inputTokens += response?.prompt_eval_count ?? 0;
-    outputTokens += response?.eval_count ?? 0;
+    if (response?.prompt_eval_count !== undefined) {
+      inputTokens = (inputTokens ?? 0) + response.prompt_eval_count;
+    }
+    if (response?.eval_count !== undefined) {
+      outputTokens = (outputTokens ?? 0) + response.eval_count;
+    }
   }
 
   return {
     inputTokens,
     outputTokens,
-    totalTokens: inputTokens + outputTokens,
+    totalTokens:
+      inputTokens !== undefined || outputTokens !== undefined
+        ? (inputTokens ?? 0) + (outputTokens ?? 0)
+        : undefined,
+    reasoningTokens: undefined,
+    cachedInputTokens: undefined,
   };
 }
 
@@ -140,7 +150,7 @@ function getLatestUserMessage(messages: OllamaMessage[]): string {
 }
 
 function getLatestUserPromptText(
-  prompt: LanguageModelV2Prompt | undefined,
+  prompt: LanguageModelV3Prompt | undefined,
 ): string {
   if (!prompt) {
     return '';
@@ -158,7 +168,7 @@ function getLatestUserPromptText(
       return message.content;
     } else if (Array.isArray(message.content)) {
       const textParts = message.content.filter(
-        (part): part is LanguageModelV2TextPart => part.type === 'text',
+        (part): part is LanguageModelV3TextPart => part.type === 'text',
       );
 
       if (textParts.length > 0) {
@@ -175,18 +185,13 @@ export interface OllamaChatConfig {
   provider: string;
 }
 
-export class OllamaChatLanguageModel implements LanguageModelV2 {
-  readonly specificationVersion = 'v2' as const;
-  readonly defaultObjectGenerationMode = 'json';
-  readonly supportsImages = true; // ✅ Ollama supports images (URLs, files, base64)
-  readonly supportsVideoURLs = false; // ❌ Not supported by Ollama API
-  readonly supportsAudioURLs = false; // ❌ Not supported by Ollama API
-  readonly supportsVideoFile = false; // ❌ Not supported by Ollama API
-  readonly supportsAudioFile = false; // ❌ Not supported by Ollama API
-  readonly supportsImageFile = true; // ✅ Already correct
+export class OllamaChatLanguageModel implements LanguageModelV3 {
+  readonly specificationVersion = 'v3' as const;
+
+  // V3 uses supportedUrls with media type patterns as keys
+  // Ollama supports images via URLs, files, and base64
   readonly supportedUrls: Record<string, RegExp[]> = {
-    // Support common image URL patterns
-    image: [
+    'image/*': [
       /^https?:\/\/.*\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i,
       /^data:image\/[^;]+;base64,/i, // Data URLs
     ],
@@ -213,7 +218,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
    * This is used internally to auto-detect when structured outputs are needed
    */
   private shouldEnableStructuredOutputs(
-    options: LanguageModelV2CallOptions,
+    options: LanguageModelV3CallOptions,
   ): boolean {
     // Auto-detect: if we have a JSON schema, we need structured outputs
     // This overrides explicit settings to ensure object generation works
@@ -240,12 +245,12 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
     return false;
   }
 
-  private getCallOptions(options: LanguageModelV2CallOptions): {
+  private getCallOptions(options: LanguageModelV3CallOptions): {
     messages: OllamaMessage[];
     options: Record<string, unknown>;
     format?: string | Record<string, unknown>;
     tools?: Tool[];
-    warnings: LanguageModelV2CallWarning[];
+    warnings: SharedV3Warning[];
   } {
     const {
       prompt,
@@ -261,7 +266,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
       tools,
     } = options;
 
-    const warnings: LanguageModelV2CallWarning[] = [];
+    const warnings: SharedV3Warning[] = [];
 
     // Auto-detect structured outputs when JSON schema is provided
     const needsStructuredOutputs = this.shouldEnableStructuredOutputs(options);
@@ -459,7 +464,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
   }
 
   async doGenerate(
-    options: LanguageModelV2CallOptions,
+    options: LanguageModelV3CallOptions,
   ): Promise<GenerateResult> {
     const {
       messages,
@@ -470,7 +475,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
     } = this.getCallOptions(options);
 
     const functionTools = (options.tools ?? []).filter(
-      (tool): tool is LanguageModelV2FunctionTool => tool.type === 'function',
+      (tool): tool is LanguageModelV3FunctionTool => tool.type === 'function',
     );
 
     // Use reliability features for tool calling when explicitly enabled
@@ -560,7 +565,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
       const thinking = response.message.thinking;
 
       // Convert content based on whether we have tool calls, reasoning, or text
-      const content: LanguageModelV2Content[] = [];
+      const content: LanguageModelV3Content[] = [];
 
       // Add reasoning content if present and enabled
       if (thinking && this.settings.reasoning) {
@@ -585,21 +590,26 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
       }
 
       // Determine finish reason - if we have tool calls, return 'tool-calls' to continue conversation
-      const finishReason: LanguageModelV2FinishReason =
+      const finishReason: LanguageModelV3FinishReason =
         parsedToolCalls.length > 0
           ? 'tool-calls'
           : (mapOllamaFinishReason(
               response.done_reason,
-            ) as LanguageModelV2FinishReason);
+            ) as LanguageModelV3FinishReason);
 
       return {
         content,
         finishReason,
         usage: {
-          inputTokens: response.prompt_eval_count || 0,
-          outputTokens: response.eval_count || 0,
+          inputTokens: response.prompt_eval_count ?? undefined,
+          outputTokens: response.eval_count ?? undefined,
           totalTokens:
-            (response.prompt_eval_count || 0) + (response.eval_count || 0),
+            response.prompt_eval_count !== undefined ||
+            response.eval_count !== undefined
+              ? (response.prompt_eval_count ?? 0) + (response.eval_count ?? 0)
+              : undefined,
+          reasoningTokens: undefined,
+          cachedInputTokens: undefined,
         },
         providerMetadata: {
           ollama: {
@@ -614,13 +624,13 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
           } as Record<string, JSONValue>,
         },
         request: {
-          body: JSON.stringify({
+          body: {
             model: this.modelId,
             messages,
             options: ollamaOptions,
             format,
             tools,
-          }),
+          },
         },
         response: {
           timestamp: new Date(),
@@ -640,7 +650,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
     messages: OllamaMessage[];
     ollamaOptions: Record<string, unknown>;
     toolResults: Awaited<ReturnType<typeof executeReliableToolCalls>>;
-    originalOptions: LanguageModelV2CallOptions;
+    originalOptions: LanguageModelV3CallOptions;
     format?: string | Record<string, unknown>;
   }): Promise<{ text: string; response: ChatResponse } | undefined> {
     const { messages, ollamaOptions, toolResults, originalOptions, format } =
@@ -649,7 +659,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
     let followUpResponse: ChatResponse | undefined;
 
     const followUpModel = {
-      doGenerate: async (callOptions: LanguageModelV2CallOptions) => {
+      doGenerate: async (callOptions: LanguageModelV3CallOptions) => {
         const prompt = callOptions.prompt;
         const followUpPrompt =
           typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
@@ -678,7 +688,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
                 {
                   type: 'text',
                   text: followUpText,
-                } satisfies LanguageModelV2Content,
+                } satisfies LanguageModelV3Content,
               ]
             : [],
         };
@@ -717,7 +727,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
     ollamaOptions: Record<string, unknown>;
     format?: string | Record<string, unknown>;
     ollamaTools?: Tool[];
-    warnings: LanguageModelV2CallWarning[];
+    warnings: SharedV3Warning[];
     response: ChatResponse;
     followUpResponse?: ChatResponse;
     parsedToolCalls: ParsedToolCall[];
@@ -764,7 +774,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
     const finishReason =
       (mapOllamaFinishReason(
         finishSource.done_reason,
-      ) as LanguageModelV2FinishReason) ?? 'stop';
+      ) as LanguageModelV3FinishReason) ?? 'stop';
 
     const providerDetails: Record<string, JSONValue> = {};
 
@@ -825,7 +835,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
         ollama: providerDetails,
       },
       request: {
-        body: JSON.stringify(requestPayload),
+        body: requestPayload,
       },
       response: {
         timestamp: new Date(),
@@ -840,8 +850,8 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
     ollamaOptions: Record<string, unknown>;
     format?: string | Record<string, unknown>;
     ollamaTools?: Tool[];
-    warnings: LanguageModelV2CallWarning[];
-    originalOptions: LanguageModelV2CallOptions;
+    warnings: SharedV3Warning[];
+    originalOptions: LanguageModelV3CallOptions;
     toolDefinitions: Record<string, ToolDefinition>;
     reliabilityOptions: ResolvedToolCallingOptions;
   }): Promise<GenerateResult> {
@@ -1021,8 +1031,8 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
     ollamaOptions: Record<string, unknown>;
     format?: string | Record<string, unknown>;
     tools?: Tool[];
-    warnings: LanguageModelV2CallWarning[];
-    originalOptions: LanguageModelV2CallOptions;
+    warnings: SharedV3Warning[];
+    originalOptions: LanguageModelV3CallOptions;
     schema: JSONSchema7;
     objectOptions: ObjectGenerationOptions &
       Required<
@@ -1155,7 +1165,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
     ollamaOptions: Record<string, unknown>;
     format?: string | Record<string, unknown>;
     tools?: Tool[];
-    warnings: LanguageModelV2CallWarning[];
+    warnings: SharedV3Warning[];
     response: ChatResponse;
     text: string;
     validatedObject: unknown;
@@ -1172,19 +1182,24 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
       params;
 
     // For object generation, we return the validated text as content
-    const content: LanguageModelV2Content[] = [{ type: 'text', text }];
+    const content: LanguageModelV3Content[] = [{ type: 'text', text }];
 
-    const usage: LanguageModelV2Usage = {
-      inputTokens: response.prompt_eval_count ?? 0,
-      outputTokens: response.eval_count ?? 0,
+    const usage: LanguageModelV3Usage = {
+      inputTokens: response.prompt_eval_count ?? undefined,
+      outputTokens: response.eval_count ?? undefined,
       totalTokens:
-        (response.prompt_eval_count ?? 0) + (response.eval_count ?? 0),
+        response.prompt_eval_count !== undefined ||
+        response.eval_count !== undefined
+          ? (response.prompt_eval_count ?? 0) + (response.eval_count ?? 0)
+          : undefined,
+      reasoningTokens: undefined,
+      cachedInputTokens: undefined,
     };
 
     const finishReason =
       (mapOllamaFinishReason(
         response.done_reason,
-      ) as LanguageModelV2FinishReason) ?? 'stop';
+      ) as LanguageModelV3FinishReason) ?? 'stop';
 
     const providerDetails: Record<string, JSONValue> = {
       model: response.model,
@@ -1217,14 +1232,14 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
         ollama: providerDetails,
       },
       request: {
-        body: JSON.stringify({
+        body: {
           model: this.modelId,
           messages: params.messages,
           options: params.ollamaOptions,
           format: params.format,
           tools: params.tools,
           reliable_object_generation: true,
-        }),
+        },
       },
       response: {
         timestamp: new Date(),
@@ -1234,13 +1249,10 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
     };
   }
 
-  async doStream(options: LanguageModelV2CallOptions): Promise<{
-    stream: ReadableStream<LanguageModelV2StreamPart>;
-    rawCall: {
-      rawPrompt: unknown;
-      rawSettings: Record<string, unknown>;
-    };
-    warnings?: LanguageModelV2CallWarning[];
+  async doStream(options: LanguageModelV3CallOptions): Promise<{
+    stream: ReadableStream<LanguageModelV3StreamPart>;
+    request?: { body?: unknown };
+    response?: { headers?: Record<string, string> };
   }> {
     const {
       messages,
@@ -1260,12 +1272,17 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
         stream: true,
       });
 
-      let usage: LanguageModelV2Usage = {
-        inputTokens: 0,
-        outputTokens: 0,
-        totalTokens: 0,
+      let usage: LanguageModelV3Usage = {
+        inputTokens: undefined,
+        outputTokens: undefined,
+        totalTokens: undefined,
+        reasoningTokens: undefined,
+        cachedInputTokens: undefined,
       };
-      let finishReason: LanguageModelV2FinishReason = 'unknown';
+      let finishReason: LanguageModelV3FinishReason = 'unknown';
+
+      // Track if we've emitted stream-start
+      let streamStartEmitted = false;
 
       // Capture settings for use in transform function
       const reasoningEnabled = this.settings.reasoning;
@@ -1279,9 +1296,17 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
 
       const transformStream = new TransformStream<
         ChatResponse,
-        LanguageModelV2StreamPart
+        LanguageModelV3StreamPart
       >({
         async transform(chunk: ChatResponse, controller) {
+          // Emit stream-start with warnings on first chunk
+          if (!streamStartEmitted) {
+            controller.enqueue({
+              type: 'stream-start',
+              warnings,
+            });
+            streamStartEmitted = true;
+          }
           // Validate chunk
           if (!chunk || typeof chunk !== 'object') {
             return; // Skip invalid chunks
@@ -1322,17 +1347,22 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
 
             // Final chunk with metadata
             usage = {
-              inputTokens: chunk.prompt_eval_count || 0,
-              outputTokens: chunk.eval_count || 0,
+              inputTokens: chunk.prompt_eval_count ?? undefined,
+              outputTokens: chunk.eval_count ?? undefined,
               totalTokens:
-                (chunk.prompt_eval_count || 0) + (chunk.eval_count || 0),
+                chunk.prompt_eval_count !== undefined ||
+                chunk.eval_count !== undefined
+                  ? (chunk.prompt_eval_count ?? 0) + (chunk.eval_count ?? 0)
+                  : undefined,
+              reasoningTokens: undefined,
+              cachedInputTokens: undefined,
             };
             // If we saw tool calls, set finish reason to 'tool-calls' to continue conversation
             finishReason = hasToolCalls
               ? 'tool-calls'
               : (mapOllamaFinishReason(
                   chunk.done_reason,
-                ) as LanguageModelV2FinishReason);
+                ) as LanguageModelV3FinishReason);
 
             controller.enqueue({
               type: 'finish',
@@ -1424,16 +1454,18 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
 
       return {
         stream: readableStream.pipeThrough(transformStream),
-        rawCall: {
-          rawPrompt: messages,
-          rawSettings: {
+        request: {
+          body: {
             model: this.modelId,
+            messages,
             options: ollamaOptions,
             format,
             tools,
           },
         },
-        warnings: warnings.length > 0 ? warnings : undefined,
+        response: {
+          headers: {},
+        },
       };
     } catch (error) {
       throw new OllamaError({

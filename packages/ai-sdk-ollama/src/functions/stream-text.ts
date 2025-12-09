@@ -6,10 +6,10 @@
  */
 
 import { streamText as _streamText, stepCountIs } from 'ai';
-import type { LanguageModel } from 'ai';
+import type { LanguageModelV3 } from '@ai-sdk/provider';
 
 export interface StreamTextOptions {
-  model: LanguageModel;
+  model: LanguageModelV3;
   system?: string;
   prompt?: string;
   messages?: Parameters<typeof _streamText>[0]['messages'];
@@ -58,7 +58,7 @@ export interface StreamTextOptions {
 /**
  * Enhanced streamText function with Ollama-specific reliability improvements
  */
-export async function streamText(options: StreamTextOptions) {
+export async function streamText(options: StreamTextOptions): Promise<Awaited<ReturnType<typeof _streamText>>> {
   const { enhancedOptions = {}, ...streamTextOptions } = options;
 
   const {
