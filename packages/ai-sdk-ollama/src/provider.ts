@@ -4,7 +4,13 @@ import {
   ProviderV2,
   NoSuchModelError,
 } from '@ai-sdk/provider';
-import { Ollama, type Options as OllamaOptions } from 'ollama';
+import {
+  Ollama,
+  type Options as OllamaOptions,
+  type ChatRequest,
+  type EmbedRequest,
+  type Config,
+} from 'ollama';
 import { OllamaChatLanguageModel } from './models/chat-language-model';
 import { OllamaEmbeddingModel } from './models/embedding-model';
 import { ollamaTools } from './ollama-tools';
@@ -22,26 +28,32 @@ export interface Options extends OllamaOptions {
 }
 
 // Re-export ollama-js types for convenience
-export type { Ollama } from 'ollama';
+export type {
+  Ollama,
+  ChatRequest,
+  EmbedRequest,
+  Config,
+  ToolCall,
+  Tool,
+  Message,
+  ChatResponse,
+  EmbedResponse,
+} from 'ollama';
 
-export interface OllamaProviderSettings {
+/**
+ * Settings for configuring the Ollama provider.
+ * Extends from Ollama's Config type for consistency with the underlying client.
+ */
+export interface OllamaProviderSettings extends Pick<Config, 'headers' | 'fetch'> {
   /**
    * Base URL for the Ollama API (defaults to http://127.0.0.1:11434)
+   * Maps to Config.host in the Ollama client
    */
   baseURL?: string;
 
   /**
-   * Custom headers for API requests
-   */
-  headers?: Record<string, string>;
-
-  /**
-   * Custom fetch implementation
-   */
-  fetch?: typeof fetch;
-
-  /**
-   * Existing Ollama client instance to use instead of creating a new one
+   * Existing Ollama client instance to use instead of creating a new one.
+   * When provided, baseURL, headers, and fetch are ignored.
    */
   client?: Ollama;
 }
@@ -102,7 +114,14 @@ export interface OllamaProvider extends ProviderV2 {
   };
 }
 
-export interface OllamaChatSettings {
+export interface OllamaChatSettings
+  extends Pick<ChatRequest, 'keep_alive' | 'format' | 'tools'> {
+  /**
+   * Additional model parameters - uses extended Options type that includes min_p
+   * This automatically includes ALL Ollama parameters including new ones like 'dimensions'
+   */
+  options?: Partial<Options>;
+
   /**
    * Enable structured output mode
    */
@@ -168,25 +187,17 @@ export interface OllamaChatSettings {
    * fixTypeMismatches=true, enableTextRepair=true).
    */
   objectGenerationOptions?: ObjectGenerationOptions;
-
-  /**
-   * Additional model parameters - re-exported from ollama-js
-   * This automatically includes ALL Ollama parameters including new ones like 'dimensions'
-   */
-  options?: Partial<Options>;
 }
 
-export interface OllamaEmbeddingSettings {
+/**
+ * Settings for configuring Ollama embedding models.
+ * Uses Pick from EmbedRequest for type consistency with the Ollama API.
+ */
+export interface OllamaEmbeddingSettings extends Pick<EmbedRequest, 'dimensions'> {
   /**
-   * Additional embedding parameters
+   * Additional embedding parameters (temperature, num_ctx, etc.)
    */
   options?: Partial<Options>;
-
-  /**
-   * Dimensions for embedding output (if supported by the model)
-   * This is a direct parameter of EmbedRequest, not part of Options
-   */
-  dimensions?: number;
 }
 
 /**

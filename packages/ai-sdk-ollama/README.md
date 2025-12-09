@@ -133,6 +133,7 @@ export OLLAMA_API_KEY="your_api_key_here"
   - [More Examples](#more-examples)
     - [Cross Provider Compatibility](#cross-provider-compatibility)
     - [Native Ollama Power](#native-ollama-power)
+    - [Model Keep-Alive Control](#model-keep-alive-control)
     - [Enhanced Tool Calling Wrappers](#enhanced-tool-calling-wrappers)
     - [Combining Tools with Structured Output](#combining-tools-with-structured-output)
     - [Simple and Predictable](#simple-and-predictable)
@@ -272,6 +273,37 @@ const { text } = await generateText({
 ```
 
 > **Parameter Precedence**: When both AI SDK parameters and Ollama options are specified, **Ollama options take precedence**. For example, if you set `temperature: 0.5` in Ollama options and `temperature: 0.8` in the `generateText` call, the final value will be `0.5`. This allows you to use standard AI SDK parameters for portability while having fine-grained control with Ollama-specific options when needed.
+
+### Model Keep-Alive Control
+
+Control how long models stay loaded in memory after requests using the `keep_alive` parameter:
+
+```typescript
+// Keep model loaded for 10 minutes
+const model = ollama('llama3.2', { keep_alive: '10m' });
+
+// Keep model loaded for 1 hour (3600 seconds)
+const model2 = ollama('llama3.2', { keep_alive: 3600 });
+
+// Keep model loaded indefinitely
+const model3 = ollama('llama3.2', { keep_alive: -1 });
+
+// Unload model immediately after each request
+const model4 = ollama('llama3.2', { keep_alive: 0 });
+
+const { text } = await generateText({
+  model,
+  prompt: 'Write a haiku',
+});
+```
+
+**Accepted values:**
+- Duration strings: `"10m"`, `"24h"`, `"30s"` (minutes, hours, seconds)
+- Numbers: seconds as a number (e.g., `3600` for 1 hour)
+- Negative numbers: keep loaded indefinitely (e.g., `-1`)
+- `0`: unload immediately after the request
+
+**Default behavior**: If not specified, Ollama keeps models loaded for 5 minutes to facilitate quicker response times for subsequent requests.
 
 ### Enhanced Tool Calling Wrappers
 
