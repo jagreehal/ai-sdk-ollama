@@ -100,8 +100,8 @@ importers:
         specifier: ^8.6.0
         version: 8.6.0(react@19.2.1)
       lucide-react:
-        specifier: ^0.559.0
-        version: 0.559.0(react@19.2.1)
+        specifier: ^0.560.0
+        version: 0.560.0(react@19.2.1)
       nanoid:
         specifier: ^5.1.6
         version: 5.1.6
@@ -3033,8 +3033,8 @@ packages:
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
-  lucide-react@0.559.0:
-    resolution: {integrity: sha512-3ymrkBPXWk3U2bwUDg6TdA6hP5iGDMgPEAMLhchEgTQmA+g0Zk24tOtKtXMx35w1PizTmsBC3RhP88QYm+7mHQ==}
+  lucide-react@0.560.0:
+    resolution: {integrity: sha512-NwKoUA/aBShsdL8WE5lukV2F/tjHzQRlonQs7fkNGI1sCT0Ay4a9Ap3ST2clUUkcY+9eQ0pBe2hybTQd2fmyDA==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
@@ -6938,7 +6938,7 @@ snapshots:
     dependencies:
       react: 19.2.1
 
-  lucide-react@0.559.0(react@19.2.1):
+  lucide-react@0.560.0(react@19.2.1):
     dependencies:
       react: 19.2.1
 
