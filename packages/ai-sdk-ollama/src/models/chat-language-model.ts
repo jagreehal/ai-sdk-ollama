@@ -567,6 +567,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
         tools,
         stream: false,
         ...(keep_alive !== undefined && { keep_alive }),
+        think: this.settings.reasoning,
       })) as ChatResponse;
 
       const text = response.message.content;
@@ -685,6 +686,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
           format,
           stream: false,
           ...(keep_alive !== undefined && { keep_alive }),
+          think: this.settings.reasoning,
         })) as ChatResponse;
 
         const followUpText = followUpResponse.message.content ?? '';
@@ -893,6 +895,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
         tools: ollamaTools,
         stream: false,
         ...(keep_alive !== undefined && { keep_alive }),
+        think: this.settings.reasoning,
       })) as ChatResponse;
 
       lastResponse = response;
@@ -1087,6 +1090,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
           tools,
           stream: false,
           ...(keep_alive !== undefined && { keep_alive }),
+          think: this.settings.reasoning,
         })) as ChatResponse;
 
         lastResponse = response;
@@ -1293,6 +1297,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
         tools,
         stream: true,
         ...(keep_alive !== undefined && { keep_alive }),
+        think: this.settings.reasoning,
       });
 
       let usage: LanguageModelV2Usage = {

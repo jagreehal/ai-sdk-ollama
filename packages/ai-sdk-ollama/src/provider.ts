@@ -130,7 +130,7 @@ export interface OllamaChatSettings
   /**
    * Enable reasoning support for models that support it
    */
-  reasoning?: boolean;
+  reasoning?: boolean| "low" | "medium" | "high";
 
   /**
    * Enable reliable tool calling with retry and completion mechanisms.
