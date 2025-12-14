@@ -2,12 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { generateText, streamText } from 'ai';
 import { ollama } from '../index';
 
-// Integration test for reasoning capabilities
-describe('Reasoning Integration Tests', { timeout: 120_000 }, () => {
-  it('should generate text with reasoning enabled', async () => {
+// Integration test for think/reasoning capabilities
+describe('Think Integration Tests', { timeout: 120_000 }, () => {
+  it('should generate text with think enabled', async () => {
     try {
       const result = await generateText({
-        model: ollama('deepseek-r1:7b', { reasoning: true }),
+        model: ollama('deepseek-r1:7b', { think: true }),
         prompt: 'Calculate: 12 + 8 = ?',
         maxOutputTokens: 500,
         temperature: 0.1,
@@ -40,10 +40,10 @@ describe('Reasoning Integration Tests', { timeout: 120_000 }, () => {
     }
   });
 
-  it('should not show reasoning when disabled', async () => {
+  it('should not show reasoning when think is disabled', async () => {
     try {
       const result = await generateText({
-        model: ollama('deepseek-r1:7b', { reasoning: false }),
+        model: ollama('deepseek-r1:7b', { think: false }),
         prompt: 'Calculate: 12 + 8 = ?',
         maxOutputTokens: 300,
         temperature: 0.1,
@@ -70,10 +70,10 @@ describe('Reasoning Integration Tests', { timeout: 120_000 }, () => {
     }
   });
 
-  it('should handle reasoning with complex math problem', async () => {
+  it('should handle think with complex math problem', async () => {
     try {
       const result = await generateText({
-        model: ollama('deepseek-r1:7b', { reasoning: true }),
+        model: ollama('deepseek-r1:7b', { think: true }),
         prompt:
           'If a train travels 60 km/h for 2 hours, how far does it go? Show your work.',
         maxOutputTokens: 300,
@@ -104,10 +104,10 @@ describe('Reasoning Integration Tests', { timeout: 120_000 }, () => {
     }
   });
 
-  it('should stream text with reasoning enabled', async () => {
+  it('should stream text with think enabled', async () => {
     try {
       const { textStream } = await streamText({
-        model: ollama('deepseek-r1:7b', { reasoning: true }),
+        model: ollama('deepseek-r1:7b', { think: true }),
         prompt: 'What is 5 + 3?',
         maxOutputTokens: 150,
         temperature: 0.1,
@@ -134,10 +134,10 @@ describe('Reasoning Integration Tests', { timeout: 120_000 }, () => {
     }
   });
 
-  it('should handle reasoning with logic puzzles', async () => {
+  it('should handle think with logic puzzles', async () => {
     try {
       const result = await generateText({
-        model: ollama('deepseek-r1:7b', { reasoning: true }),
+        model: ollama('deepseek-r1:7b', { think: true }),
         prompt:
           'If all roses are flowers and some flowers are red, can we conclude that some roses are red? Explain your reasoning.',
         maxOutputTokens: 400,
@@ -167,10 +167,10 @@ describe('Reasoning Integration Tests', { timeout: 120_000 }, () => {
     }
   });
 
-  it('should handle reasoning with code verification', async () => {
+  it('should handle think with code verification', async () => {
     try {
       const result = await generateText({
-        model: ollama('deepseek-r1:7b', { reasoning: true }),
+        model: ollama('deepseek-r1:7b', { think: true }),
         prompt: `Is this function correct for checking if a number is even?
 function isEven(n) {
   return n % 2 === 0;
@@ -204,38 +204,38 @@ Test with n=4 and n=7.`,
     }
   });
 
-  it('should compare reasoning vs non-reasoning output length', async () => {
+  it('should compare think vs non-think output length', async () => {
     try {
       const prompt = 'Solve: 15 × 4 = ?';
 
-      // With reasoning
-      const withReasoning = await generateText({
-        model: ollama('deepseek-r1:7b', { reasoning: true }),
+      // With think
+      const withThink = await generateText({
+        model: ollama('deepseek-r1:7b', { think: true }),
         prompt,
         maxOutputTokens: 300,
         temperature: 0.1,
       });
 
-      // Without reasoning
-      const withoutReasoning = await generateText({
-        model: ollama('deepseek-r1:7b', { reasoning: false }),
+      // Without think
+      const withoutThink = await generateText({
+        model: ollama('deepseek-r1:7b', { think: false }),
         prompt,
         maxOutputTokens: 300,
         temperature: 0.1,
       });
 
-      expect(withReasoning.text).toBeTruthy();
-      expect(withoutReasoning.text).toBeTruthy();
+      expect(withThink.text).toBeTruthy();
+      expect(withoutThink.text).toBeTruthy();
 
       // Both should produce valid output for the multiplication
       // At least attempt to solve (flexible since model output varies)
-      expect(withReasoning.text.length).toBeGreaterThan(0);
-      expect(withoutReasoning.text.length).toBeGreaterThan(0);
+      expect(withThink.text.length).toBeGreaterThan(0);
+      expect(withoutThink.text.length).toBeGreaterThan(0);
 
-      // Reasoning output is typically longer due to thinking process
+      // Think output is typically longer due to thinking process
       // This is a soft check as it may vary
-      console.log('With reasoning length:', withReasoning.text.length);
-      console.log('Without reasoning length:', withoutReasoning.text.length);
+      console.log('With think length:', withThink.text.length);
+      console.log('Without think length:', withoutThink.text.length);
     } catch (error) {
       if (
         error instanceof Error &&
