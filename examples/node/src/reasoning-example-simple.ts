@@ -5,7 +5,7 @@ async function main() {
   console.log('=== DeepSeek-R1 Reasoning Example ===\n');
 
   // Create a model with reasoning enabled using DeepSeek-R1
-  const model = ollama('deepseek-r1:7b', { reasoning: true });
+  const model = ollama('deepseek-r1:7b', { think: true });
 
   // Test mathematical reasoning
   console.log('Testing mathematical reasoning with verification:\n');
@@ -23,7 +23,7 @@ async function main() {
   // Test without reasoning for comparison
   console.log('Same prompt without reasoning mode:\n');
 
-  const modelNoReasoning = ollama('deepseek-r1:7b', { reasoning: false });
+  const modelNoReasoning = ollama('deepseek-r1:7b', { think: false });
 
   const resultNoReasoning = await generateText({
     model: modelNoReasoning,
