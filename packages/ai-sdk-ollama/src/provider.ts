@@ -115,7 +115,7 @@ export interface OllamaProvider extends ProviderV2 {
 }
 
 export interface OllamaChatSettings
-  extends Pick<ChatRequest, 'keep_alive' | 'format' | 'tools'> {
+  extends Pick<ChatRequest, 'keep_alive' | 'format' | 'tools' | 'think'> {
   /**
    * Additional model parameters - uses extended Options type that includes min_p
    * This automatically includes ALL Ollama parameters including new ones like 'dimensions'
@@ -126,11 +126,6 @@ export interface OllamaChatSettings
    * Enable structured output mode
    */
   structuredOutputs?: boolean;
-
-  /**
-   * Enable reasoning support for models that support it
-   */
-  reasoning?: boolean;
 
   /**
    * Enable reliable tool calling with retry and completion mechanisms.

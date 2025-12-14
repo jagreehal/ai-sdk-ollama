@@ -567,6 +567,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
         tools,
         stream: false,
         ...(keep_alive !== undefined && { keep_alive }),
+        ...(this.settings.think !== undefined && { think: this.settings.think }),
       })) as ChatResponse;
 
       const text = response.message.content;
@@ -577,7 +578,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
       const content: LanguageModelV2Content[] = [];
 
       // Add reasoning content if present and enabled
-      if (thinking && this.settings.reasoning) {
+      if (thinking && this.settings.think) {
         content.push({ type: 'reasoning', text: thinking });
       }
 
@@ -685,6 +686,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
           format,
           stream: false,
           ...(keep_alive !== undefined && { keep_alive }),
+          ...(this.settings.think !== undefined && { think: this.settings.think }),
         })) as ChatResponse;
 
         const followUpText = followUpResponse.message.content ?? '';
@@ -768,7 +770,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
 
     const content = buildContent(
       thinking,
-      Boolean(this.settings.reasoning),
+      Boolean(this.settings.think),
       finalText,
       parsedToolCalls,
     );
@@ -893,6 +895,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
         tools: ollamaTools,
         stream: false,
         ...(keep_alive !== undefined && { keep_alive }),
+        ...(this.settings.think !== undefined && { think: this.settings.think }),
       })) as ChatResponse;
 
       lastResponse = response;
@@ -1087,6 +1090,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
           tools,
           stream: false,
           ...(keep_alive !== undefined && { keep_alive }),
+          ...(this.settings.think !== undefined && { think: this.settings.think }),
         })) as ChatResponse;
 
         lastResponse = response;
@@ -1293,6 +1297,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
         tools,
         stream: true,
         ...(keep_alive !== undefined && { keep_alive }),
+        ...(this.settings.think !== undefined && { think: this.settings.think }),
       });
 
       let usage: LanguageModelV2Usage = {
@@ -1303,7 +1308,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
       let finishReason: LanguageModelV2FinishReason = 'unknown';
 
       // Capture settings for use in transform function
-      const reasoningEnabled = this.settings.reasoning;
+      const reasoningEnabled = this.settings.think;
 
       // Track text streaming state for UI message compatibility
       let textStreamStarted = false;

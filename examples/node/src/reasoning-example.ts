@@ -3,7 +3,7 @@ import { generateText } from 'ai';
 
 async function main() {
   // Create a model with reasoning enabled using DeepSeek-R1
-  const model = ollama('deepseek-r1:7b', { reasoning: true });
+  const model = ollama('gpt-oss:20b-cloud', { think: true });
 
   console.log('=== DeepSeek-R1 Reasoning Example ===\n');
 
@@ -52,7 +52,7 @@ Test it with factorial(5) and verify the result step by step.`,
 
   // Example 4: Comparison with reasoning disabled
   console.log('4. Same problem without reasoning (for comparison):');
-  const modelWithoutReasoning = ollama('deepseek-r1:7b', { reasoning: false });
+  const modelWithoutReasoning = ollama('gpt-oss:20b-cloud', { think: false });
 
   const result4 = await generateText({
     model: modelWithoutReasoning,

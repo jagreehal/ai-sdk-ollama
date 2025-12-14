@@ -669,7 +669,7 @@ describe('OllamaChatLanguageModel', () => {
     });
   });
 
-  describe('doGenerate with reasoning', () => {
+  describe('doGenerate with think', () => {
     it('should handle generation with reasoning', async () => {
       const mockResponse = {
         model: 'llama3.2',
@@ -694,7 +694,7 @@ describe('OllamaChatLanguageModel', () => {
 
       const modelWithReasoning = new OllamaChatLanguageModel(
         'llama3.2',
-        { reasoning: true },
+        { think: true },
         { client: mockOllamaClient, provider: 'ollama' },
       );
 
@@ -724,7 +724,7 @@ describe('OllamaChatLanguageModel', () => {
       });
     });
 
-    it('should not include reasoning when reasoning is disabled', async () => {
+    it('should not include reasoning when think is disabled', async () => {
       const mockResponse = {
         model: 'llama3.2',
         created_at: new Date(),
@@ -747,7 +747,7 @@ describe('OllamaChatLanguageModel', () => {
 
       const modelWithoutReasoning = new OllamaChatLanguageModel(
         'llama3.2',
-        { reasoning: false },
+        { think: false },
         { client: mockOllamaClient, provider: 'ollama' },
       );
 
@@ -769,7 +769,7 @@ describe('OllamaChatLanguageModel', () => {
     });
   });
 
-  describe('doStream with reasoning', () => {
+  describe('doStream with think', () => {
     it('should handle streaming with reasoning', async () => {
       const mockStreamData: ChatResponse[] = [
         {
@@ -826,7 +826,7 @@ describe('OllamaChatLanguageModel', () => {
 
       const modelWithReasoning = new OllamaChatLanguageModel(
         'llama3.2',
-        { reasoning: true },
+        { think: true },
         { client: mockOllamaClient, provider: 'ollama' },
       );
 
@@ -876,7 +876,7 @@ describe('OllamaChatLanguageModel', () => {
       expect(finish?.finishReason).toBe('stop');
     });
 
-    it('should not emit reasoning stream parts when reasoning is disabled', async () => {
+    it('should not emit reasoning stream parts when think is disabled', async () => {
       const mockStreamData: ChatResponse[] = [
         {
           model: 'llama3.2',
@@ -914,7 +914,7 @@ describe('OllamaChatLanguageModel', () => {
 
       const modelWithoutReasoning = new OllamaChatLanguageModel(
         'llama3.2',
-        { reasoning: false },
+        { think: false },
         { client: mockOllamaClient, provider: 'ollama' },
       );
 
