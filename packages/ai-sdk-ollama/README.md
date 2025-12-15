@@ -139,6 +139,7 @@ export OLLAMA_API_KEY="your_api_key_here"
     - [Simple and Predictable](#simple-and-predictable)
   - [Advanced Features](#advanced-features)
     - [Custom Ollama Instance](#custom-ollama-instance)
+    - [API Key Configuration](#api-key-configuration)
     - [Using Existing Ollama Client](#using-existing-ollama-client)
     - [Structured Output](#structured-output)
     - [Auto-Detection of Structured Outputs](#auto-detection-of-structured-outputs)
@@ -454,6 +455,57 @@ const { text } = await generateText({
   prompt: 'Hello!',
 });
 ```
+
+### API Key Configuration
+
+For cloud Ollama services, pass your API key explicitly using `createOllama`:
+
+```typescript
+import { createOllama } from 'ai-sdk-ollama';
+
+const ollama = createOllama({
+  apiKey: process.env.OLLAMA_API_KEY,
+  baseURL: 'https://ollama.com',
+});
+
+const { text } = await generateText({
+  model: ollama('llama3.2'),
+  prompt: 'Hello!',
+});
+```
+
+**Why explicit over auto-detection?**
+
+Different runtimes handle environment variables differently:
+
+| Runtime | `.env` Auto-Loading |
+|---------|---------------------|
+| Node.js | ❌ No (requires `dotenv`) |
+| Bun | ✅ Yes (usually) |
+| Deno | ❌ No |
+| Edge/Serverless | ❌ No (platform injects vars) |
+
+Passing `apiKey` explicitly works reliably everywhere and avoids surprises.
+
+**Runtime-specific examples:**
+
+```typescript
+// Node.js (with dotenv)
+import 'dotenv/config';
+const ollama = createOllama({ apiKey: process.env.OLLAMA_API_KEY });
+
+// Bun
+const ollama = createOllama({ apiKey: Bun.env.OLLAMA_API_KEY });
+
+// Deno
+const ollama = createOllama({ apiKey: Deno.env.get('OLLAMA_API_KEY') });
+
+// Production (Vercel, Railway, Fly.io, etc.)
+// Env vars are injected by the platform - no .env files needed
+const ollama = createOllama({ apiKey: process.env.OLLAMA_API_KEY });
+```
+
+**Note**: The API key is set as `Authorization: Bearer {apiKey}` header. If you provide both an `apiKey` and a pre-existing `Authorization` header, the existing header takes precedence.
 
 ### Using Existing Ollama Client
 
