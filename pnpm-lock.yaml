@@ -85,8 +85,8 @@ importers:
         specifier: ^4.1.18
         version: 4.1.18(vite@7.3.0(@types/node@25.0.2)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0))
       ai:
-        specifier: ^5.0.113
-        version: 5.0.113(zod@4.2.0)
+        specifier: ^5.0.114
+        version: 5.0.114(zod@4.2.0)
       ai-sdk-ollama:
         specifier: workspace:*
         version: link:../../packages/ai-sdk-ollama
@@ -164,8 +164,8 @@ importers:
         specifier: ^0.0.12
         version: 0.0.12(zod@4.2.0)
       ai:
-        specifier: ^5.0.113
-        version: 5.0.113(zod@4.2.0)
+        specifier: ^5.0.114
+        version: 5.0.114(zod@4.2.0)
       ai-sdk-ollama:
         specifier: workspace:*
         version: link:../../packages/ai-sdk-ollama
@@ -1978,6 +1978,12 @@ packages:
 
   ai@5.0.113:
     resolution: {integrity: sha512-26vivpSO/mzZj0k1Si2IpsFspp26ttQICHRySQiMrtWcRd5mnJMX2a8sG28vmZ38C+JUn1cWmfZrsLMxkSMw9g==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  ai@5.0.114:
+    resolution: {integrity: sha512-q/lxcJA6avYn/TXTaE41VX6p9lN245mDU9bIGuPpfk6WxDMvmMoUKUIS0/aXAPYN3UmkUn/r9rvq/8C98RoCWw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -5873,6 +5879,14 @@ snapshots:
   acorn@8.15.0: {}
 
   ai@5.0.113(zod@4.2.0):
+    dependencies:
+      '@ai-sdk/gateway': 2.0.21(zod@4.2.0)
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.19(zod@4.2.0)
+      '@opentelemetry/api': 1.9.0
+      zod: 4.2.0
+
+  ai@5.0.114(zod@4.2.0):
     dependencies:
       '@ai-sdk/gateway': 2.0.21(zod@4.2.0)
       '@ai-sdk/provider': 2.0.0
