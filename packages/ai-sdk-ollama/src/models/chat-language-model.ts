@@ -13,7 +13,13 @@ import {
   SharedV2ProviderMetadata,
   SharedV3Warning,
 } from '@ai-sdk/provider';
-import { Ollama, Message as OllamaMessage, ChatResponse, Tool } from 'ollama';
+import {
+  Ollama,
+  Message as OllamaMessage,
+  ChatResponse,
+  Tool,
+  ToolCall,
+} from 'ollama';
 import { OllamaChatSettings } from '../provider';
 import { convertToOllamaChatMessages } from '../utils/convert-to-ollama-messages';
 import { mapOllamaFinishReason } from '../utils/map-ollama-finish-reason';
@@ -53,9 +59,11 @@ interface ParsedToolCall {
   rawInput: unknown;
 }
 
-function parseOllamaToolCalls(
-  toolCalls: ChatResponse['message']['tool_calls'] | undefined,
-): ParsedToolCall[] {
+/**
+ * Parse Ollama tool calls into a normalized format.
+ * Uses the ToolCall type from the Ollama library for type safety.
+ */
+function parseOllamaToolCalls(toolCalls: ToolCall[] | undefined): ParsedToolCall[] {
   if (!toolCalls || toolCalls.length === 0) {
     return [];
   }
@@ -251,6 +259,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
     format?: string | Record<string, unknown>;
     tools?: Tool[];
     warnings: SharedV3Warning[];
+    keep_alive?: string | number;
   } {
     const {
       prompt,
@@ -396,6 +405,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       format,
       tools: ollamaTools,
       warnings,
+      keep_alive: this.settings.keep_alive,
     };
   }
 
@@ -472,6 +482,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       format,
       tools,
       warnings,
+      keep_alive,
     } = this.getCallOptions(options);
 
     const functionTools = (options.tools ?? []).filter(
@@ -500,6 +511,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
           originalOptions: options,
           toolDefinitions,
           reliabilityOptions,
+          keep_alive,
         });
       } catch (error) {
         if (this.settings.reliableToolCalling === true) {
@@ -538,6 +550,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
           originalOptions: options,
           schema: options.responseFormat.schema,
           objectOptions,
+          keep_alive,
         });
       } catch (error) {
         if (this.settings.reliableObjectGeneration === true) {
@@ -558,6 +571,8 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
         format,
         tools,
         stream: false,
+        ...(keep_alive !== undefined && { keep_alive }),
+        ...(this.settings.think !== undefined && { think: this.settings.think }),
       })) as ChatResponse;
 
       const text = response.message.content;
@@ -568,7 +583,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       const content: LanguageModelV3Content[] = [];
 
       // Add reasoning content if present and enabled
-      if (thinking && this.settings.reasoning) {
+      if (thinking && this.settings.think) {
         content.push({ type: 'reasoning', text: thinking });
       }
 
@@ -630,6 +645,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
             options: ollamaOptions,
             format,
             tools,
+            ...(keep_alive !== undefined && { keep_alive }),
           },
         },
         response: {
@@ -652,8 +668,9 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
     toolResults: Awaited<ReturnType<typeof executeReliableToolCalls>>;
     originalOptions: LanguageModelV3CallOptions;
     format?: string | Record<string, unknown>;
+    keep_alive?: string | number;
   }): Promise<{ text: string; response: ChatResponse } | undefined> {
-    const { messages, ollamaOptions, toolResults, originalOptions, format } =
+    const { messages, ollamaOptions, toolResults, originalOptions, format, keep_alive } =
       params;
 
     let followUpResponse: ChatResponse | undefined;
@@ -678,6 +695,8 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
           options: ollamaOptions,
           format,
           stream: false,
+          ...(keep_alive !== undefined && { keep_alive }),
+          ...(this.settings.think !== undefined && { think: this.settings.think }),
         })) as ChatResponse;
 
         const followUpText = followUpResponse.message.content ?? '';
@@ -737,6 +756,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
     toolResults?: Awaited<ReturnType<typeof executeReliableToolCalls>>;
     reliable: boolean;
     finalTextOverride?: string;
+    keep_alive?: string | number;
   }): GenerateResult {
     const {
       messages,
@@ -760,7 +780,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
 
     const content = buildContent(
       thinking,
-      Boolean(this.settings.reasoning),
+      Boolean(this.settings.think),
       finalText,
       parsedToolCalls,
     );
@@ -821,6 +841,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       options: ollamaOptions,
       format,
       tools: ollamaTools,
+      ...(params.keep_alive !== undefined && { keep_alive: params.keep_alive }),
     };
 
     if (reliable) {
@@ -854,6 +875,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
     originalOptions: LanguageModelV3CallOptions;
     toolDefinitions: Record<string, ToolDefinition>;
     reliabilityOptions: ResolvedToolCallingOptions;
+    keep_alive?: string | number;
   }): Promise<GenerateResult> {
     const {
       messages,
@@ -864,6 +886,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       originalOptions,
       toolDefinitions,
       reliabilityOptions,
+      keep_alive,
     } = params;
 
     const errors: string[] = [];
@@ -881,6 +904,8 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
         format,
         tools: ollamaTools,
         stream: false,
+        ...(keep_alive !== undefined && { keep_alive }),
+        ...(this.settings.think !== undefined && { think: this.settings.think }),
       })) as ChatResponse;
 
       lastResponse = response;
@@ -902,6 +927,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
           retryCount: attempt,
           errors,
           reliable: true,
+          keep_alive,
         });
       }
 
@@ -962,6 +988,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
               originalOptions.responseFormat?.type === 'json'
                 ? format
                 : undefined,
+            keep_alive,
           });
 
           if (followUpData && followUpData.text.trim().length > 0) {
@@ -980,6 +1007,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
               toolResults,
               reliable: true,
               finalTextOverride: followUpData.text,
+              keep_alive,
             });
           }
 
@@ -1018,6 +1046,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
         retryCount: reliabilityOptions.maxRetries ?? 3,
         errors,
         reliable: true,
+        keep_alive,
       });
     }
 
@@ -1045,6 +1074,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
           | 'enableTextRepair'
         >
       >;
+    keep_alive?: string | number;
   }): Promise<GenerateResult> {
     const {
       messages,
@@ -1054,6 +1084,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       warnings,
       schema,
       objectOptions,
+      keep_alive,
     } = params;
 
     const errors: string[] = [];
@@ -1068,6 +1099,8 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
           format,
           tools,
           stream: false,
+          ...(keep_alive !== undefined && { keep_alive }),
+          ...(this.settings.think !== undefined && { think: this.settings.think }),
         })) as ChatResponse;
 
         lastResponse = response;
@@ -1105,6 +1138,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
               recoveryMethod,
               retryCount: attempt,
               errors: errors.length > 0 ? errors : undefined,
+              keep_alive,
             });
           } else {
             errors.push(
@@ -1146,6 +1180,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
             recoveryMethod: 'fallback',
             retryCount: objectOptions.maxRetries,
             errors,
+            keep_alive,
           });
         }
       } catch (fallbackError) {
@@ -1177,6 +1212,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       | 'text_repair';
     retryCount: number;
     errors?: string[];
+    keep_alive?: string | number;
   }): GenerateResult {
     const { response, text, warnings, recoveryMethod, retryCount, errors } =
       params;
@@ -1239,6 +1275,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
           format: params.format,
           tools: params.tools,
           reliable_object_generation: true,
+          ...(params.keep_alive !== undefined && { keep_alive: params.keep_alive }),
         },
       },
       response: {
@@ -1260,6 +1297,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       format,
       tools,
       warnings,
+      keep_alive,
     } = this.getCallOptions(options);
 
     try {
@@ -1270,6 +1308,8 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
         format,
         tools,
         stream: true,
+        ...(keep_alive !== undefined && { keep_alive }),
+        ...(this.settings.think !== undefined && { think: this.settings.think }),
       });
 
       let usage: LanguageModelV3Usage = {
@@ -1285,7 +1325,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       let streamStartEmitted = false;
 
       // Capture settings for use in transform function
-      const reasoningEnabled = this.settings.reasoning;
+      const reasoningEnabled = this.settings.think;
 
       // Track text streaming state for UI message compatibility
       let textStreamStarted = false;
@@ -1461,6 +1501,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
             options: ollamaOptions,
             format,
             tools,
+            ...(keep_alive !== undefined && { keep_alive }),
           },
         },
         response: {

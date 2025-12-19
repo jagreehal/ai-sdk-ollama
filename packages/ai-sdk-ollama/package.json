@@ -1,6 +1,6 @@
 {
   "name": "ai-sdk-ollama",
-  "version": "1.0.2",
+  "version": "2.1.0",
   "type": "module",
   "description": "Vercel AI SDK Provider for Ollama using official ollama-js library",
   "main": "./dist/index.js",
@@ -35,12 +35,13 @@
   "author": "Jag Reehal<jag@jagreehal.com> (https://jagreehal.com)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jagreehal/ai-sdk-ollama.git",
+    "url": "https://github.com/jagreehal/ai-sdk-ollama.git",
     "directory": "packages/ai-sdk-ollama"
   },
   "license": "MIT",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "files": [
     "dist",
@@ -96,19 +97,19 @@
     "@total-typescript/ts-reset": "^0.6.1",
     "@total-typescript/tsconfig": "^1.0.4",
     "@types/eslint-config-prettier": "^6.11.3",
-    "@types/node": "^24.10.1",
-    "@typescript-eslint/eslint-plugin": "^8.48.1",
-    "@typescript-eslint/parser": "^8.48.1",
+    "@types/node": "^25.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.50.0",
+    "@typescript-eslint/parser": "^8.50.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-unicorn": "^62.0.0",
     "prettier": "^3.7.4",
     "rimraf": "^6.1.2",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.48.1",
-    "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^4.0.15",
-    "zod": "^4.1.13"
+    "typescript-eslint": "^8.50.0",
+    "vite-tsconfig-paths": "^6.0.3",
+    "vitest": "^4.0.16",
+    "zod": "^4.2.1"
   },
   "engines": {
     "node": ">=22"

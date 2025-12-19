@@ -133,11 +133,13 @@ export OLLAMA_API_KEY="your_api_key_here"
   - [More Examples](#more-examples)
     - [Cross Provider Compatibility](#cross-provider-compatibility)
     - [Native Ollama Power](#native-ollama-power)
+    - [Model Keep-Alive Control](#model-keep-alive-control)
     - [Enhanced Tool Calling Wrappers](#enhanced-tool-calling-wrappers)
     - [Combining Tools with Structured Output](#combining-tools-with-structured-output)
     - [Simple and Predictable](#simple-and-predictable)
   - [Advanced Features](#advanced-features)
     - [Custom Ollama Instance](#custom-ollama-instance)
+    - [API Key Configuration](#api-key-configuration)
     - [Using Existing Ollama Client](#using-existing-ollama-client)
     - [Structured Output](#structured-output)
     - [Auto-Detection of Structured Outputs](#auto-detection-of-structured-outputs)
@@ -272,6 +274,37 @@ const { text } = await generateText({
 ```
 
 > **Parameter Precedence**: When both AI SDK parameters and Ollama options are specified, **Ollama options take precedence**. For example, if you set `temperature: 0.5` in Ollama options and `temperature: 0.8` in the `generateText` call, the final value will be `0.5`. This allows you to use standard AI SDK parameters for portability while having fine-grained control with Ollama-specific options when needed.
+
+### Model Keep-Alive Control
+
+Control how long models stay loaded in memory after requests using the `keep_alive` parameter:
+
+```typescript
+// Keep model loaded for 10 minutes
+const model = ollama('llama3.2', { keep_alive: '10m' });
+
+// Keep model loaded for 1 hour (3600 seconds)
+const model2 = ollama('llama3.2', { keep_alive: 3600 });
+
+// Keep model loaded indefinitely
+const model3 = ollama('llama3.2', { keep_alive: -1 });
+
+// Unload model immediately after each request
+const model4 = ollama('llama3.2', { keep_alive: 0 });
+
+const { text } = await generateText({
+  model,
+  prompt: 'Write a haiku',
+});
+```
+
+**Accepted values:**
+- Duration strings: `"10m"`, `"24h"`, `"30s"` (minutes, hours, seconds)
+- Numbers: seconds as a number (e.g., `3600` for 1 hour)
+- Negative numbers: keep loaded indefinitely (e.g., `-1`)
+- `0`: unload immediately after the request
+
+**Default behavior**: If not specified, Ollama keeps models loaded for 5 minutes to facilitate quicker response times for subsequent requests.
 
 ### Enhanced Tool Calling Wrappers
 
@@ -422,6 +455,57 @@ const { text } = await generateText({
   prompt: 'Hello!',
 });
 ```
+
+### API Key Configuration
+
+For cloud Ollama services, pass your API key explicitly using `createOllama`:
+
+```typescript
+import { createOllama } from 'ai-sdk-ollama';
+
+const ollama = createOllama({
+  apiKey: process.env.OLLAMA_API_KEY,
+  baseURL: 'https://ollama.com',
+});
+
+const { text } = await generateText({
+  model: ollama('llama3.2'),
+  prompt: 'Hello!',
+});
+```
+
+**Why explicit over auto-detection?**
+
+Different runtimes handle environment variables differently:
+
+| Runtime | `.env` Auto-Loading |
+|---------|---------------------|
+| Node.js | ❌ No (requires `dotenv`) |
+| Bun | ✅ Yes (usually) |
+| Deno | ❌ No |
+| Edge/Serverless | ❌ No (platform injects vars) |
+
+Passing `apiKey` explicitly works reliably everywhere and avoids surprises.
+
+**Runtime-specific examples:**
+
+```typescript
+// Node.js (with dotenv)
+import 'dotenv/config';
+const ollama = createOllama({ apiKey: process.env.OLLAMA_API_KEY });
+
+// Bun
+const ollama = createOllama({ apiKey: Bun.env.OLLAMA_API_KEY });
+
+// Deno
+const ollama = createOllama({ apiKey: Deno.env.get('OLLAMA_API_KEY') });
+
+// Production (Vercel, Railway, Fly.io, etc.)
+// Env vars are injected by the platform - no .env files needed
+const ollama = createOllama({ apiKey: process.env.OLLAMA_API_KEY });
+```
+
+**Note**: The API key is set as `Authorization: Bearer {apiKey}` header. If you provide both an `apiKey` and a pre-existing `Authorization` header, the existing header takes precedence.
 
 ### Using Existing Ollama Client
 

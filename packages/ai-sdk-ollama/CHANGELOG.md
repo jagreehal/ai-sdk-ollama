@@ -1,5 +1,72 @@
 # Changelog
 
+## 2.1.0
+
+### Minor Changes
+
+- 285e4e4: Enhanced `streamText` wrapper to support `fullStream` with synthesis
+  - Added synthesis support for `fullStream` in addition to `textStream`
+  - When tool-calling models (like `gpt-oss:120b`) invoke tools without generating text first, the enhanced `fullStream` now automatically synthesizes a response based on tool results
+  - Emits proper `TextStreamPart` events (`text-start`, `text-delta`, `text-end`) for flow-based UIs
+  - Fixes issue where flow interfaces only received control events (`start`, `finish`) without any text content when models called tools first
+
+## 2.0.1
+
+### Patch Changes
+
+- 826eb83: Add API key configuration support for cloud Ollama services
+  - Added `apiKey` parameter to `createOllama` options
+  - API key is automatically set as `Authorization: Bearer {apiKey}` header
+  - Existing Authorization headers take precedence over apiKey
+  - Added header normalization to handle Headers instances, arrays, and plain objects
+  - Updated README with API key configuration examples for different runtimes (Node.js, Bun, Deno, serverless)
+
+## 2.0.0
+
+### Major Changes
+
+- a23b4a5: ## Breaking Change: Rename `reasoning` to `think`
+
+  The `reasoning` parameter in `OllamaChatSettings` has been renamed to `think` to align with Ollama's native API parameter name. This change ensures consistency with the official Ollama API and improves type safety by using `Pick<ChatRequest, 'keep_alive' | 'format' | 'tools' | 'think'>`.
+
+  ### Migration Guide
+
+  **Before:**
+
+  ```typescript
+  const model = ollama('gpt-oss:20b-cloud', { reasoning: true });
+  ```
+
+  **After:**
+
+  ```typescript
+  const model = ollama('gpt-oss:20b-cloud', { think: true });
+  ```
+
+  ### What Changed
+  - Removed `reasoning?: boolean` from `OllamaChatSettings`
+  - Added `think` parameter via `Pick<ChatRequest, 'keep_alive' | 'format' | 'tools' | 'think'>`
+  - Updated all internal references from `this.settings.reasoning` to `this.settings.think`
+  - Updated examples and tests to use the new `think` parameter
+
+  The functionality remains the same - only the parameter name has changed to match Ollama's API.
+
+## 1.1.0
+
+### Minor Changes
+
+- 201b13b: Add `keep_alive` parameter support and improve type safety
+
+  ### Added
+  - **`keep_alive` parameter**: Control how long models stay loaded in memory after requests
+    - Accepts duration strings (e.g., `"10m"`, `"24h"`), numbers in seconds, negative numbers for indefinite, or `0` to unload immediately
+    - Works across all chat operations (generate, stream, tool calling, object generation)
+
+  ### Improved
+  - **Type safety**: Now uses `Pick<ChatRequest, 'keep_alive' | 'format' | 'tools'>` from the official ollama-js package
+  - **Type consistency**: `OllamaProviderSettings` extends `Pick<Config, 'headers' | 'fetch'>` and `OllamaEmbeddingSettings` extends `Pick<EmbedRequest, 'dimensions'>`
+  - **Type exports**: Re-export more types from ollama-js for better developer experience (`ChatRequest`, `EmbedRequest`, `Config`, `ToolCall`, `Tool`, `Message`, `ChatResponse`, `EmbedResponse`)
+
 ## 1.0.2
 
 ### Patch Changes

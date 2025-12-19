@@ -4,7 +4,13 @@ import {
   ProviderV3,
   NoSuchModelError,
 } from '@ai-sdk/provider';
-import { Ollama, type Options as OllamaOptions } from 'ollama';
+import {
+  Ollama,
+  type Options as OllamaOptions,
+  type ChatRequest,
+  type EmbedRequest,
+  type Config,
+} from 'ollama';
 import { OllamaChatLanguageModel } from './models/chat-language-model';
 import { OllamaEmbeddingModel } from './models/embedding-model';
 import { ollamaTools } from './ollama-tools';
@@ -22,26 +28,38 @@ export interface Options extends OllamaOptions {
 }
 
 // Re-export ollama-js types for convenience
-export type { Ollama } from 'ollama';
+export type {
+  Ollama,
+  ChatRequest,
+  EmbedRequest,
+  Config,
+  ToolCall,
+  Tool,
+  Message,
+  ChatResponse,
+  EmbedResponse,
+} from 'ollama';
 
-export interface OllamaProviderSettings {
+/**
+ * Settings for configuring the Ollama provider.
+ * Extends from Ollama's Config type for consistency with the underlying client.
+ */
+export interface OllamaProviderSettings extends Pick<Config, 'headers' | 'fetch'> {
   /**
    * Base URL for the Ollama API (defaults to http://127.0.0.1:11434)
+   * Maps to Config.host in the Ollama client
    */
   baseURL?: string;
 
   /**
-   * Custom headers for API requests
+   * Ollama API key for authentication with cloud services.
+   * The API key will be set as Authorization: Bearer {apiKey} header.
    */
-  headers?: Record<string, string>;
+  apiKey?: string;
 
   /**
-   * Custom fetch implementation
-   */
-  fetch?: typeof fetch;
-
-  /**
-   * Existing Ollama client instance to use instead of creating a new one
+   * Existing Ollama client instance to use instead of creating a new one.
+   * When provided, baseURL, headers, and fetch are ignored.
    */
   client?: Ollama;
 }
@@ -102,16 +120,18 @@ export interface OllamaProvider extends ProviderV3 {
   };
 }
 
-export interface OllamaChatSettings {
+export interface OllamaChatSettings
+  extends Pick<ChatRequest, 'keep_alive' | 'format' | 'tools' | 'think'> {
+  /**
+   * Additional model parameters - uses extended Options type that includes min_p
+   * This automatically includes ALL Ollama parameters including new ones like 'dimensions'
+   */
+  options?: Partial<Options>;
+
   /**
    * Enable structured output mode
    */
   structuredOutputs?: boolean;
-
-  /**
-   * Enable reasoning support for models that support it
-   */
-  reasoning?: boolean;
 
   /**
    * Enable reliable tool calling with retry and completion mechanisms.
@@ -168,25 +188,17 @@ export interface OllamaChatSettings {
    * fixTypeMismatches=true, enableTextRepair=true).
    */
   objectGenerationOptions?: ObjectGenerationOptions;
-
-  /**
-   * Additional model parameters - re-exported from ollama-js
-   * This automatically includes ALL Ollama parameters including new ones like 'dimensions'
-   */
-  options?: Partial<Options>;
 }
 
-export interface OllamaEmbeddingSettings {
+/**
+ * Settings for configuring Ollama embedding models.
+ * Uses Pick from EmbedRequest for type consistency with the Ollama API.
+ */
+export interface OllamaEmbeddingSettings extends Pick<EmbedRequest, 'dimensions'> {
   /**
-   * Additional embedding parameters
+   * Additional embedding parameters (temperature, num_ctx, etc.)
    */
   options?: Partial<Options>;
-
-  /**
-   * Dimensions for embedding output (if supported by the model)
-   * This is a direct parameter of EmbedRequest, not part of Options
-   */
-  dimensions?: number;
 }
 
 /**
@@ -220,18 +232,76 @@ export interface OllamaEmbeddingProviderOptions extends OllamaProviderOptions {
 }
 
 /**
+ * Type guard to check if an object is Headers-like (has entries method)
+ */
+function isHeadersLike(
+  obj: unknown,
+): obj is { entries: () => IterableIterator<[string, string]> } {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'entries' in obj &&
+    typeof (obj as { entries: unknown }).entries === 'function'
+  );
+}
+
+/**
+ * Normalize HeadersInit to a plain object for safe merging
+ */
+function normalizeHeaders(
+  headers: Record<string, string> | Headers | [string, string][] | undefined,
+): Record<string, string> {
+  if (!headers) {
+    return {};
+  }
+
+  // If it's an array of [key, value] tuples, convert first
+  if (Array.isArray(headers)) {
+    const result: Record<string, string> = {};
+    for (const [key, value] of headers) {
+      result[key] = value;
+    }
+    return result;
+  }
+
+  // If it's a Headers instance (check by method presence, not instanceof for cross-context compatibility)
+  if (isHeadersLike(headers)) {
+    const result: Record<string, string> = {};
+    for (const [key, value] of headers.entries()) {
+      result[key] = value;
+    }
+    return result;
+  }
+
+  // If it's already a plain object, return it
+  if (typeof headers === 'object') {
+    return headers as Record<string, string>;
+  }
+
+  return {};
+}
+
+/**
  * Create an Ollama provider instance
  */
 export function createOllama(
   options: OllamaProviderSettings = {},
 ): OllamaProvider {
+  // Normalize headers to a plain object for safe merging
+  const normalizedHeaders = normalizeHeaders(options.headers);
+
+  // Add Authorization header if apiKey is provided and not already set
+  if (options.apiKey && !normalizedHeaders.Authorization && !normalizedHeaders.authorization) {
+    normalizedHeaders.Authorization = `Bearer ${options.apiKey}`;
+  }
+
   // Use existing client or create new one
   const client =
     options.client ||
     new Ollama({
       host: options.baseURL,
       fetch: options.fetch,
-      headers: options.headers,
+      headers: Object.keys(normalizedHeaders).length > 0 ? normalizedHeaders : undefined,
     });
 
   const createChatModel = (

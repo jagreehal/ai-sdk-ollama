@@ -4,7 +4,7 @@ import {
   SharedV2ProviderMetadata,
   SharedV3ProviderOptions,
 } from '@ai-sdk/provider';
-import { Ollama } from 'ollama';
+import { Ollama, type EmbedResponse } from 'ollama';
 import { OllamaEmbeddingSettings } from '../provider';
 import { OllamaError } from '../utils/ollama-error';
 
@@ -66,7 +66,7 @@ export class OllamaEmbeddingModel implements EmbeddingModelV3 {
           continue;
         }
 
-        const response = await this.config.client.embed({
+        const response: EmbedResponse = await this.config.client.embed({
           model: this.modelId,
           input: value,
           options: this.settings.options,
