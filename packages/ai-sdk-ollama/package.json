@@ -89,7 +89,7 @@
     "ollama": "^0.6.3"
   },
   "peerDependencies": {
-    "ai": "^5.0.113"
+    "ai": "^5.0.115"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
@@ -98,8 +98,8 @@
     "@total-typescript/tsconfig": "^1.0.4",
     "@types/eslint-config-prettier": "^6.11.3",
     "@types/node": "^25.0.3",
-    "@typescript-eslint/eslint-plugin": "^8.49.0",
-    "@typescript-eslint/parser": "^8.49.0",
+    "@typescript-eslint/eslint-plugin": "^8.50.0",
+    "@typescript-eslint/parser": "^8.50.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-unicorn": "^62.0.0",
     "prettier": "^3.7.4",
@@ -107,9 +107,9 @@
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.50.0",
-    "vite-tsconfig-paths": "^6.0.2",
-    "vitest": "^4.0.15",
-    "zod": "^4.2.0"
+    "vite-tsconfig-paths": "^6.0.3",
+    "vitest": "^4.0.16",
+    "zod": "^4.2.1"
   },
   "engines": {
     "node": ">=22"
