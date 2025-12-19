@@ -4,6 +4,14 @@ import { Ollama as OllamaBrowser } from 'ollama/browser';
 import type { Ollama } from 'ollama';
 import { OllamaChatLanguageModel } from './models/chat-language-model';
 import { OllamaEmbeddingModel } from './models/embedding-model';
+import {
+  OllamaRerankingModel,
+  OllamaRerankingSettings,
+} from './models/reranking-model';
+import {
+  OllamaEmbeddingRerankingModel,
+  OllamaEmbeddingRerankingSettings,
+} from './models/embedding-reranking-model';
 import { ollamaTools } from './ollama-tools';
 
 // Re-export all the types
@@ -117,6 +125,31 @@ export function createOllama(
     });
   };
 
+  const createRerankingModel = (
+    modelId: string,
+    settings: OllamaRerankingSettings = {},
+  ) => {
+    // Determine base URL for direct HTTP calls
+    const baseURL = options.baseURL ?? 'http://127.0.0.1:11434';
+
+    return new OllamaRerankingModel(modelId, settings, {
+      provider: 'ollama.reranking',
+      baseURL,
+      headers: () => normalizedHeaders,
+      fetch: options.fetch,
+    });
+  };
+
+  const createEmbeddingRerankingModel = (
+    modelId: string,
+    settings: OllamaEmbeddingRerankingSettings = {},
+  ) => {
+    return new OllamaEmbeddingRerankingModel(modelId, settings, {
+      client,
+      provider: 'ollama.embedding-reranking',
+    });
+  };
+
   const provider = function (modelId: string, settings?: OllamaChatSettings) {
     if (new.target) {
       throw new Error(
@@ -131,6 +164,9 @@ export function createOllama(
   provider.embedding = createEmbeddingModel;
   provider.textEmbedding = createEmbeddingModel;
   provider.textEmbeddingModel = createEmbeddingModel;
+  provider.reranking = createRerankingModel;
+  provider.rerankingModel = createRerankingModel;
+  provider.embeddingReranking = createEmbeddingRerankingModel;
   provider.imageModel = (modelId: string) => {
     throw new NoSuchModelError({
       modelId,

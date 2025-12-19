@@ -11,8 +11,22 @@ export {
   type Options,
 } from './provider';
 
+export {
+  OllamaRerankingModel,
+  type OllamaRerankingSettings,
+  type OllamaRerankingProviderOptions,
+} from './models/reranking-model';
+
+export {
+  OllamaEmbeddingRerankingModel,
+  type OllamaEmbeddingRerankingSettings,
+} from './models/embedding-reranking-model';
+
 export { OllamaError } from './utils/ollama-error';
 export type { OllamaErrorData } from './utils/ollama-error';
+
+// Utility exports
+export { cosineSimilarity } from './utils/cosine-similarity';
 
 // Re-export tool calling reliability utilities for advanced users
 export type {
