@@ -13,6 +13,23 @@ const mockOllamaClient = {
   chat: vi.fn(),
 } as unknown as Ollama;
 
+// Helper to create V3 usage format for test expectations
+function createExpectedUsage(inputTokens: number, outputTokens: number) {
+  return {
+    inputTokens: {
+      total: inputTokens,
+      noCache: inputTokens,
+      cacheRead: undefined,
+      cacheWrite: undefined,
+    },
+    outputTokens: {
+      total: outputTokens,
+      text: outputTokens,
+      reasoning: undefined,
+    },
+  };
+}
+
 describe('OllamaChatLanguageModel', () => {
   let model: OllamaChatLanguageModel;
   let settings: OllamaChatSettings;
@@ -83,14 +100,8 @@ describe('OllamaChatLanguageModel', () => {
 
       expect(result.content).toEqual([{ type: 'text', text: 'Hello, world!' }]);
       expect(result.finishReason).toBe('stop');
-      // V3 uses undefined instead of 0 for missing values
-      expect(result.usage).toEqual({
-        inputTokens: 5,
-        outputTokens: 10,
-        totalTokens: 15,
-        reasoningTokens: undefined,
-        cachedInputTokens: undefined,
-      });
+      // V3 uses structured usage format
+      expect(result.usage).toEqual(createExpectedUsage(5, 10));
 
       expect(mockOllamaClient.chat).toHaveBeenCalledWith({
         model: 'llama3.2',
@@ -500,11 +511,7 @@ describe('OllamaChatLanguageModel', () => {
       expect(chunks[6]).toEqual({
         type: 'finish',
         finishReason: 'stop',
-        usage: {
-          inputTokens: 8,
-          outputTokens: 15,
-          totalTokens: 23,
-        },
+        usage: createExpectedUsage(8, 15),
       });
 
       expect(mockOllamaClient.chat).toHaveBeenCalledWith({
@@ -719,11 +726,7 @@ describe('OllamaChatLanguageModel', () => {
         { type: 'text', text: 'The answer is 42.' },
       ]);
       expect(result.finishReason).toBe('stop');
-      expect(result.usage).toEqual({
-        inputTokens: 8,
-        outputTokens: 15,
-        totalTokens: 23,
-      });
+      expect(result.usage).toEqual(createExpectedUsage(8, 15));
     });
 
     it('should not include reasoning when think is disabled', async () => {
@@ -1078,11 +1081,7 @@ describe('OllamaChatLanguageModel', () => {
       expect(chunks[6]).toEqual({
         type: 'finish',
         finishReason: 'stop',
-        usage: {
-          inputTokens: 8,
-          outputTokens: 15,
-          totalTokens: 23,
-        },
+        usage: createExpectedUsage(8, 15),
       });
     });
 
@@ -1138,11 +1137,7 @@ describe('OllamaChatLanguageModel', () => {
       expect(chunks[1]).toEqual({
         type: 'finish',
         finishReason: 'stop',
-        usage: {
-          inputTokens: 5,
-          outputTokens: 0,
-          totalTokens: 5,
-        },
+        usage: createExpectedUsage(5, 0),
       });
     });
 
@@ -1233,11 +1228,7 @@ describe('OllamaChatLanguageModel', () => {
       expect(chunks[4]).toEqual({
         type: 'finish',
         finishReason: 'stop',
-        usage: {
-          inputTokens: 8,
-          outputTokens: 15,
-          totalTokens: 23,
-        },
+        usage: createExpectedUsage(8, 15),
       });
     });
 

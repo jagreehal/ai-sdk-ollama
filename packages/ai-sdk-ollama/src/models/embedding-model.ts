@@ -1,8 +1,9 @@
 import {
   EmbeddingModelV3,
   EmbeddingModelV3Embedding,
-  SharedV2ProviderMetadata,
+  SharedV3ProviderMetadata,
   SharedV3ProviderOptions,
+  SharedV3Warning,
 } from '@ai-sdk/provider';
 import { Ollama, type EmbedResponse } from 'ollama';
 import { OllamaEmbeddingSettings } from '../provider';
@@ -39,8 +40,9 @@ export class OllamaEmbeddingModel implements EmbeddingModelV3 {
   }): Promise<{
     embeddings: EmbeddingModelV3Embedding[];
     usage?: { tokens: number };
-    providerMetadata?: SharedV2ProviderMetadata;
+    providerMetadata?: SharedV3ProviderMetadata;
     response?: { headers?: Record<string, string>; body?: unknown };
+    warnings: SharedV3Warning[];
   }> {
     const { values, abortSignal } = params;
     if (values.length > this.maxEmbeddingsPerCall) {
@@ -51,7 +53,7 @@ export class OllamaEmbeddingModel implements EmbeddingModelV3 {
 
     // Handle empty array case
     if (values.length === 0) {
-      return { embeddings: [] };
+      return { embeddings: [], warnings: [] };
     }
 
     try {
@@ -117,6 +119,7 @@ export class OllamaEmbeddingModel implements EmbeddingModelV3 {
             model: this.modelId,
           },
         },
+        warnings: [],
       };
     } catch (error) {
       if (error instanceof OllamaError) {

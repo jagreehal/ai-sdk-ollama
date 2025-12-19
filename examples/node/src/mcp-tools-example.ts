@@ -226,7 +226,8 @@ rl.on('line', (input) => {
         model: ollama('llama3.2'),
         prompt:
           'Calculate 15 + 27 using the calculator tool with operation="add", a=15, b=27. Also get the current time using the getTime tool.',
-        tools: mcpTools,
+        // Type assertion needed for @ai-sdk/mcp compatibility with AI SDK v6 beta
+        tools: mcpTools as Parameters<typeof generateText>[0]['tools'],
       });
 
       console.log('Final Response:', result1.text);
@@ -247,7 +248,7 @@ rl.on('line', (input) => {
         model: ollama('llama3.2'),
         prompt:
           'Get the weather in Tokyo using the weatherMock tool and calculate 100 divided by 4 using the calculator tool.',
-        tools: mcpTools,
+        tools: mcpTools as Parameters<typeof generateText>[0]['tools'],
       });
 
       console.log('Final Response:', result2.text);
@@ -272,7 +273,7 @@ rl.on('line', (input) => {
       const result3 = await generateText({
         model: ollama('llama3.2'),
         prompt: 'Tell me the current time.',
-        tools: mcpTools,
+        tools: mcpTools as Parameters<typeof generateText>[0]['tools'],
         toolChoice: 'required', // Force tool usage
       });
 

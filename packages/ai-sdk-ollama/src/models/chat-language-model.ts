@@ -117,6 +117,29 @@ function buildContent(
   return content;
 }
 
+/**
+ * Create a LanguageModelV3Usage object from token counts.
+ * V3 uses structured objects for inputTokens and outputTokens.
+ */
+function createUsage(
+  inputTokenCount?: number,
+  outputTokenCount?: number,
+): LanguageModelV3Usage {
+  return {
+    inputTokens: {
+      total: inputTokenCount,
+      noCache: inputTokenCount,
+      cacheRead: undefined,
+      cacheWrite: undefined,
+    },
+    outputTokens: {
+      total: outputTokenCount,
+      text: outputTokenCount,
+      reasoning: undefined,
+    },
+  };
+}
+
 function aggregateUsage(...responses: ChatResponse[]): LanguageModelV3Usage {
   let inputTokens: number | undefined;
   let outputTokens: number | undefined;
@@ -130,16 +153,7 @@ function aggregateUsage(...responses: ChatResponse[]): LanguageModelV3Usage {
     }
   }
 
-  return {
-    inputTokens,
-    outputTokens,
-    totalTokens:
-      inputTokens !== undefined || outputTokens !== undefined
-        ? (inputTokens ?? 0) + (outputTokens ?? 0)
-        : undefined,
-    reasoningTokens: undefined,
-    cachedInputTokens: undefined,
-  };
+  return createUsage(inputTokens, outputTokens);
 }
 
 function getLatestUserMessage(messages: OllamaMessage[]): string {
@@ -615,17 +629,10 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       return {
         content,
         finishReason,
-        usage: {
-          inputTokens: response.prompt_eval_count ?? undefined,
-          outputTokens: response.eval_count ?? undefined,
-          totalTokens:
-            response.prompt_eval_count !== undefined ||
-            response.eval_count !== undefined
-              ? (response.prompt_eval_count ?? 0) + (response.eval_count ?? 0)
-              : undefined,
-          reasoningTokens: undefined,
-          cachedInputTokens: undefined,
-        },
+        usage: createUsage(
+          response.prompt_eval_count ?? undefined,
+          response.eval_count ?? undefined,
+        ),
         providerMetadata: {
           ollama: {
             model: response.model,
@@ -1220,17 +1227,10 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
     // For object generation, we return the validated text as content
     const content: LanguageModelV3Content[] = [{ type: 'text', text }];
 
-    const usage: LanguageModelV3Usage = {
-      inputTokens: response.prompt_eval_count ?? undefined,
-      outputTokens: response.eval_count ?? undefined,
-      totalTokens:
-        response.prompt_eval_count !== undefined ||
-        response.eval_count !== undefined
-          ? (response.prompt_eval_count ?? 0) + (response.eval_count ?? 0)
-          : undefined,
-      reasoningTokens: undefined,
-      cachedInputTokens: undefined,
-    };
+    const usage: LanguageModelV3Usage = createUsage(
+      response.prompt_eval_count ?? undefined,
+      response.eval_count ?? undefined,
+    );
 
     const finishReason =
       (mapOllamaFinishReason(
@@ -1312,13 +1312,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
         ...(this.settings.think !== undefined && { think: this.settings.think }),
       });
 
-      let usage: LanguageModelV3Usage = {
-        inputTokens: undefined,
-        outputTokens: undefined,
-        totalTokens: undefined,
-        reasoningTokens: undefined,
-        cachedInputTokens: undefined,
-      };
+      let usage: LanguageModelV3Usage = createUsage();
       let finishReason: LanguageModelV3FinishReason = 'unknown';
 
       // Track if we've emitted stream-start
@@ -1386,17 +1380,10 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
             }
 
             // Final chunk with metadata
-            usage = {
-              inputTokens: chunk.prompt_eval_count ?? undefined,
-              outputTokens: chunk.eval_count ?? undefined,
-              totalTokens:
-                chunk.prompt_eval_count !== undefined ||
-                chunk.eval_count !== undefined
-                  ? (chunk.prompt_eval_count ?? 0) + (chunk.eval_count ?? 0)
-                  : undefined,
-              reasoningTokens: undefined,
-              cachedInputTokens: undefined,
-            };
+            usage = createUsage(
+              chunk.prompt_eval_count ?? undefined,
+              chunk.eval_count ?? undefined,
+            );
             // If we saw tool calls, set finish reason to 'tool-calls' to continue conversation
             finishReason = hasToolCalls
               ? 'tool-calls'
