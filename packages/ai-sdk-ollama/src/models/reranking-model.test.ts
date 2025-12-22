@@ -200,7 +200,7 @@ describe('OllamaRerankingModel', () => {
       });
 
       // Check that documents are stringified
-      const body = getLastRequestBody();
+      const body = getLastRequestBody() as { documents: string[] };
       expect(body.documents[0]).toBe('{"title":"Doc1"}');
       expect(body.documents[1]).toBe('{"title":"Doc2"}');
 

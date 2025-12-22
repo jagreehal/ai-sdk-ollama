@@ -618,13 +618,12 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
         }
       }
 
-      // Determine finish reason - if we have tool calls, return 'tool-calls' to continue conversation
+      // Determine finish reason - when tool calls are present, use 'stop' as the finish reason
+      // (tool calls are already represented in the content array)
       const finishReason: LanguageModelV3FinishReason =
         parsedToolCalls.length > 0
-          ? 'tool-calls'
-          : (mapOllamaFinishReason(
-              response.done_reason,
-            ) as LanguageModelV3FinishReason);
+          ? ('stop' as unknown as LanguageModelV3FinishReason)
+          : mapOllamaFinishReason(response.done_reason);
 
       return {
         content,
@@ -798,10 +797,8 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       ? aggregateUsage(response, followUpResponse)
       : aggregateUsage(response);
 
-    const finishReason =
-      (mapOllamaFinishReason(
-        finishSource.done_reason,
-      ) as LanguageModelV3FinishReason) ?? 'stop';
+    const finishReason: LanguageModelV3FinishReason =
+      mapOllamaFinishReason(finishSource.done_reason) ?? ('stop' as unknown as LanguageModelV3FinishReason);
 
     const providerDetails: Record<string, JSONValue> = {};
 
@@ -1313,7 +1310,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       });
 
       let usage: LanguageModelV3Usage = createUsage();
-      let finishReason: LanguageModelV3FinishReason = 'unknown';
+      let finishReason: LanguageModelV3FinishReason = 'unknown' as unknown as LanguageModelV3FinishReason;
 
       // Track if we've emitted stream-start
       let streamStartEmitted = false;
@@ -1384,12 +1381,11 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
               chunk.prompt_eval_count ?? undefined,
               chunk.eval_count ?? undefined,
             );
-            // If we saw tool calls, set finish reason to 'tool-calls' to continue conversation
+            // If we saw tool calls, use 'stop' as the finish reason
+            // (tool calls are already represented in the content array)
             finishReason = hasToolCalls
-              ? 'tool-calls'
-              : (mapOllamaFinishReason(
-                  chunk.done_reason,
-                ) as LanguageModelV3FinishReason);
+              ? ('stop' as unknown as LanguageModelV3FinishReason)
+              : mapOllamaFinishReason(chunk.done_reason);
 
             controller.enqueue({
               type: 'finish',

@@ -19,7 +19,7 @@
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "pnpm build && changeset publish",
-    "quality": "pnpm test && pnpm lint && pnpm build"
+    "quality": "turbo quality"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
