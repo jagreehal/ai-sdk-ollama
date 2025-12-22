@@ -594,17 +594,17 @@ import { z } from 'zod';
 
 const agent = new ToolLoopAgent({
   model: ollama('llama3.2'),
-  system: 'You are a helpful assistant.',
+  instructions: 'You are a helpful assistant.',
   tools: {
     weather: tool({
       description: 'Get weather for a location',
-      parameters: z.object({ location: z.string() }),
-      execute: async ({ location }) => ({ temp: 72, condition: 'sunny' }),
+      inputSchema: z.object({ location: z.string() }),
+      execute: async ({ location }: { location: string }) => ({ temp: 72, condition: 'sunny' }),
     }),
     done: tool({
       description: 'Call when task is complete',
-      parameters: z.object({ summary: z.string() }),
-      execute: async ({ summary }) => ({ completed: true, summary }),
+      inputSchema: z.object({ summary: z.string() }),
+      execute: async ({ summary }: { summary: string }) => ({ completed: true, summary }),
     }),
   },
   maxOutputTokens: 1000,
@@ -612,8 +612,8 @@ const agent = new ToolLoopAgent({
     stepCountIs(10),      // Stop after 10 steps max
     hasToolCall('done'),  // Stop when 'done' tool is called
   ],
-  onStepFinish: (step, index) => {
-    console.log(`Step ${index + 1}:`, step.toolCalls.length, 'tool calls');
+  onStepFinish: (stepResult) => {
+    console.log(`Step:`, stepResult.toolCalls.length, 'tool calls');
   },
 });
 

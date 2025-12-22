@@ -12,7 +12,8 @@
     "test:integration": "playwright test",
     "test:integration:headed": "playwright test --headed",
     "test:integration:ui": "playwright test --ui",
-    "test:integration:report": "playwright show-report"
+    "test:integration:report": "playwright show-report",
+    "quality": "pnpm type-check && pnpm build"
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.0",

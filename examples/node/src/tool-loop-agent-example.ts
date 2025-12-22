@@ -17,10 +17,10 @@ async function main() {
   const tools = {
     weather: tool({
       description: 'Get the current weather for a location',
-      parameters: z.object({
+      inputSchema: z.object({
         location: z.string().describe('The city name'),
       }),
-      execute: async ({ location }) => {
+      execute: async ({ location }: { location: string }) => {
         // Simulated weather data
         const weatherData: Record<string, { temp: number; condition: string }> =
           {
@@ -46,13 +46,13 @@ async function main() {
 
     calculator: tool({
       description: 'Perform a mathematical calculation. You can pass either an expression string like "15 * 7" or numbers with an operation.',
-      parameters: z.object({
+      inputSchema: z.object({
         expression: z.string().optional().describe('A math expression like "15 * 7" or "2 + 2"'),
         a: z.number().optional().describe('First number'),
         b: z.number().optional().describe('Second number'),
         operation: z.string().optional().describe('Operation: +, -, *, /'),
       }),
-      execute: async ({ expression, a, b, operation }) => {
+      execute: async ({ expression, a, b, operation }: { expression?: string; a?: number; b?: number; operation?: string }) => {
         try {
           let result: number;
           if (expression) {
@@ -93,10 +93,10 @@ async function main() {
     done: tool({
       description:
         'Call this when you have completed the task and want to finish',
-      parameters: z.object({
+      inputSchema: z.object({
         summary: z.string().describe('A brief summary of what was done'),
       }),
-      execute: async ({ summary }) => {
+      execute: async ({ summary }: { summary: string }) => {
         return { completed: true, summary };
       },
     }),
@@ -108,24 +108,24 @@ async function main() {
 
   const agent1 = new ToolLoopAgent({
     model,
-    system:
+    instructions:
       'You are a helpful assistant. When you call tools, you MUST provide a text response after receiving the tool results. Always summarize what you learned from the tools.',
     tools,
     maxOutputTokens: 1000,
     temperature: 0.7,
     stopWhen: stepCountIs(5), // Stop after 5 steps max
-    onStepFinish: (step, index) => {
-      console.log(`  Step ${index + 1}:`);
-      if (step.text) {
-        console.log(`    Text: "${step.text.slice(0, 100)}${step.text.length > 100 ? '...' : ''}"`);
+    onStepFinish: (stepResult) => {
+      // Note: In AI SDK v6, onStepFinish only receives stepResult (no index parameter)
+      if (stepResult.text) {
+        console.log(`    Text: "${stepResult.text.slice(0, 100)}${stepResult.text.length > 100 ? '...' : ''}"`);
       }
-      if (step.toolCalls.length > 0) {
-        console.log(`    Tool calls: ${step.toolCalls.map(tc => `${String(tc.toolName)}(${JSON.stringify(tc.args)})`).join(', ')}`);
+      if (stepResult.toolCalls.length > 0) {
+        console.log(`    Tool calls: ${stepResult.toolCalls.map(tc => `${String(tc.toolName)}(${JSON.stringify(tc.input)})`).join(', ')}`);
       }
-      if (step.toolResults.length > 0) {
-        console.log(`    Tool results: ${step.toolResults.map(tr => `${String(tr.toolName)} → ${JSON.stringify(tr.result)}`).join(', ')}`);
+      if (stepResult.toolResults.length > 0) {
+        console.log(`    Tool results: ${stepResult.toolResults.map(tr => `${String(tr.toolName)} → ${JSON.stringify(tr.output)}`).join(', ')}`);
       }
-      console.log(`    Finish reason: ${step.finishReason || 'continue'}`);
+      console.log(`    Finish reason: ${stepResult.finishReason || 'continue'}`);
     },
   });
 
@@ -144,7 +144,7 @@ async function main() {
       if (step.toolResults.length > 0) {
         console.log(`\nStep ${i + 1} tool results:`);
         for (const tr of step.toolResults) {
-          console.log(`  ${String(tr.toolName)}:`, JSON.stringify(tr.result, null, 2));
+            console.log(`  ${String(tr.toolName)}:`, JSON.stringify(tr.output, null, 2));
         }
       }
     }
@@ -160,29 +160,30 @@ async function main() {
 
   const agent2 = new ToolLoopAgent({
     model,
-    system:
+    instructions:
       'You are a helpful assistant. Complete tasks step by step. After finishing, call the "done" tool with a summary. Provide text responses when you have information to share.',
     tools,
     stopWhen: [
       stepCountIs(10), // Safety limit
       hasToolCall('done'), // Stop when done tool is called
     ],
-    onStepFinish: (step, index) => {
-      console.log(`  Step ${index + 1}:`);
-      if (step.text) {
-        console.log(`    Text: "${step.text.slice(0, 80)}${step.text.length > 80 ? '...' : ''}"`);
+    onStepFinish: (stepResult) => {
+      // Note: In AI SDK v6, onStepFinish only receives stepResult, not index
+      // We can track step index from result.steps if needed
+      if (stepResult.text) {
+        console.log(`    Text: "${stepResult.text.slice(0, 80)}${stepResult.text.length > 80 ? '...' : ''}"`);
       }
-      if (step.toolCalls.length > 0) {
-        for (const tc of step.toolCalls) {
-          console.log(`    → Calling ${String(tc.toolName)}:`, tc.args);
+      if (stepResult.toolCalls.length > 0) {
+        for (const tc of stepResult.toolCalls) {
+          console.log(`    → Calling ${String(tc.toolName)}:`, tc.input);
         }
       }
-      if (step.toolResults.length > 0) {
-        for (const tr of step.toolResults) {
-          console.log(`    ← ${String(tr.toolName)} returned:`, tr.result);
+      if (stepResult.toolResults.length > 0) {
+        for (const tr of stepResult.toolResults) {
+          console.log(`    ← ${String(tr.toolName)} returned:`, tr.output);
         }
       }
-      console.log(`    Finish reason: ${step.finishReason || 'continue'}`);
+      console.log(`    Finish reason: ${stepResult.finishReason || 'continue'}`);
     },
   });
 
@@ -201,7 +202,7 @@ async function main() {
     if (doneStep) {
       const doneResult = doneStep.toolResults.find(tr => tr.toolName === 'done');
       if (doneResult) {
-        console.log('Done tool summary:', doneResult.result);
+        console.log('Done tool summary:', doneResult.output);
       }
     }
   }
@@ -215,18 +216,18 @@ async function main() {
 
   const agent3 = new ToolLoopAgent({
     model,
-    system: 'You are a calculator assistant. When asked a math question: 1) Call the calculator tool, 2) Then provide a clear text answer explaining the result.',
+    instructions: 'You are a calculator assistant. When asked a math question: 1) Call the calculator tool, 2) Then provide a clear text answer explaining the result.',
     tools: { calculator: tools.calculator },
     stopWhen: stepCountIs(3),
-    onStepFinish: (step, index) => {
-      if (step.toolCalls.length > 0) {
-        console.log(`  Step ${index + 1}: Called calculator`);
-        for (const tr of step.toolResults) {
-          console.log(`    Result: ${JSON.stringify(tr.result)}`);
+    onStepFinish: (stepResult) => {
+      if (stepResult.toolCalls.length > 0) {
+        console.log(`  Called calculator`);
+        for (const tr of stepResult.toolResults) {
+          console.log(`    Result: ${JSON.stringify(tr.output)}`);
         }
       }
-      if (step.text) {
-        console.log(`  Step ${index + 1}: Generated text: "${step.text}"`);
+      if (stepResult.text) {
+        console.log(`  Generated text: "${stepResult.text}"`);
       }
     },
     onFinish: (result) => {
@@ -256,10 +257,10 @@ async function main() {
     console.log('(No text generated - showing calculator result)');
     for (const step of result3.steps) {
       const calcResult = step.toolResults.find(tr => tr.toolName === 'calculator');
-      if (calcResult && typeof calcResult.result === 'object' && calcResult.result !== null) {
-        const result = calcResult.result as { result?: number; expression?: string };
-        if (result.result !== undefined) {
-          console.log(`Calculator result: ${result.expression || 'calculation'} = ${result.result}`);
+      if (calcResult && typeof calcResult.output === 'object' && calcResult.output !== null) {
+        const output = calcResult.output as { result?: number; expression?: string };
+        if (output.result !== undefined) {
+          console.log(`Calculator result: ${output.expression || 'calculation'} = ${output.result}`);
         }
       }
     }
@@ -274,7 +275,7 @@ async function main() {
 
   const agent4 = new ToolLoopAgent({
     model,
-    system: 'You are a helpful assistant. Provide clear, concise answers.',
+    instructions: 'You are a helpful assistant. Provide clear, concise answers.',
     tools,
   });
 
