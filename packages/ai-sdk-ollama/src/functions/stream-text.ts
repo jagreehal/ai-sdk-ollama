@@ -8,7 +8,9 @@
  */
 
 import { streamText as _streamText, stepCountIs } from 'ai';
-import type { LanguageModelV3 } from '@ai-sdk/provider';
+
+// Extract the AI SDK's streamText options type for full compatibility
+type AIStreamTextOptions = Parameters<typeof _streamText>[0];
 
 /**
  * TextStreamPart type for fullStream synthesis
@@ -16,7 +18,7 @@ import type { LanguageModelV3 } from '@ai-sdk/provider';
  */
 type SynthesisStreamPart =
   | { type: 'text-start'; id: string }
-  | { type: 'text-delta'; id: string; text: string }
+  | { type: 'text-delta'; id: string; text: string; delta?: string }
   | { type: 'text-end'; id: string }
   | { type: 'tool-call'; toolCallId: string; toolName: string; input: unknown }
   | { type: 'tool-result'; toolCallId: string; toolName: string; output: unknown }
@@ -26,23 +28,20 @@ type SynthesisStreamPart =
   | { type: 'finish-step'; response: unknown; usage: unknown; finishReason: string; providerMetadata: unknown }
   | { type: string; [key: string]: unknown };
 
-export interface StreamTextOptions {
-  model: LanguageModelV3;
-  system?: string;
-  prompt?: string;
-  messages?: Parameters<typeof _streamText>[0]['messages'];
-  tools?: Parameters<typeof _streamText>[0]['tools'];
-  maxOutputTokens?: number;
-  temperature?: number;
-  topP?: number;
-  topK?: number;
-  presencePenalty?: number;
-  frequencyPenalty?: number;
-  stopSequences?: string[];
-  seed?: number;
-  maxRetries?: number;
-  abortSignal?: AbortSignal;
-  headers?: Record<string, string>;
+/**
+ * Type for parts from the AI SDK's fullStream
+ * This is more permissive to handle all possible stream part types
+ */
+type StreamPart = {
+  type: string;
+  [key: string]: unknown;
+};
+
+/**
+ * Enhanced streamText options that extend the official AI SDK options
+ * This ensures 100% compatibility - all AI SDK properties are supported
+ */
+export type StreamTextOptions = AIStreamTextOptions & {
   /**
    * Enhanced options for Ollama-specific reliability features
    */
@@ -99,16 +98,17 @@ export async function streamText(options: StreamTextOptions): Promise<Awaited<Re
 
   const hasTools = options.tools && Object.keys(options.tools).length > 0;
 
-  // If no tools, just use standard streaming
+  // If no tools, just use standard streaming - forward all options automatically
   if (!hasTools || !enableStreamingSynthesis) {
     return _streamText(streamTextOptions as Parameters<typeof _streamText>[0]);
   }
 
   // Enhanced streaming with tool calling reliability
-  // Enable multi-turn tool calling with stopWhen
+  // Automatically forward all AI SDK options, only override stopWhen if needed
   const streamResult = await _streamText({
     ...(streamTextOptions as Parameters<typeof _streamText>[0]),
-    stopWhen: stepCountIs(5), // Enable multi-turn tool calling
+    // Only set stopWhen default if user didn't provide one and tools are enabled
+    stopWhen: streamTextOptions.stopWhen ?? (hasTools ? stepCountIs(5) : undefined),
   });
 
   // Shared state for synthesis
@@ -296,14 +296,17 @@ Based on the tool results above, please provide a comprehensive response to the 
   /**
    * Create enhanced fullStream with synthesis support
    * Emits proper TextStreamPart objects including synthesized text parts
+   * Streams events in real-time instead of waiting for completion
    */
   const createEnhancedFullStream = () => {
-    // We need to collect parts from the original result's accessors
-    // since fullStream uses teeStream which may conflict with textStream
+    // Get the original fullStream to consume in real-time
+    const originalFullStream = streamResult.fullStream;
 
     return new ReadableStream<SynthesisStreamPart>({
       async start(controller) {
         let controllerClosed = false;
+        let hasSeenText = false;
+        let currentTextId: string | null = null;
 
         const safeClose = () => {
           if (!controllerClosed) {
@@ -330,97 +333,145 @@ Based on the tool results above, please provide a comprehensive response to the 
         };
 
         try {
-          // Emit start
-          safeEnqueue({ type: 'start' });
+          const reader = originalFullStream.getReader();
 
-          // Wait for the stream to complete and collect tool information
-          const finalResult = await streamResult;
-          const [toolCalls, toolResults, text] = await Promise.all([
-            finalResult.toolCalls,
-            finalResult.toolResults,
-            finalResult.text,
-          ]);
+          while (true) {
+            const { done, value } = await reader.read();
 
-          // Update state
-          state.textContent = text || '';
-          if (toolCalls) {
-            state.toolCalls = toolCalls.map((tc) => ({
-              toolCallId: tc.toolCallId,
-              toolName: tc.toolName,
-              input: tc.input,
-            }));
-          }
-          if (toolResults) {
-            state.toolResults = toolResults.map((tr) => ({
-              toolCallId: tr.toolCallId,
-              toolName: tr.toolName,
-              output: tr.output,
-            }));
-          }
+            if (done) {
+              state.hasFinished = true;
 
-          // Emit tool calls
-          for (const tc of state.toolCalls) {
-            safeEnqueue({
-              type: 'tool-call',
-              toolCallId: tc.toolCallId,
-              toolName: tc.toolName,
-              input: tc.input,
-            });
-          }
+              // Check if we need synthesis before finishing
+              const finalResult = await streamResult;
+              const [toolCalls, toolResults, text] = await Promise.all([
+                finalResult.toolCalls,
+                finalResult.toolResults,
+                finalResult.text,
+              ]);
 
-          // Emit tool results
-          for (const tr of state.toolResults) {
-            safeEnqueue({
-              type: 'tool-result',
-              toolCallId: tr.toolCallId,
-              toolName: tr.toolName,
-              output: tr.output,
-            });
-          }
+              // Update state with final values
+              state.textContent = text || '';
+              if (toolCalls) {
+                state.toolCalls = toolCalls.map((tc) => ({
+                  toolCallId: tc.toolCallId,
+                  toolName: tc.toolName,
+                  input: tc.input,
+                }));
+              }
+              if (toolResults) {
+                state.toolResults = toolResults.map((tr) => ({
+                  toolCallId: tr.toolCallId,
+                  toolName: tr.toolName,
+                  output: tr.output,
+                }));
+              }
 
-          // Emit text content (or synthesis if needed)
-          let finalText = state.textContent;
+              // Check if synthesis is needed
+              if (
+                state.toolCalls.length > 0 &&
+                state.textContent.length < minStreamLength &&
+                !hasSeenText
+              ) {
+                const synthesisText = await generateSynthesis();
+                if (synthesisText && synthesisText.length > 0) {
+                  // Emit synthesized text
+                  currentTextId = crypto.randomUUID();
+                  safeEnqueue({ type: 'text-start', id: currentTextId });
 
-          // Check if synthesis is needed
-          if (
-            state.toolCalls.length > 0 &&
-            state.textContent.length < minStreamLength
-          ) {
-            const synthesisText = await generateSynthesis();
-            if (synthesisText) {
-              finalText = synthesisText;
+                  // Emit text in chunks for streaming effect
+                  const chunkSize = 10;
+                  for (let i = 0; i < synthesisText.length; i += chunkSize) {
+                    const chunk = synthesisText.slice(i, i + chunkSize);
+                    safeEnqueue({
+                      type: 'text-delta',
+                      id: currentTextId,
+                      text: chunk,
+                    });
+                  }
+
+                  safeEnqueue({ type: 'text-end', id: currentTextId });
+                }
+              }
+
+              // Emit finish with final usage
+              const usage = await finalResult.usage;
+              const finishReason = await finalResult.finishReason;
+
+              safeEnqueue({
+                type: 'finish',
+                finishReason: finishReason || 'stop',
+                totalUsage: {
+                  inputTokens: usage?.inputTokens || 0,
+                  outputTokens: usage?.outputTokens || 0,
+                  totalTokens: usage?.totalTokens || 0,
+                },
+              });
+
+              safeClose();
+              break;
+            }
+
+            if (value) {
+              // Forward the part as-is, but track state
+              // The AI SDK's fullStream returns various stream part types
+              const part = value as StreamPart;
+
+              // Track text content - AI SDK uses 'delta' for text-delta events
+              switch (part.type) {
+              case 'text-delta': 
+              case 'text-delta-text': {
+                hasSeenText = true;
+                // AI SDK fullStream uses 'delta' property, but we'll check both for compatibility
+                const delta = typeof part.delta === 'string' ? part.delta : '';
+                const text = typeof part.text === 'string' ? part.text : '';
+                const textDelta = delta || text;
+                if (textDelta) {
+                  state.textContent += textDelta;
+                }
+                if (!currentTextId && typeof part.id === 'string') {
+                  currentTextId = part.id;
+                }
+              
+              break;
+              }
+              case 'text-start': {
+                hasSeenText = true;
+                if (typeof part.id === 'string') {
+                  currentTextId = part.id;
+                }
+              
+              break;
+              }
+              case 'text-end': {
+                currentTextId = null;
+              
+              break;
+              }
+              // No default
+              }
+
+              // Track tool calls
+              if (part.type === 'tool-call') {
+                state.toolCalls.push({
+                  toolCallId: typeof part.toolCallId === 'string' ? part.toolCallId : '',
+                  toolName: typeof part.toolName === 'string' ? part.toolName : '',
+                  input: part.input,
+                });
+              }
+
+              // Track tool results
+              if (part.type === 'tool-result') {
+                state.toolResults.push({
+                  toolCallId: typeof part.toolCallId === 'string' ? part.toolCallId : '',
+                  toolName: typeof part.toolName === 'string' ? part.toolName : '',
+                  output: part.output,
+                });
+              }
+
+              // Forward the part immediately - this ensures flow UIs see events in real-time
+              safeEnqueue(part as SynthesisStreamPart);
             }
           }
-
-          if (finalText && finalText.length > 0) {
-            const textId = crypto.randomUUID();
-            safeEnqueue({ type: 'text-start', id: textId });
-
-            // Emit text in chunks for streaming effect
-            const chunkSize = 10;
-            for (let i = 0; i < finalText.length; i += chunkSize) {
-              const chunk = finalText.slice(i, i + chunkSize);
-              safeEnqueue({ type: 'text-delta', id: textId, text: chunk });
-            }
-
-            safeEnqueue({ type: 'text-end', id: textId });
-          }
-
-          // Emit finish
-          const usage = await finalResult.usage;
-          const finishReason = await finalResult.finishReason;
-
-          safeEnqueue({
-            type: 'finish',
-            finishReason: finishReason || 'stop',
-            totalUsage: {
-              inputTokens: usage?.inputTokens || 0,
-              outputTokens: usage?.outputTokens || 0,
-              totalTokens: usage?.totalTokens || 0,
-            },
-          });
-
-          safeClose();
         } catch (error) {
           if (!controllerClosed) {
             controller.error(error);

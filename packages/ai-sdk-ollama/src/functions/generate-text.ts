@@ -182,9 +182,11 @@ export async function generateText(
   }
 
   // First, try standard generateText with multi-turn tool calling enabled
+  // Automatically forward all AI SDK options, only override stopWhen if needed
   const result = await _generateText({
     ...(generateTextOptions as Parameters<typeof _generateText>[0]),
-    stopWhen: stepCountIs(5), // Enable multi-turn tool calling
+    // Only set stopWhen default if user didn't provide one and tools are enabled
+    stopWhen: (generateTextOptions.stopWhen ?? (hasTools ? stepCountIs(5) : undefined)) as Parameters<typeof _generateText>[0]['stopWhen'],
   });
 
   // Check if we need synthesis (tools called but no meaningful text)

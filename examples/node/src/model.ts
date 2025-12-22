@@ -13,10 +13,11 @@ export const MODELS = {
   // Cloud models (recommended for web search)
   GPT_OSS_120B_CLOUD: 'gpt-oss:120b-cloud',
   QWEN3_480B_CLOUD: 'qwen3-coder:480b-cloud',
-  DEEPSEEK_V3_1_CLOUD: 'deepseek-v3.1-cloud',
+  DEEPSEEK_V3_1_CLOUD: 'deepseek-v3.1:671b-cloud',
 } as const;
 
 export const MODEL = MODELS.GPT_OSS_20B;
 export const model = ollama(MODELS.LLAMA_3_2);
 export const LLAMA_3_2_MODEL = ollama(MODELS.LLAMA_3_2);
 export const GRANITE_4_MODEL = ollama(MODELS.GRANITE_4);
+export const DEEPSEEK_V3_1_CLOUD_MODEL = ollama(MODELS.DEEPSEEK_V3_1_CLOUD);
