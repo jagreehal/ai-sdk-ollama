@@ -38,7 +38,7 @@ const supportArticles = [
   },
   {
     id: 'KB003',
-    title: 'How to Cancel Your Subscription',
+    title: 'Account Plan Changes',
     content: 'To cancel your subscription, navigate to Settings > Subscription > Cancel Plan. Your access will continue until the end of your billing period. Refunds are available within 14 days of purchase.',
   },
   {

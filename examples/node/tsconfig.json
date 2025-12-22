@@ -19,7 +19,7 @@
     "ai-sdk-ollama": ["../../packages/ai-sdk-ollama/src/*"]
   },
   "include": [
-    "src/**/*", "src/web-search-ai-sdk-ollama.ts",
+    "src/**/*",
   ],
   "exclude": [
     "node_modules",
