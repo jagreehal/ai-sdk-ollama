@@ -87,9 +87,7 @@ interface StreamState {
  * Enhanced streamText function with Ollama-specific reliability improvements
  * Enhances both textStream and fullStream with synthesis support
  */
-export async function streamText(options: StreamTextOptions) {
-  // Extract enhancedOptions and forward everything else automatically
-  // This ensures 100% compatibility - all AI SDK properties are automatically supported
+export async function streamText(options: StreamTextOptions): Promise<Awaited<ReturnType<typeof _streamText>>> {
   const { enhancedOptions = {}, ...streamTextOptions } = options;
 
   const {

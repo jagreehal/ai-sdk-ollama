@@ -1,4 +1,4 @@
-import { LanguageModelV2Prompt } from '@ai-sdk/provider';
+import { LanguageModelV3Prompt } from '@ai-sdk/provider';
 import { Message as OllamaMessage } from 'ollama';
 
 /**
@@ -6,7 +6,7 @@ import { Message as OllamaMessage } from 'ollama';
  * and handles edge cases better than the referenced implementation
  */
 export function convertToOllamaChatMessages(
-  prompt: LanguageModelV2Prompt,
+  prompt: LanguageModelV3Prompt,
 ): OllamaMessage[] {
   const messages: OllamaMessage[] = [];
 
@@ -167,7 +167,9 @@ export function convertToOllamaChatMessages(
               const contentValue =
                 part.output.type === 'text' || part.output.type === 'error-text'
                   ? part.output.value
-                  : JSON.stringify(part.output.value);
+                  : part.output.type === 'json' || part.output.type === 'error-json'
+                    ? JSON.stringify(part.output.value)
+                    : JSON.stringify(part.output);
 
               // Ollama's Message interface supports tool_name field for tool results
               messages.push({

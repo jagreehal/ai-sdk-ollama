@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { OllamaChatLanguageModel } from './chat-language-model';
 import { OllamaChatSettings } from '../provider';
 import {
-  LanguageModelV2CallOptions,
-  LanguageModelV2StreamPart,
-  LanguageModelV2FunctionTool,
+  LanguageModelV3CallOptions,
+  LanguageModelV3StreamPart,
+  LanguageModelV3FunctionTool,
 } from '@ai-sdk/provider';
 import { Ollama, AbortableAsyncIterator, ChatResponse } from 'ollama';
 
@@ -12,6 +12,23 @@ import { Ollama, AbortableAsyncIterator, ChatResponse } from 'ollama';
 const mockOllamaClient = {
   chat: vi.fn(),
 } as unknown as Ollama;
+
+// Helper to create V3 usage format for test expectations
+function createExpectedUsage(inputTokens: number, outputTokens: number) {
+  return {
+    inputTokens: {
+      total: inputTokens,
+      noCache: inputTokens,
+      cacheRead: undefined,
+      cacheWrite: undefined,
+    },
+    outputTokens: {
+      total: outputTokens,
+      text: outputTokens,
+      reasoning: undefined,
+    },
+  };
+}
 
 describe('OllamaChatLanguageModel', () => {
   let model: OllamaChatLanguageModel;
@@ -28,21 +45,15 @@ describe('OllamaChatLanguageModel', () => {
 
   describe('initialization', () => {
     it('should initialize with correct properties', () => {
-      expect(model.specificationVersion).toBe('v2');
+      expect(model.specificationVersion).toBe('v3');
       expect(model.modelId).toBe('llama3.2');
       expect(model.provider).toBe('ollama');
-      expect(model.defaultObjectGenerationMode).toBe('json');
     });
 
-    it('should have correct capability flags', () => {
-      expect(model.supportsImages).toBe(true); // ✅ Ollama supports images
-      expect(model.supportsVideoURLs).toBe(false);
-      expect(model.supportsAudioURLs).toBe(false);
-      expect(model.supportsVideoFile).toBe(false);
-      expect(model.supportsAudioFile).toBe(false);
-      expect(model.supportsImageFile).toBe(true);
+    it('should have correct supportedUrls for V3 spec', () => {
+      // V3 uses media type patterns as keys (e.g., 'image/*')
       expect(model.supportedUrls).toEqual({
-        image: [
+        'image/*': [
           /^https?:\/\/.*\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i,
           /^data:image\/[^;]+;base64,/i,
         ],
@@ -81,7 +92,7 @@ describe('OllamaChatLanguageModel', () => {
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
       };
 
@@ -89,11 +100,8 @@ describe('OllamaChatLanguageModel', () => {
 
       expect(result.content).toEqual([{ type: 'text', text: 'Hello, world!' }]);
       expect(result.finishReason).toBe('stop');
-      expect(result.usage).toEqual({
-        inputTokens: 5,
-        outputTokens: 10,
-        totalTokens: 15,
-      });
+      // V3 uses structured usage format
+      expect(result.usage).toEqual(createExpectedUsage(5, 10));
 
       expect(mockOllamaClient.chat).toHaveBeenCalledWith({
         model: 'llama3.2',
@@ -123,7 +131,7 @@ describe('OllamaChatLanguageModel', () => {
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
         temperature: 0.7,
         maxOutputTokens: 100,
@@ -173,7 +181,7 @@ describe('OllamaChatLanguageModel', () => {
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [
           { role: 'user', content: [{ type: 'text', text: 'Generate JSON' }] },
         ],
@@ -214,7 +222,7 @@ describe('OllamaChatLanguageModel', () => {
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
         tools: [
           {
@@ -310,7 +318,7 @@ describe('OllamaChatLanguageModel', () => {
         .mockResolvedValueOnce(initialResponse)
         .mockResolvedValueOnce(forcedResponse);
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [
           {
             role: 'user',
@@ -331,7 +339,7 @@ describe('OllamaChatLanguageModel', () => {
               },
             },
             execute: toolExecute,
-          } as LanguageModelV2FunctionTool & { execute: typeof toolExecute },
+          } as LanguageModelV3FunctionTool & { execute: typeof toolExecute },
         ],
       };
 
@@ -354,7 +362,7 @@ describe('OllamaChatLanguageModel', () => {
       const error = new Error('Connection failed');
       vi.mocked(mockOllamaClient.chat).mockRejectedValueOnce(error);
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
       };
 
@@ -383,7 +391,7 @@ describe('OllamaChatLanguageModel', () => {
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [
           {
             role: 'user',
@@ -459,7 +467,7 @@ describe('OllamaChatLanguageModel', () => {
         mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
       );
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
       };
 
@@ -470,39 +478,40 @@ describe('OllamaChatLanguageModel', () => {
         chunks.push(chunk);
       }
 
-      expect(chunks).toHaveLength(6); // text-start + 3 text-delta + text-end + finish
+      expect(chunks).toHaveLength(7); // stream-start + text-start + 3 text-delta + text-end + finish
+      // V3 adds stream-start at the beginning
       expect(chunks[0]).toEqual({
+        type: 'stream-start',
+        warnings: [],
+      });
+      expect(chunks[1]).toEqual({
         type: 'text-start',
         id: expect.any(String),
       });
-      const textStartId = (chunks[0] as { id: string }).id;
-      expect(chunks[1]).toEqual({
+      const textStartId = (chunks[1] as { id: string }).id;
+      expect(chunks[2]).toEqual({
         type: 'text-delta',
         id: textStartId,
         delta: 'Hello',
       });
-      expect(chunks[2]).toEqual({
+      expect(chunks[3]).toEqual({
         type: 'text-delta',
         id: textStartId,
         delta: ' world',
       });
-      expect(chunks[3]).toEqual({
+      expect(chunks[4]).toEqual({
         type: 'text-delta',
         id: textStartId,
         delta: '!',
       });
-      expect(chunks[4]).toEqual({
+      expect(chunks[5]).toEqual({
         type: 'text-end',
         id: textStartId,
       });
-      expect(chunks[5]).toEqual({
+      expect(chunks[6]).toEqual({
         type: 'finish',
         finishReason: 'stop',
-        usage: {
-          inputTokens: 8,
-          outputTokens: 15,
-          totalTokens: 23,
-        },
+        usage: createExpectedUsage(8, 15),
       });
 
       expect(mockOllamaClient.chat).toHaveBeenCalledWith({
@@ -517,7 +526,7 @@ describe('OllamaChatLanguageModel', () => {
       const error = new Error('Stream error');
       vi.mocked(mockOllamaClient.chat).mockRejectedValueOnce(error);
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
       };
 
@@ -541,7 +550,7 @@ describe('OllamaChatLanguageModel', () => {
         mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
       );
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
         abortSignal: abortController.signal,
       };
@@ -595,7 +604,7 @@ describe('OllamaChatLanguageModel', () => {
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
       };
 
@@ -649,7 +658,7 @@ describe('OllamaChatLanguageModel', () => {
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
         temperature: 0.9, // Will be overridden by Ollama setting
         topK: 60, // Will be overridden by Ollama setting
@@ -698,7 +707,7 @@ describe('OllamaChatLanguageModel', () => {
         { client: mockOllamaClient, provider: 'ollama' },
       );
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [
           {
             role: 'user',
@@ -717,11 +726,7 @@ describe('OllamaChatLanguageModel', () => {
         { type: 'text', text: 'The answer is 42.' },
       ]);
       expect(result.finishReason).toBe('stop');
-      expect(result.usage).toEqual({
-        inputTokens: 8,
-        outputTokens: 15,
-        totalTokens: 23,
-      });
+      expect(result.usage).toEqual(createExpectedUsage(8, 15));
     });
 
     it('should not include reasoning when think is disabled', async () => {
@@ -751,7 +756,7 @@ describe('OllamaChatLanguageModel', () => {
         { client: mockOllamaClient, provider: 'ollama' },
       );
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [
           {
             role: 'user',
@@ -830,7 +835,7 @@ describe('OllamaChatLanguageModel', () => {
         { client: mockOllamaClient, provider: 'ollama' },
       );
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [
           {
             role: 'user',
@@ -840,7 +845,7 @@ describe('OllamaChatLanguageModel', () => {
       };
 
       const { stream } = await modelWithReasoning.doStream(options);
-      const chunks: LanguageModelV2StreamPart[] = [];
+      const chunks: LanguageModelV3StreamPart[] = [];
 
       for await (const chunk of stream) {
         chunks.push(chunk);
@@ -918,7 +923,7 @@ describe('OllamaChatLanguageModel', () => {
         { client: mockOllamaClient, provider: 'ollama' },
       );
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [
           {
             role: 'user',
@@ -928,7 +933,7 @@ describe('OllamaChatLanguageModel', () => {
       };
 
       const { stream } = await modelWithoutReasoning.doStream(options);
-      const chunks: LanguageModelV2StreamPart[] = [];
+      const chunks: LanguageModelV3StreamPart[] = [];
 
       for await (const chunk of stream) {
         chunks.push(chunk);
@@ -1022,59 +1027,61 @@ describe('OllamaChatLanguageModel', () => {
         mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
       );
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
       };
 
       const { stream } = await model.doStream(options);
-      const chunks: LanguageModelV2StreamPart[] = [];
+      const chunks: LanguageModelV3StreamPart[] = [];
 
       for await (const chunk of stream) {
         chunks.push(chunk);
       }
 
-      // Should have: text-start, text-delta, text-delta, text-delta, text-end, finish
-      expect(chunks).toHaveLength(6);
+      // Should have: stream-start, text-start, text-delta, text-delta, text-delta, text-end, finish
+      expect(chunks).toHaveLength(7);
 
-      // Check text-start is emitted first
+      // V3 adds stream-start at the beginning
       expect(chunks[0]).toEqual({
+        type: 'stream-start',
+        warnings: [],
+      });
+
+      // Check text-start is emitted second
+      expect(chunks[1]).toEqual({
         type: 'text-start',
         id: expect.any(String),
       });
 
       // Check text-delta parts have the same ID
-      const textStartId = (chunks[0] as { id: string }).id;
-      expect(chunks[1]).toEqual({
+      const textStartId = (chunks[1] as { id: string }).id;
+      expect(chunks[2]).toEqual({
         type: 'text-delta',
         id: textStartId,
         delta: 'Hello',
       });
-      expect(chunks[2]).toEqual({
+      expect(chunks[3]).toEqual({
         type: 'text-delta',
         id: textStartId,
         delta: ' world',
       });
-      expect(chunks[3]).toEqual({
+      expect(chunks[4]).toEqual({
         type: 'text-delta',
         id: textStartId,
         delta: '!',
       });
 
       // Check text-end is emitted with the same ID
-      expect(chunks[4]).toEqual({
+      expect(chunks[5]).toEqual({
         type: 'text-end',
         id: textStartId,
       });
 
       // Check finish is emitted last
-      expect(chunks[5]).toEqual({
+      expect(chunks[6]).toEqual({
         type: 'finish',
         finishReason: 'stop',
-        usage: {
-          inputTokens: 8,
-          outputTokens: 15,
-          totalTokens: 23,
-        },
+        usage: createExpectedUsage(8, 15),
       });
     });
 
@@ -1110,27 +1117,27 @@ describe('OllamaChatLanguageModel', () => {
         mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
       );
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
       };
 
       const { stream } = await model.doStream(options);
-      const chunks: LanguageModelV2StreamPart[] = [];
+      const chunks: LanguageModelV3StreamPart[] = [];
 
       for await (const chunk of stream) {
         chunks.push(chunk);
       }
 
-      // Should only have finish (no text parts since content is empty)
-      expect(chunks).toHaveLength(1);
+      // Should have stream-start + finish (no text parts since content is empty)
+      expect(chunks).toHaveLength(2);
       expect(chunks[0]).toEqual({
+        type: 'stream-start',
+        warnings: [],
+      });
+      expect(chunks[1]).toEqual({
         type: 'finish',
         finishReason: 'stop',
-        usage: {
-          inputTokens: 5,
-          outputTokens: 0,
-          totalTokens: 5,
-        },
+        usage: createExpectedUsage(5, 0),
       });
     });
 
@@ -1180,46 +1187,48 @@ describe('OllamaChatLanguageModel', () => {
         mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
       );
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
       };
 
       const { stream } = await model.doStream(options);
-      const chunks: LanguageModelV2StreamPart[] = [];
+      const chunks: LanguageModelV3StreamPart[] = [];
 
       for await (const chunk of stream) {
         chunks.push(chunk);
       }
 
-      // Should have: text-start, text-delta, text-end, finish
-      expect(chunks).toHaveLength(4);
+      // Should have: stream-start, text-start, text-delta, text-end, finish
+      expect(chunks).toHaveLength(5);
+
+      // V3 adds stream-start at the beginning
+      expect(chunks[0]).toEqual({
+        type: 'stream-start',
+        warnings: [],
+      });
 
       // Check text-start is emitted when content appears in final chunk
-      expect(chunks[0]).toEqual({
+      expect(chunks[1]).toEqual({
         type: 'text-start',
         id: expect.any(String),
       });
 
-      const textStartId = (chunks[0] as { id: string }).id;
-      expect(chunks[1]).toEqual({
+      const textStartId = (chunks[1] as { id: string }).id;
+      expect(chunks[2]).toEqual({
         type: 'text-delta',
         id: textStartId,
         delta: 'Complete response',
       });
 
-      expect(chunks[2]).toEqual({
+      expect(chunks[3]).toEqual({
         type: 'text-end',
         id: textStartId,
       });
 
-      expect(chunks[3]).toEqual({
+      expect(chunks[4]).toEqual({
         type: 'finish',
         finishReason: 'stop',
-        usage: {
-          inputTokens: 8,
-          outputTokens: 15,
-          totalTokens: 23,
-        },
+        usage: createExpectedUsage(8, 15),
       });
     });
 
@@ -1283,12 +1292,12 @@ describe('OllamaChatLanguageModel', () => {
         mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
       );
 
-      const options: LanguageModelV2CallOptions = {
+      const options: LanguageModelV3CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
       };
 
       const { stream } = await model.doStream(options);
-      const chunks: LanguageModelV2StreamPart[] = [];
+      const chunks: LanguageModelV3StreamPart[] = [];
 
       for await (const chunk of stream) {
         chunks.push(chunk);

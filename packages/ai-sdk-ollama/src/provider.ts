@@ -1,7 +1,8 @@
 import {
-  LanguageModelV2,
-  EmbeddingModelV2,
-  ProviderV2,
+  LanguageModelV3,
+  EmbeddingModelV3,
+  RerankingModelV3,
+  ProviderV3,
   NoSuchModelError,
 } from '@ai-sdk/provider';
 import {
@@ -13,6 +14,14 @@ import {
 } from 'ollama';
 import { OllamaChatLanguageModel } from './models/chat-language-model';
 import { OllamaEmbeddingModel } from './models/embedding-model';
+import {
+  OllamaRerankingModel,
+  OllamaRerankingSettings,
+} from './models/reranking-model';
+import {
+  OllamaEmbeddingRerankingModel,
+  OllamaEmbeddingRerankingSettings,
+} from './models/embedding-reranking-model';
 import { ollamaTools } from './ollama-tools';
 import type { WebSearchToolOptions } from './tool/web-search';
 import type { WebFetchToolOptions } from './tool/web-fetch';
@@ -64,16 +73,16 @@ export interface OllamaProviderSettings extends Pick<Config, 'headers' | 'fetch'
   client?: Ollama;
 }
 
-export interface OllamaProvider extends ProviderV2 {
+export interface OllamaProvider extends ProviderV3 {
   /**
    * Create a language model instance
    */
-  (modelId: string, settings?: OllamaChatSettings): LanguageModelV2;
+  (modelId: string, settings?: OllamaChatSettings): LanguageModelV3;
 
   /**
    * Create a language model instance with the `chat` method
    */
-  chat(modelId: string, settings?: OllamaChatSettings): LanguageModelV2;
+  chat(modelId: string, settings?: OllamaChatSettings): LanguageModelV3;
 
   /**
    * Create a language model instance with the `languageModel` method
@@ -81,7 +90,7 @@ export interface OllamaProvider extends ProviderV2 {
   languageModel(
     modelId: string,
     settings?: OllamaChatSettings,
-  ): LanguageModelV2;
+  ): LanguageModelV3;
 
   /**
    * Create an embedding model instance
@@ -89,7 +98,7 @@ export interface OllamaProvider extends ProviderV2 {
   embedding(
     modelId: string,
     settings?: OllamaEmbeddingSettings,
-  ): EmbeddingModelV2<string>;
+  ): EmbeddingModelV3;
 
   /**
    * Create an embedding model instance with the `textEmbedding` method
@@ -97,7 +106,7 @@ export interface OllamaProvider extends ProviderV2 {
   textEmbedding(
     modelId: string,
     settings?: OllamaEmbeddingSettings,
-  ): EmbeddingModelV2<string>;
+  ): EmbeddingModelV3;
 
   /**
    * Create an embedding model instance with the `textEmbeddingModel` method
@@ -105,7 +114,51 @@ export interface OllamaProvider extends ProviderV2 {
   textEmbeddingModel(
     modelId: string,
     settings?: OllamaEmbeddingSettings,
-  ): EmbeddingModelV2<string>;
+  ): EmbeddingModelV3;
+
+  /**
+   * Create a reranking model instance
+   */
+  reranking(
+    modelId: string,
+    settings?: OllamaRerankingSettings,
+  ): RerankingModelV3;
+
+  /**
+   * Create a reranking model instance with the `rerankingModel` method
+   *
+   * NOTE: This uses Ollama's native /api/rerank endpoint which is NOT YET AVAILABLE.
+   * Use `embeddingReranking()` for a working solution.
+   * @see https://github.com/ollama/ollama/pull/11389
+   */
+  rerankingModel(
+    modelId: string,
+    settings?: OllamaRerankingSettings,
+  ): RerankingModelV3;
+
+  /**
+   * Create an embedding-based reranking model (RECOMMENDED - working now)
+   *
+   * This is a workaround that uses embedding similarity for reranking
+   * since Ollama doesn't have native reranking support yet.
+   *
+   * @param modelId - The embedding model to use (e.g., 'bge-m3', 'nomic-embed-text')
+   * @param settings - Optional settings for the reranking model
+   *
+   * @example
+   * ```ts
+   * const result = await rerank({
+   *   model: ollama.embeddingReranking('bge-m3'),
+   *   query: 'What is machine learning?',
+   *   documents: [...],
+   *   topN: 3,
+   * });
+   * ```
+   */
+  embeddingReranking(
+    modelId: string,
+    settings?: OllamaEmbeddingRerankingSettings,
+  ): RerankingModelV3;
 
   /**
    * Ollama-specific tools that leverage web search capabilities
@@ -324,6 +377,31 @@ export function createOllama(
     });
   };
 
+  const createRerankingModel = (
+    modelId: string,
+    settings: OllamaRerankingSettings = {},
+  ) => {
+    // Determine base URL for direct HTTP calls
+    const baseURL = options.baseURL ?? 'http://127.0.0.1:11434';
+
+    return new OllamaRerankingModel(modelId, settings, {
+      provider: 'ollama.reranking',
+      baseURL,
+      headers: () => normalizedHeaders,
+      fetch: options.fetch,
+    });
+  };
+
+  const createEmbeddingRerankingModel = (
+    modelId: string,
+    settings: OllamaEmbeddingRerankingSettings = {},
+  ) => {
+    return new OllamaEmbeddingRerankingModel(modelId, settings, {
+      client,
+      provider: 'ollama.embedding-reranking',
+    });
+  };
+
   const provider = function (modelId: string, settings?: OllamaChatSettings) {
     if (new.target) {
       throw new Error(
@@ -338,6 +416,9 @@ export function createOllama(
   provider.embedding = createEmbeddingModel;
   provider.textEmbedding = createEmbeddingModel;
   provider.textEmbeddingModel = createEmbeddingModel;
+  provider.reranking = createRerankingModel;
+  provider.rerankingModel = createRerankingModel;
+  provider.embeddingReranking = createEmbeddingRerankingModel;
   provider.imageModel = (modelId: string) => {
     throw new NoSuchModelError({
       modelId,
@@ -354,7 +435,7 @@ export function createOllama(
 
   provider.tools = toolsWithClient;
 
-  return provider as OllamaProvider;
+  return provider as unknown as OllamaProvider;
 }
 
 /**

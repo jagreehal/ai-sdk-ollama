@@ -5,12 +5,14 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Vercel AI SDK v5+ provider for Ollama built on the official `ollama` package. Type safe, future proof, with cross provider compatibility and native Ollama features.
+A Vercel AI SDK v6 provider for Ollama built on the official `ollama` package. Type safe, future proof, with cross provider compatibility and native Ollama features.
+
+> **📌 Version Compatibility**: This version (v3+) requires AI SDK v6. If you're using AI SDK v5, please use `ai-sdk-ollama@^2.0.0` instead.
 
 ## Quick Start
 
 ```bash
-npm install ai-sdk-ollama ai@^5.0.0
+npm install ai-sdk-ollama ai@^6.0.0
 ```
 
 ```typescript
@@ -44,7 +46,7 @@ console.log(text);
 > **🚀 The Problem We Solve**: Standard Ollama providers often execute tools but return empty responses. Our enhanced functions guarantee complete, useful responses every time.
 
 ```typescript
-import { generateText, streamText } from 'ai-sdk-ollama';
+import { ollama, generateText, streamText } from 'ai-sdk-ollama';
 
 // ✅ Enhanced generateText - guaranteed complete responses
 const { text } = await generateText({
@@ -137,6 +139,14 @@ export OLLAMA_API_KEY="your_api_key_here"
     - [Enhanced Tool Calling Wrappers](#enhanced-tool-calling-wrappers)
     - [Combining Tools with Structured Output](#combining-tools-with-structured-output)
     - [Simple and Predictable](#simple-and-predictable)
+  - [Reranking](#reranking)
+  - [Streaming Utilities](#streaming-utilities)
+    - [Smooth Stream](#smooth-stream)
+    - [Partial JSON Parsing](#partial-json-parsing)
+  - [Middleware System](#middleware-system)
+    - [Default Settings Middleware](#default-settings-middleware)
+    - [Extract Reasoning Middleware](#extract-reasoning-middleware)
+  - [ToolLoopAgent](#toolloopagent)
   - [Advanced Features](#advanced-features)
     - [Custom Ollama Instance](#custom-ollama-instance)
     - [API Key Configuration](#api-key-configuration)
@@ -181,7 +191,7 @@ const { text: advancedText } = await generateText({
 
 - Node.js 22+
 - [Ollama](https://ollama.com) installed locally or running on a remote server
-- AI SDK v5+ (`ai` package)
+- AI SDK v6 (`ai` package)
 - TypeScript 5.9+ (for TypeScript users)
 
 ```bash
@@ -346,7 +356,7 @@ console.log(result.text); // "15 + 27 equals 42. Using the math tool, I calculat
 The `enableToolsWithStructuredOutput` option allows you to use both tool calling and structured output together:
 
 ```typescript
-import { generateText } from 'ai-sdk-ollama';
+import { ollama, generateText } from 'ai-sdk-ollama';
 import { Output, tool } from 'ai';
 import { z } from 'zod';
 
@@ -363,28 +373,14 @@ const weatherTool = tool({
   }),
 });
 
-// Standard behavior: tools are bypassed when using experimental_output
-const standardResult = await generateText({
-  model: ollama('llama3.2'),
-  prompt: 'Get weather for San Francisco and provide a structured summary',
-  tools: { getWeather: weatherTool },
-  experimental_output: Output.object({
-    schema: z.object({
-      location: z.string(),
-      temperature: z.number(),
-      summary: z.string(),
-    }),
-  }),
-  toolChoice: 'required',
-});
-// Result: 0 tool calls, model generates placeholder data
+// AI SDK v6: tools and structured output work together by default
+import { ollama } from 'ai-sdk-ollama';
 
-// Enhanced behavior: tools are called AND structured output is generated
-const enhancedResult = await generateText({
+const result = await generateText({
   model: ollama('llama3.2'),
   prompt: 'Get weather for San Francisco and provide a structured summary',
   tools: { getWeather: weatherTool },
-  experimental_output: Output.object({
+  output: Output.object({
     schema: z.object({
       location: z.string(),
       temperature: z.number(),
@@ -392,11 +388,8 @@ const enhancedResult = await generateText({
     }),
   }),
   toolChoice: 'required',
-  enhancedOptions: {
-    enableToolsWithStructuredOutput: true, // Enable both features together
-  },
 });
-// Result: 1 tool call, real data from tool used in structured output
+// Result: Tool is called AND structured output is generated
 ```
 
 **When to Use Enhanced Wrappers:**
@@ -434,6 +427,210 @@ const { text } = await generateText({
 // - No hidden complexity or capability detection
 ```
 
+## Reranking
+
+> **AI SDK v6 Feature**: Rerank documents by semantic relevance to improve search results and RAG pipelines.
+
+Since Ollama doesn't have native reranking yet, we provide embedding-based reranking using cosine similarity:
+
+```typescript
+import { rerank } from 'ai';
+import { ollama } from 'ai-sdk-ollama';
+
+// Rerank documents by relevance to a query
+const { ranking, rerankedDocuments } = await rerank({
+  model: ollama.embeddingReranking('nomic-embed-text'),
+  query: 'How do I get a refund?',
+  documents: [
+    'To reset your password, click Forgot Password on the login page.',
+    'Refunds are available within 14 days of purchase. Go to Settings > Cancel Plan.',
+    'Enable 2FA for extra security in Settings > Security.',
+  ],
+  topN: 2, // Return top 2 most relevant
+});
+
+console.log('Most relevant:', rerankedDocuments[0]);
+// Output: "Refunds are available within 14 days..."
+
+// Each ranking item includes score and original index
+ranking.forEach((item, i) => {
+  console.log(`${i + 1}. Score: ${item.score.toFixed(3)}, Index: ${item.originalIndex}`);
+});
+```
+
+**Use Cases:**
+- **RAG Pipelines**: Rerank retrieved documents before passing to LLM
+- **Search Results**: Improve relevance of search results
+- **Customer Support**: Find most relevant help articles
+
+**Recommended Models**: `embeddinggemma` (best score separation), `nomic-embed-text`, `bge-m3`
+
+## Streaming Utilities
+
+### Smooth Stream
+
+Create smoother streaming output by chunking text into words, lines, or custom patterns:
+
+```typescript
+import { ollama } from 'ai-sdk-ollama';
+import { streamText, smoothStream } from 'ai';
+
+// Word-by-word streaming with delay
+const result = streamText({
+  model: ollama('llama3.2'),
+  prompt: 'Write a poem about the ocean.',
+  experimental_transform: smoothStream({
+    delayInMs: 50,      // 50ms between chunks
+    chunking: 'word',   // 'word' | 'line' | RegExp
+  }),
+});
+
+for await (const chunk of result.textStream) {
+  process.stdout.write(chunk); // Smooth, word-by-word output
+}
+```
+
+**Chunking Options:**
+- `'word'` - Emit word by word (default)
+- `'line'` - Emit line by line
+- `RegExp` - Custom pattern (e.g., `/[.!?]\s+/` for sentences)
+
+### Partial JSON Parsing
+
+Parse incomplete JSON from streaming responses - useful for progressive UI updates:
+
+```typescript
+import { parsePartialJson } from 'ai';
+
+// As JSON streams in, parse what's available
+const partial = '{"name": "Alice", "age": 25, "city": "New';
+const result = await parsePartialJson(partial);
+
+if (result.state === 'repaired-parse' || result.state === 'successful-parse') {
+  console.log(result.value); // { name: "Alice", age: 25, city: "New" }
+}
+```
+
+**Note**: `createStitchableStream` and other advanced stream utilities are internal to the AI SDK. Use standard `ReadableStream` APIs for stream manipulation, or import utilities directly from `'ai'` when available.
+
+## Middleware System
+
+Wrap language models with middleware for parameter transformation, logging, or custom behavior:
+
+```typescript
+import { ollama, wrapLanguageModel, defaultSettingsMiddleware } from 'ai-sdk-ollama';
+import { generateText } from 'ai';
+
+// Apply default settings to all calls
+const model = wrapLanguageModel({
+  model: ollama('llama3.2'),
+  middleware: defaultSettingsMiddleware({
+    settings: {
+      temperature: 0.7,
+      maxOutputTokens: 1000,
+    },
+  }),
+});
+
+// Temperature and maxOutputTokens are now applied by default
+const { text } = await generateText({
+  model,
+  prompt: 'Write a story.',
+});
+```
+
+### Default Settings Middleware
+
+Apply default parameters that can be overridden per-call:
+
+```typescript
+import { defaultSettingsMiddleware } from 'ai-sdk-ollama';
+
+const middleware = defaultSettingsMiddleware({
+  settings: {
+    temperature: 0.7,
+    maxOutputTokens: 500,
+  },
+});
+```
+
+### Extract Reasoning Middleware
+
+Extract reasoning/thinking from model outputs that use XML tags:
+
+```typescript
+import { ollama, wrapLanguageModel, extractReasoningMiddleware } from 'ai-sdk-ollama';
+
+const model = wrapLanguageModel({
+  model: ollama('deepseek-r1:7b'),
+  middleware: extractReasoningMiddleware({
+    tagName: 'think',        // Extract content from <think> tags
+    separator: '\n',          // Separator for multiple reasoning blocks
+    startWithReasoning: true, // Model starts with reasoning
+  }),
+});
+```
+
+**Combining Multiple Middlewares:**
+
+```typescript
+const model = wrapLanguageModel({
+  model: ollama('llama3.2'),
+  middleware: [
+    defaultSettingsMiddleware({ settings: { temperature: 0.5 } }),
+    extractReasoningMiddleware({ tagName: 'thinking' }),
+  ],
+});
+```
+
+## ToolLoopAgent
+
+An agent that runs tools in a loop until a stop condition is met:
+
+```typescript
+import { ollama } from 'ai-sdk-ollama';
+import { ToolLoopAgent, stepCountIs, hasToolCall, tool } from 'ai';
+import { z } from 'zod';
+
+const agent = new ToolLoopAgent({
+  model: ollama('llama3.2'),
+  instructions: 'You are a helpful assistant.',
+  tools: {
+    weather: tool({
+      description: 'Get weather for a location',
+      inputSchema: z.object({ location: z.string() }),
+      execute: async ({ location }: { location: string }) => ({ temp: 72, condition: 'sunny' }),
+    }),
+    done: tool({
+      description: 'Call when task is complete',
+      inputSchema: z.object({ summary: z.string() }),
+      execute: async ({ summary }: { summary: string }) => ({ completed: true, summary }),
+    }),
+  },
+  maxOutputTokens: 1000,
+  stopWhen: [
+    stepCountIs(10),      // Stop after 10 steps max
+    hasToolCall('done'),  // Stop when 'done' tool is called
+  ],
+  onStepFinish: (stepResult) => {
+    console.log(`Step:`, stepResult.toolCalls.length, 'tool calls');
+  },
+});
+
+const result = await agent.generate({
+  prompt: 'What is the weather in San Francisco?',
+});
+
+console.log('Final:', result.text);
+console.log('Steps:', result.steps.length);
+console.log('Tokens:', result.totalUsage.totalTokens ?? 'undefined');
+```
+
+**Stop Conditions:**
+- `stepCountIs(n)` - Stop after n steps
+- `hasToolCall(name)` - Stop when specific tool is called
+- Custom: `(options: { steps: StepResult[] }) => boolean | Promise<boolean>`
+
 ## Advanced Features
 
 ### Custom Ollama Instance
@@ -442,6 +639,7 @@ You can create a custom Ollama provider instance with specific configuration:
 
 ```typescript
 import { createOllama } from 'ai-sdk-ollama';
+import { generateText } from 'ai';
 
 const ollama = createOllama({
   baseURL: 'http://my-ollama-server:11434',
@@ -462,6 +660,7 @@ For cloud Ollama services, pass your API key explicitly using `createOllama`:
 
 ```typescript
 import { createOllama } from 'ai-sdk-ollama';
+import { generateText } from 'ai';
 
 const ollama = createOllama({
   apiKey: process.env.OLLAMA_API_KEY,
@@ -573,6 +772,10 @@ The provider automatically detects when structured outputs are needed:
 - **No Breaking Changes**: Existing code continues to work as expected
 
 ```typescript
+import { ollama } from 'ai-sdk-ollama';
+import { generateObject, generateText } from 'ai';
+import { z } from 'zod';
+
 // This works without explicit structuredOutputs: true
 const { object } = await generateObject({
   model: ollama('llama3.2'),
@@ -594,6 +797,7 @@ const { text } = await generateText({
 The provider includes automatic JSON repair that handles 14+ types of common JSON issues from LLM outputs:
 
 ```typescript
+import { ollama } from 'ai-sdk-ollama';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 
@@ -669,6 +873,9 @@ const { object: custom } = await generateObject({
 Some models like DeepSeek-R1 support reasoning (chain-of-thought) output. Enable this feature to see the model's thinking process:
 
 ```typescript
+import { ollama } from 'ai-sdk-ollama';
+import { generateText } from 'ai';
+
 // Enable reasoning for models that support it (e.g., deepseek-r1:7b)
 const model = ollama('deepseek-r1:7b', { reasoning: true });
 
@@ -713,7 +920,7 @@ Install with: `ollama pull deepseek-r1:7b`
 - **Model compatibility errors** - The provider will throw errors if you try to use unsupported features (e.g., tools with non-compatible models)
 - **Network issues** - Verify Ollama is accessible at the configured URL
 - **TypeScript support** - Full type safety with TypeScript 5.9+
-- **AI SDK v5+ compatibility** - Built for the latest AI SDK specification
+- **AI SDK v6 compatibility** - Built for the latest AI SDK specification
 
 ## Supported Models
 
@@ -758,7 +965,22 @@ For detailed testing information, see [Integration Tests Documentation](./src/in
 
 📡 **[Streaming Examples](../../examples/node/src/streaming-simple-test.ts)** - Real-time responses
 
-🌐 **[Web Search Tools](../../examples/node/src/web-search-example.ts)** - Web search and fetch capabilities
+🌐 **[Web Search Tools](../../examples/node/src/web-search-ai-sdk-ollama.ts)** - Web search and fetch capabilities
+
+🔄 **[Reranking Example](../../examples/node/src/v6-reranking-example.ts)** - Document reranking with embeddings
+
+🌊 **[SmoothStream Example](../../examples/node/src/smooth-stream-example.ts)** - Smooth chunked streaming output
+
+🔌 **[Middleware Example](../../examples/node/src/middleware-example.ts)** - Model wrapping and middleware system
+
+🤖 **[ToolLoopAgent Example](../../examples/node/src/tool-loop-agent-example.ts)** - Autonomous tool-calling agents
+
+🛡️ **[Tool Approval Example](../../examples/node/src/v6-tool-approval-example.ts)** - Human-in-the-loop tool execution approval
+
+📦 **[Structured Output + Tools](../../examples/node/src/v6-structured-output-example.ts)** - Tool calling with structured output generation
+
+🔗 **[MCP Tools Example](../../examples/node/src/mcp-tools-example.ts)** - Model Context Protocol integration
+
 
 ## License
 

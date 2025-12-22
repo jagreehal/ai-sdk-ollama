@@ -4,11 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "build": "tsc --noEmit",
+    "quality": "pnpm build"
   },
   "dependencies": {
-    "@ai-sdk/mcp": "^0.0.12",
-    "ai": "^5.0.116",
+    "@ai-sdk/mcp": "^1.0.0",
+    "ai": "^6.0.0",
     "ai-sdk-ollama": "workspace:*",
     "dotenv": "^17.2.3",
     "ollama": "^0.6.3",

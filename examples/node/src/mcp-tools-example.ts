@@ -14,16 +14,17 @@
  * - Model Context Protocol is an open standard for connecting AI apps to tools
  * - Enables secure, two-way communication between apps and data sources
  * - Supports various transports: stdio, SSE, HTTP
- * - Uses experimental_createMCPClient from @ai-sdk/mcp
+ * - Uses createMCPClient from @ai-sdk/mcp (stable in AI SDK v6)
+ * - Note: Transport classes still use Experimental_ prefix
  *
  * Documentation:
- * - https://ai-sdk.dev/docs/reference/ai-sdk-core/create-mcp-client
+ * - https://sdk.vercel.ai/docs/ai-sdk-core/tools/mcp-tools
  * - https://modelcontextprotocol.info
  */
 
 import { ollama } from 'ai-sdk-ollama';
 import { generateText } from 'ai';
-import { experimental_createMCPClient } from '@ai-sdk/mcp';
+import { createMCPClient } from '@ai-sdk/mcp';
 import { Experimental_StdioMCPTransport } from '@ai-sdk/mcp/mcp-stdio';
 
 async function demonstrateMCPTools() {
@@ -37,7 +38,7 @@ async function demonstrateMCPTools() {
   );
   console.log('='.repeat(60));
 
-  let mcpClient: Awaited<ReturnType<typeof experimental_createMCPClient>> | null = null;
+  let mcpClient: Awaited<ReturnType<typeof createMCPClient>> | null = null;
 
   try {
 
@@ -198,8 +199,8 @@ rl.on('line', (input) => {
       // Write the server code to a temporary file
       fs.writeFileSync(serverPath, serverCode);
 
-      // Create MCP client using the actual API
-      mcpClient = await experimental_createMCPClient({
+      // Create MCP client (AI SDK v6 - createMCPClient is stable, transport classes still use Experimental_ prefix)
+      mcpClient = await createMCPClient({
         transport: new Experimental_StdioMCPTransport({
           command: 'node',
           args: [serverPath],
@@ -226,7 +227,8 @@ rl.on('line', (input) => {
         model: ollama('llama3.2'),
         prompt:
           'Calculate 15 + 27 using the calculator tool with operation="add", a=15, b=27. Also get the current time using the getTime tool.',
-        tools: mcpTools,
+        // MCP tools work seamlessly with AI SDK v6
+        tools: mcpTools as Parameters<typeof generateText>[0]['tools'],
       });
 
       console.log('Final Response:', result1.text);
@@ -247,7 +249,7 @@ rl.on('line', (input) => {
         model: ollama('llama3.2'),
         prompt:
           'Get the weather in Tokyo using the weatherMock tool and calculate 100 divided by 4 using the calculator tool.',
-        tools: mcpTools,
+        tools: mcpTools as Parameters<typeof generateText>[0]['tools'],
       });
 
       console.log('Final Response:', result2.text);
@@ -272,7 +274,7 @@ rl.on('line', (input) => {
       const result3 = await generateText({
         model: ollama('llama3.2'),
         prompt: 'Tell me the current time.',
-        tools: mcpTools,
+        tools: mcpTools as Parameters<typeof generateText>[0]['tools'],
         toolChoice: 'required', // Force tool usage
       });
 
@@ -331,8 +333,8 @@ rl.on('line', (input) => {
 
   console.log('\n📚 NEXT STEPS:');
   console.log('   1. Install real MCP servers from the MCP ecosystem');
-  console.log('   2. Configure transport using Experimental_StdioMCPTransport or SSE/HTTP');
-  console.log('   3. Connect using experimental_createMCPClient (as shown in this example)');
+  console.log('   2. Configure transport using Experimental_StdioMCPTransport, SSEMCPTransport, or HTTPMCPTransport');
+  console.log('   3. Connect using createMCPClient (stable in AI SDK v6, as shown in this example)');
   console.log('   4. Explore the growing MCP server ecosystem');
 
   console.log('\n🌐 LEARN MORE:');
