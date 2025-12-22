@@ -146,4 +146,4 @@ The API remains **identical** between environments - write once, run anywhere!
 
 - ✅ Build the parent package first: `pnpm build` (from monorepo root)
 - ✅ Clear node_modules and reinstall: `rm -rf node_modules && pnpm install`
-- ✅ Check for TypeScript errors: `pnpm type-check`
+- ✅ Check for TypeScript errors: `pnpm quality`

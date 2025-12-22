@@ -57,6 +57,13 @@
     },
     "clean": {
       "cache": false
+    },
+    "quality": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!dist/**"
+      ]
     }
   },
 }

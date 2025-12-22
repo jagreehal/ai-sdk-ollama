@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { convertToOllamaChatMessages } from './convert-to-ollama-messages';
-import { LanguageModelV2Prompt } from '@ai-sdk/provider';
+import { LanguageModelV3Prompt } from '@ai-sdk/provider';
 
 describe('convertToOllamaChatMessages', () => {
   describe('system messages', () => {
     it('should convert system message', () => {
-      const prompt: LanguageModelV2Prompt = [
+      const prompt: LanguageModelV3Prompt = [
         {
           role: 'system',
           content: 'You are a helpful assistant.',
@@ -25,7 +25,7 @@ describe('convertToOllamaChatMessages', () => {
 
   describe('user messages', () => {
     it('should convert simple user message', () => {
-      const prompt: LanguageModelV2Prompt = [
+      const prompt: LanguageModelV3Prompt = [
         {
           role: 'user',
           content: [{ type: 'text', text: 'Hello, how are you?' }],
@@ -43,7 +43,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should convert user message with text parts', () => {
-      const prompt: LanguageModelV2Prompt = [
+      const prompt: LanguageModelV3Prompt = [
         {
           role: 'user',
           content: [
@@ -64,7 +64,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should convert user message with image URL', () => {
-      const prompt: LanguageModelV2Prompt = [
+      const prompt: LanguageModelV3Prompt = [
         {
           role: 'user',
           content: [
@@ -90,7 +90,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should convert user message with base64 image string', () => {
-      const prompt: LanguageModelV2Prompt = [
+      const prompt: LanguageModelV3Prompt = [
         {
           role: 'user',
           content: [
@@ -117,7 +117,7 @@ describe('convertToOllamaChatMessages', () => {
 
     it('should convert user message with Uint8Array image', () => {
       const imageData = new Uint8Array([255, 216, 255, 224]); // JPEG header
-      const prompt: LanguageModelV2Prompt = [
+      const prompt: LanguageModelV3Prompt = [
         {
           role: 'user',
           content: [
@@ -139,7 +139,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should convert user message with multiple images', () => {
-      const prompt: LanguageModelV2Prompt = [
+      const prompt: LanguageModelV3Prompt = [
         {
           role: 'user',
           content: [
@@ -170,7 +170,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should handle user message with only images', () => {
-      const prompt: LanguageModelV2Prompt = [
+      const prompt: LanguageModelV3Prompt = [
         {
           role: 'user',
           content: [
@@ -197,7 +197,7 @@ describe('convertToOllamaChatMessages', () => {
 
   describe('assistant messages', () => {
     it('should convert simple assistant message', () => {
-      const prompt: LanguageModelV2Prompt = [
+      const prompt: LanguageModelV3Prompt = [
         {
           role: 'assistant',
           content: [{ type: 'text', text: 'I am doing well, thank you!' }],
@@ -215,7 +215,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should convert assistant message with text parts', () => {
-      const prompt: LanguageModelV2Prompt = [
+      const prompt: LanguageModelV3Prompt = [
         {
           role: 'assistant',
           content: [
@@ -236,7 +236,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should convert assistant message with tool calls', () => {
-      const prompt: LanguageModelV2Prompt = [
+      const prompt: LanguageModelV3Prompt = [
         {
           role: 'assistant',
           content: [
@@ -272,7 +272,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should convert assistant message with multiple tool calls', () => {
-      const prompt: LanguageModelV2Prompt = [
+      const prompt: LanguageModelV3Prompt = [
         {
           role: 'assistant',
           content: [
@@ -321,7 +321,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should handle empty assistant message', () => {
-      const prompt: LanguageModelV2Prompt = [
+      const prompt: LanguageModelV3Prompt = [
         {
           role: 'assistant',
           content: [],
@@ -341,7 +341,7 @@ describe('convertToOllamaChatMessages', () => {
 
   describe('tool messages', () => {
     it('should convert tool message to user message', () => {
-      const prompt: LanguageModelV2Prompt = [
+      const prompt: LanguageModelV3Prompt = [
         {
           role: 'tool',
           content: [
@@ -370,7 +370,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should handle tool message with string result', () => {
-      const prompt: LanguageModelV2Prompt = [
+      const prompt: LanguageModelV3Prompt = [
         {
           role: 'tool',
           content: [
@@ -398,7 +398,7 @@ describe('convertToOllamaChatMessages', () => {
 
   describe('complex conversations', () => {
     it('should convert complete conversation', () => {
-      const prompt: LanguageModelV2Prompt = [
+      const prompt: LanguageModelV3Prompt = [
         {
           role: 'system',
           content: 'You are a helpful assistant.',
@@ -498,13 +498,13 @@ describe('convertToOllamaChatMessages', () => {
 
   describe('edge cases', () => {
     it('should handle empty prompt', () => {
-      const prompt: LanguageModelV2Prompt = [];
+      const prompt: LanguageModelV3Prompt = [];
       const result = convertToOllamaChatMessages(prompt);
       expect(result).toEqual([]);
     });
 
     it('should handle mixed content types properly', () => {
-      const prompt: LanguageModelV2Prompt = [
+      const prompt: LanguageModelV3Prompt = [
         {
           role: 'user',
           content: [

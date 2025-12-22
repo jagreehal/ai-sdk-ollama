@@ -123,9 +123,11 @@ async function basicFullStreamExample() {
         break;
 
       case 'text-delta':
+      case 'text-delta-text':
         hasTextContent = true;
-        collectedText += part.text;
-        console.log(colors.gray(`[${timestamp()}]`), colors.green('TEXT-DELTA'), colors.dim(`"${part.text.slice(0, 50)}${part.text.length > 50 ? '...' : ''}"`));
+        const textDelta = part.delta || part.text || '';
+        collectedText += textDelta;
+        console.log(colors.gray(`[${timestamp()}]`), colors.green('TEXT-DELTA'), colors.dim(`"${textDelta.slice(0, 50)}${textDelta.length > 50 ? '...' : ''}"`));
         break;
 
       case 'text-end':
@@ -198,63 +200,131 @@ async function verboseStateTrackingExample() {
 
   logState('INITIAL');
 
-  // Consume text stream first
+  const timestamp = () => new Date().toISOString().split('T')[1].slice(0, 12);
+  
   try {
-    for await (const chunk of stream.textStream) {
-      if (!state.textStarted) {
-        state.textStarted = true;
-        logState('TEXT-START');
-      }
-      state.hasTextContent = true;
-      state.textContent += chunk;
-      // Only log periodically to avoid spam
-      if (state.textContent.length % 100 < 10) {
-        logState('TEXT-DELTA');
+    for await (const part of stream.fullStream as AsyncIterable<any>) {
+      switch (part.type) {
+        case 'start':
+          logState('START');
+          break;
+
+        case 'text-start':
+          if (!state.textStarted) {
+            state.textStarted = true;
+            state.hasTextContent = true;
+            logState('TEXT-START');
+          }
+          break;
+
+        case 'text-delta':
+        case 'text-delta-text':
+          state.hasTextContent = true;
+          const delta = part.delta || part.text || '';
+          state.textContent += delta;
+          if (state.textContent.length % 100 < 10) {
+            logState('TEXT-DELTA');
+          }
+          break;
+
+        case 'text-end':
+          if (state.textStarted && !state.textEnded) {
+            state.textEnded = true;
+            logState('TEXT-END');
+          }
+          break;
+
+        case 'tool-call':
+          const input = typeof part.input === 'string' ? JSON.parse(part.input) : part.input;
+          state.toolCalls.push({
+            id: part.toolCallId || '',
+            toolName: part.toolName || '',
+            input,
+            status: 'calling',
+          });
+          console.log(colors.yellow(`[${timestamp()}]`), colors.cyan('TOOL-CALL'), colors.cyan(part.toolName || 'unknown'));
+          console.log(colors.gray('  └─'), colors.dim(`input: ${JSON.stringify(input)}`));
+          logState(`TOOL-CALL:${part.toolName}`);
+          break;
+
+        case 'tool-result':
+          const existingCall = state.toolCalls.find(tc => tc.id === part.toolCallId);
+          if (existingCall) {
+            existingCall.status = 'completed';
+            existingCall.result = part.output;
+          }
+          console.log(colors.yellow(`[${timestamp()}]`), colors.cyan('TOOL-RESULT'), colors.cyan(part.toolName || 'unknown'));
+          const output = part.output as any;
+          if (output?.results) {
+            console.log(colors.gray('  └─'), colors.dim(`${output.results.length} search results`));
+          }
+          logState(`TOOL-RESULT:${part.toolName}`);
+          break;
+
+        case 'start-step':
+        case 'finish-step':
+          // Step events are handled by the AI SDK internally
+          break;
+
+        case 'finish':
+          state.isStreaming = false;
+          state.finishReason = part.finishReason || 'unknown';
+          logState('FINISH');
+          break;
+
+        default:
+          // Ignore unhandled event types
+          break;
       }
     }
-    if (state.textStarted) {
-      state.textEnded = true;
-      logState('TEXT-END');
-    }
-  } catch {
-    logState('STREAM-INTERRUPTED');
+  } catch (error) {
+    state.isStreaming = false;
+    state.hasError = true;
+    state.errorMessage = error instanceof Error ? error.message : String(error);
+    logState('STREAM-ERROR');
+    console.error(colors.red('Stream error:'), error);
   }
 
-  // Access tool calls
-  try {
-    const toolCalls = await stream.toolCalls;
-    for (const call of toolCalls) {
-      const input = typeof call.input === 'string' ? JSON.parse(call.input) : call.input;
-      state.toolCalls.push({
-        id: call.toolCallId,
-        toolName: call.toolName,
-        input,
-        status: 'calling',
-      });
-      logState(`TOOL-CALL:${call.toolName}`);
-    }
-  } catch {
-    // No tool calls
-  }
-
-  // Access tool results
-  try {
-    const toolResults = await stream.toolResults;
-    for (const result of toolResults) {
-      const existingCall = state.toolCalls.find(tc => tc.id === result.toolCallId);
-      if (existingCall) {
-        existingCall.status = 'completed';
-        existingCall.result = result.output;
+  // Fallback: Check toolCalls and toolResults promises after stream completes
+  // Some models might expose tool calls only through promises, not stream events
+  if (state.toolCalls.length === 0) {
+    try {
+      const toolCalls = await stream.toolCalls;
+      if (toolCalls && toolCalls.length > 0) {
+        for (const call of toolCalls) {
+          const input = typeof call.input === 'string' ? JSON.parse(call.input) : call.input;
+          state.toolCalls.push({
+            id: call.toolCallId,
+            toolName: call.toolName,
+            input,
+            status: 'calling',
+          });
+          console.log(colors.yellow(`[${timestamp()}]`), colors.cyan('TOOL-CALL'), colors.cyan(call.toolName));
+          console.log(colors.gray('  └─'), colors.dim(`input: ${JSON.stringify(input)}`));
+          logState(`TOOL-CALL:${call.toolName}`);
+        }
       }
-      logState(`TOOL-RESULT:${result.toolName}`);
+    } catch {
+      // No tool calls available
     }
-  } catch {
-    // No tool results
-  }
 
-  state.isStreaming = false;
-  state.finishReason = await stream.finishReason;
-  logState('FINISH');
+    try {
+      const toolResults = await stream.toolResults;
+      if (toolResults && toolResults.length > 0) {
+        for (const result of toolResults) {
+          const existingCall = state.toolCalls.find(tc => tc.id === result.toolCallId);
+          if (existingCall) {
+            existingCall.status = 'completed';
+            existingCall.result = result.output;
+          }
+          console.log(colors.yellow(`[${timestamp()}]`), colors.cyan('TOOL-RESULT'), colors.cyan(result.toolName));
+          logState(`TOOL-RESULT:${result.toolName}`);
+        }
+      }
+    } catch {
+      // No tool results available
+    }
+  }
 
   console.log(colors.bold('\n📋 Final Flow State:'));
   console.log(colors.gray('─'.repeat(60)));
@@ -262,8 +332,12 @@ async function verboseStateTrackingExample() {
   console.log(`  Text length: ${colors.cyan(state.textContent.length.toString())} chars`);
   console.log(`  Tool calls made: ${colors.cyan(state.toolCalls.length.toString())}`);
 
-  for (const tc of state.toolCalls) {
-    console.log(`    └─ ${colors.cyan(tc.toolName)}: ${tc.status === 'completed' ? colors.green('✓') : colors.red('✗')}`);
+  if (state.toolCalls.length === 0) {
+    console.log(colors.yellow('  ⚠️  No tool calls detected in stream'));
+  } else {
+    for (const tc of state.toolCalls) {
+      console.log(`    └─ ${colors.cyan(tc.toolName)}: ${tc.status === 'completed' ? colors.green('✓') : colors.red('✗')}`);
+    }
   }
 
   console.log(`  Finish reason: ${colors.magenta(state.finishReason || 'unknown')}`);
@@ -272,6 +346,12 @@ async function verboseStateTrackingExample() {
   if (!state.hasTextContent && state.toolCalls.length > 0) {
     console.log(colors.yellow('\n💡 Insight: Model invoked tools without generating text first'));
     console.log(colors.dim('   Flow UIs should handle this by showing a "Searching..." indicator'));
+  } else if (state.toolCalls.length === 0) {
+    console.log(colors.yellow('\n⚠️  Warning: No tool calls were detected'));
+    console.log(colors.dim('   This might indicate:'));
+    console.log(colors.dim('   - The model did not invoke any tools'));
+    console.log(colors.dim('   - Tool calls were not properly streamed'));
+    console.log(colors.dim('   - Check that tools are properly configured'));
   }
 }
 
@@ -312,51 +392,45 @@ async function uiSimulationExample() {
 
   renderUI('thinking', 'Processing request...');
 
-  // Consume text stream
+  // Use fullStream to track all events including tool calls
   try {
-    for await (const chunk of stream.textStream) {
-      if (!hasReceivedAnyContent) {
-        hasReceivedAnyContent = true;
-        currentSection = 'responding';
-        renderUI('responding', 'Generating response...');
-        console.log(''); // New line for text content
-      }
-      textBuffer += chunk;
-      process.stdout.write(chunk);
-    }
-    if (hasReceivedAnyContent) {
-      console.log(''); // New line after text
-    }
-  } catch {
-    // Stream may end early for tool calls
-  }
+    for await (const part of stream.fullStream as AsyncIterable<any>) {
+      switch (part.type) {
+        case 'text-delta':
+        case 'text-delta-text':
+          if (!hasReceivedAnyContent) {
+            hasReceivedAnyContent = true;
+            currentSection = 'responding';
+            renderUI('responding', 'Generating response...');
+            console.log('');
+          }
+          const delta = part.delta || part.text || '';
+          textBuffer += delta;
+          process.stdout.write(delta);
+          break;
 
-  // Access tool calls
-  try {
-    const toolCalls = await stream.toolCalls;
-    for (const call of toolCalls) {
-      hasReceivedAnyContent = true;
-      currentSection = 'searching';
-      const input = typeof call.input === 'string' ? JSON.parse(call.input) : call.input;
-      renderUI('searching', `${call.toolName}: "${(input as any).query || 'fetching...'}"`);
-      console.log(''); // New line
-    }
-  } catch {
-    // No tool calls
-  }
+        case 'tool-call':
+          hasReceivedAnyContent = true;
+          currentSection = 'searching';
+          const input = typeof part.input === 'string' ? JSON.parse(part.input) : part.input;
+          renderUI('searching', `${part.toolName}: "${(input as any).query || 'fetching...'}"`);
+          console.log('');
+          break;
 
-  // Access tool results
-  try {
-    const toolResults = await stream.toolResults;
-    for (const result of toolResults) {
-      toolResultCount++;
-      const output = result.output as any;
-      if (output?.results) {
-        console.log(colors.green(`  ✓ Found ${output.results.length} results`));
+        case 'tool-result':
+          toolResultCount++;
+          const output = part.output as any;
+          if (output?.results) {
+            console.log(colors.green(`  ✓ Found ${output.results.length} results`));
+          }
+          break;
       }
     }
-  } catch {
-    // No tool results
+    if (hasReceivedAnyContent && textBuffer.length > 0) {
+      console.log('');
+    }
+  } catch (error) {
+    console.error(colors.red('Stream error:'), error);
   }
 
   currentSection = 'idle';
@@ -369,12 +443,8 @@ async function uiSimulationExample() {
     console.log(colors.dim('   This might indicate a model issue or API error'));
   } else if (textBuffer.length === 0) {
     console.log(colors.yellow('ℹ️  Tool calls completed but no final text response'));
-    console.log(colors.dim('   For multi-turn conversations, the AI SDK will continue the conversation'));
-
-    console.log(colors.cyan('\n📊 Stream summary:'));
-    console.log(`  Text collected: ${colors.yellow('none')}`);
-    console.log(`  Tool results: ${colors.cyan(toolResultCount.toString())}`);
-    console.log(colors.dim('\n💡 This is the reported issue - flow UIs should show tool activity'));
+    console.log(colors.cyan(`  Tool results: ${toolResultCount}`));
+    console.log(colors.dim('   Flow UIs should show tool activity even when no text is generated'));
   } else {
     console.log(colors.green('✅ Stream completed successfully'));
     console.log(`   Text: ${textBuffer.length} characters`);

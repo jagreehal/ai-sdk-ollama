@@ -6,7 +6,6 @@
  */
 
 import { generateText as _generateText, stepCountIs } from 'ai';
-import type { ToolSet } from 'ai';
 
 /**
  * Enhanced options for Ollama-specific reliability features
@@ -53,11 +52,7 @@ export interface EnhancedOptions {
 /**
  * Enhanced generateText options that extend the official AI SDK options
  */
-export type GenerateTextOptions<
-  TOOLS extends ToolSet = ToolSet,
-  OUTPUT = never,
-  OUTPUT_PARTIAL = never,
-> = Parameters<typeof _generateText<TOOLS, OUTPUT, OUTPUT_PARTIAL>>[0] & {
+export type GenerateTextOptions = Parameters<typeof _generateText>[0] & {
   /**
    * Enhanced options for Ollama-specific reliability features
    */
@@ -72,13 +67,9 @@ export type GenerateTextOptions<
  *
  * Type parameters are inferred from the options, preserving AI SDK's type inference.
  */
-export async function generateText<
-  TOOLS extends ToolSet = ToolSet,
-  OUTPUT = never,
-  OUTPUT_PARTIAL = never,
->(
-  options: GenerateTextOptions<TOOLS, OUTPUT, OUTPUT_PARTIAL>,
-): ReturnType<typeof _generateText<TOOLS, OUTPUT, OUTPUT_PARTIAL>> {
+export async function generateText(
+  options: GenerateTextOptions,
+): Promise<Awaited<ReturnType<typeof _generateText>>> {
   const { enhancedOptions = {}, ...generateTextOptions } = options;
 
   const {
@@ -186,9 +177,7 @@ export async function generateText<
         enumerable: true,
       });
 
-      return enhancedResult as unknown as Awaited<
-        ReturnType<typeof _generateText<TOOLS, OUTPUT, OUTPUT_PARTIAL>>
-      >;
+      return enhancedResult as unknown as Awaited<ReturnType<typeof _generateText>>;
     }
   }
 
@@ -209,9 +198,7 @@ export async function generateText<
     !result.text || result.text.trim().length < minResponseLength;
 
   if (!hasTools || !toolsWereCalled || !hasMinimalText || !enableSynthesis) {
-    return result as unknown as ReturnType<
-      typeof _generateText<TOOLS, OUTPUT, OUTPUT_PARTIAL>
-    >;
+    return result as unknown as Awaited<ReturnType<typeof _generateText>>;
   }
 
   // Attempt synthesis with tool results
@@ -307,16 +294,12 @@ ${synthesisPrompt}`;
           enumerable: true,
         });
 
-        return enhancedResult as unknown as ReturnType<
-          typeof _generateText<TOOLS, OUTPUT, OUTPUT_PARTIAL>
-        >;
+        return enhancedResult as unknown as Awaited<ReturnType<typeof _generateText>>;
       }
     } catch {
       // Silently continue to next attempt
     }
   }
 
-  return result as unknown as ReturnType<
-    typeof _generateText<TOOLS, OUTPUT, OUTPUT_PARTIAL>
-  >;
+  return result as unknown as Awaited<ReturnType<typeof _generateText>>;
 }

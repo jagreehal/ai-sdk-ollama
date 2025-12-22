@@ -7,7 +7,6 @@ import { z } from 'zod';
 describe('Tool Calling Integration Tests', () => {
   // Mock weather tool for testing
   const weatherTool = tool({
-    name: 'weather',
     description: 'Get the weather for a location',
     inputSchema: z.object({
       location: z.string().describe('The location to get weather for'),
@@ -62,7 +61,6 @@ describe('Tool Calling Integration Tests', () => {
 
   it('should handle simple tool without execute', async () => {
     const simpleTool = tool({
-      name: 'simple',
       description: 'A simple tool for testing',
       inputSchema: z.object({
         message: z.string().describe('A simple message'),
@@ -124,7 +122,6 @@ describe('Tool Calling Integration Tests', () => {
 
   it('should handle multiple tools', async () => {
     const infoTool = tool({
-      name: 'info',
       description: 'Get information about a topic',
       inputSchema: z.object({
         topic: z.string().describe('The topic to get information about'),
