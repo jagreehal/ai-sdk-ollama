@@ -21,11 +21,30 @@ type SynthesisStreamPart =
   | { type: 'text-delta'; id: string; text: string; delta?: string }
   | { type: 'text-end'; id: string }
   | { type: 'tool-call'; toolCallId: string; toolName: string; input: unknown }
-  | { type: 'tool-result'; toolCallId: string; toolName: string; output: unknown }
-  | { type: 'finish'; finishReason: string; totalUsage: { inputTokens: number; outputTokens: number; totalTokens: number } }
+  | {
+      type: 'tool-result';
+      toolCallId: string;
+      toolName: string;
+      output: unknown;
+    }
+  | {
+      type: 'finish';
+      finishReason: string;
+      totalUsage: {
+        inputTokens: number;
+        outputTokens: number;
+        totalTokens: number;
+      };
+    }
   | { type: 'start' }
   | { type: 'start-step'; request: unknown; warnings: unknown[] }
-  | { type: 'finish-step'; response: unknown; usage: unknown; finishReason: string; providerMetadata: unknown }
+  | {
+      type: 'finish-step';
+      response: unknown;
+      usage: unknown;
+      finishReason: string;
+      providerMetadata: unknown;
+    }
   | { type: string; [key: string]: unknown };
 
 /**
@@ -70,7 +89,7 @@ export type StreamTextOptions = AIStreamTextOptions & {
      */
     synthesisTimeout?: number;
   };
-}
+};
 
 /**
  * Collected stream state for synthesis decision
@@ -87,7 +106,9 @@ interface StreamState {
  * Enhanced streamText function with Ollama-specific reliability improvements
  * Enhances both textStream and fullStream with synthesis support
  */
-export async function streamText(options: StreamTextOptions): Promise<Awaited<ReturnType<typeof _streamText>>> {
+export async function streamText(
+  options: StreamTextOptions,
+): Promise<Awaited<ReturnType<typeof _streamText>>> {
   const { enhancedOptions = {}, ...streamTextOptions } = options;
 
   const {
@@ -108,7 +129,8 @@ export async function streamText(options: StreamTextOptions): Promise<Awaited<Re
   const streamResult = await _streamText({
     ...(streamTextOptions as Parameters<typeof _streamText>[0]),
     // Only set stopWhen default if user didn't provide one and tools are enabled
-    stopWhen: streamTextOptions.stopWhen ?? (hasTools ? stepCountIs(5) : undefined),
+    stopWhen:
+      streamTextOptions.stopWhen ?? (hasTools ? stepCountIs(5) : undefined),
   });
 
   // Shared state for synthesis
@@ -418,43 +440,46 @@ Based on the tool results above, please provide a comprehensive response to the 
 
               // Track text content - AI SDK uses 'delta' for text-delta events
               switch (part.type) {
-              case 'text-delta': 
-              case 'text-delta-text': {
-                hasSeenText = true;
-                // AI SDK fullStream uses 'delta' property, but we'll check both for compatibility
-                const delta = typeof part.delta === 'string' ? part.delta : '';
-                const text = typeof part.text === 'string' ? part.text : '';
-                const textDelta = delta || text;
-                if (textDelta) {
-                  state.textContent += textDelta;
+                case 'text-delta':
+                case 'text-delta-text': {
+                  hasSeenText = true;
+                  // AI SDK fullStream uses 'delta' property, but we'll check both for compatibility
+                  const delta =
+                    typeof part.delta === 'string' ? part.delta : '';
+                  const text = typeof part.text === 'string' ? part.text : '';
+                  const textDelta = delta || text;
+                  if (textDelta) {
+                    state.textContent += textDelta;
+                  }
+                  if (!currentTextId && typeof part.id === 'string') {
+                    currentTextId = part.id;
+                  }
+
+                  break;
                 }
-                if (!currentTextId && typeof part.id === 'string') {
-                  currentTextId = part.id;
+                case 'text-start': {
+                  hasSeenText = true;
+                  if (typeof part.id === 'string') {
+                    currentTextId = part.id;
+                  }
+
+                  break;
                 }
-              
-              break;
-              }
-              case 'text-start': {
-                hasSeenText = true;
-                if (typeof part.id === 'string') {
-                  currentTextId = part.id;
+                case 'text-end': {
+                  currentTextId = null;
+
+                  break;
                 }
-              
-              break;
-              }
-              case 'text-end': {
-                currentTextId = null;
-              
-              break;
-              }
-              // No default
+                // No default
               }
 
               // Track tool calls
               if (part.type === 'tool-call') {
                 state.toolCalls.push({
-                  toolCallId: typeof part.toolCallId === 'string' ? part.toolCallId : '',
-                  toolName: typeof part.toolName === 'string' ? part.toolName : '',
+                  toolCallId:
+                    typeof part.toolCallId === 'string' ? part.toolCallId : '',
+                  toolName:
+                    typeof part.toolName === 'string' ? part.toolName : '',
                   input: part.input,
                 });
               }
@@ -462,8 +487,10 @@ Based on the tool results above, please provide a comprehensive response to the 
               // Track tool results
               if (part.type === 'tool-result') {
                 state.toolResults.push({
-                  toolCallId: typeof part.toolCallId === 'string' ? part.toolCallId : '',
-                  toolName: typeof part.toolName === 'string' ? part.toolName : '',
+                  toolCallId:
+                    typeof part.toolCallId === 'string' ? part.toolCallId : '',
+                  toolName:
+                    typeof part.toolName === 'string' ? part.toolName : '',
                   output: part.output,
                 });
               }

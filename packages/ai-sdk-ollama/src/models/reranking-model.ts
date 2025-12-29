@@ -184,7 +184,8 @@ export class OllamaRerankingModel implements RerankingModelV3 {
       warnings.push({
         type: 'compatibility',
         feature: 'object documents',
-        details: 'Object documents are converted to JSON strings for reranking.',
+        details:
+          'Object documents are converted to JSON strings for reranking.',
       });
       documentValues = documents.values.map((value) => JSON.stringify(value));
     } else {
@@ -199,7 +200,8 @@ export class OllamaRerankingModel implements RerankingModelV3 {
     };
 
     // Add optional parameters
-    const instruction = rerankingOptions?.instruction ?? this.settings.instruction;
+    const instruction =
+      rerankingOptions?.instruction ?? this.settings.instruction;
     if (instruction) {
       requestBody.instruction = instruction;
     }
@@ -226,10 +228,12 @@ export class OllamaRerankingModel implements RerankingModelV3 {
     });
 
     return {
-      ranking: response.results.map((result: { index: number; relevance_score: number }) => ({
-        index: result.index,
-        relevanceScore: result.relevance_score,
-      })),
+      ranking: response.results.map(
+        (result: { index: number; relevance_score: number }) => ({
+          index: result.index,
+          relevanceScore: result.relevance_score,
+        }),
+      ),
       warnings: warnings.length > 0 ? warnings : undefined,
       response: {
         modelId: response.model,

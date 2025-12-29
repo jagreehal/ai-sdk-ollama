@@ -63,7 +63,9 @@ interface ParsedToolCall {
  * Parse Ollama tool calls into a normalized format.
  * Uses the ToolCall type from the Ollama library for type safety.
  */
-function parseOllamaToolCalls(toolCalls: ToolCall[] | undefined): ParsedToolCall[] {
+function parseOllamaToolCalls(
+  toolCalls: ToolCall[] | undefined,
+): ParsedToolCall[] {
   if (!toolCalls || toolCalls.length === 0) {
     return [];
   }
@@ -586,7 +588,9 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
         tools,
         stream: false,
         ...(keep_alive !== undefined && { keep_alive }),
-        ...(this.settings.think !== undefined && { think: this.settings.think }),
+        ...(this.settings.think !== undefined && {
+          think: this.settings.think,
+        }),
       })) as ChatResponse;
 
       const text = response.message.content;
@@ -622,7 +626,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       // (tool calls are already represented in the content array)
       const finishReason: LanguageModelV3FinishReason =
         parsedToolCalls.length > 0
-          ? ('stop' as unknown as LanguageModelV3FinishReason)
+          ? mapOllamaFinishReason('stop')
           : mapOllamaFinishReason(response.done_reason);
 
       return {
@@ -676,8 +680,14 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
     format?: string | Record<string, unknown>;
     keep_alive?: string | number;
   }): Promise<{ text: string; response: ChatResponse } | undefined> {
-    const { messages, ollamaOptions, toolResults, originalOptions, format, keep_alive } =
-      params;
+    const {
+      messages,
+      ollamaOptions,
+      toolResults,
+      originalOptions,
+      format,
+      keep_alive,
+    } = params;
 
     let followUpResponse: ChatResponse | undefined;
 
@@ -702,7 +712,9 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
           format,
           stream: false,
           ...(keep_alive !== undefined && { keep_alive }),
-          ...(this.settings.think !== undefined && { think: this.settings.think }),
+          ...(this.settings.think !== undefined && {
+            think: this.settings.think,
+          }),
         })) as ChatResponse;
 
         const followUpText = followUpResponse.message.content ?? '';
@@ -798,7 +810,8 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       : aggregateUsage(response);
 
     const finishReason: LanguageModelV3FinishReason =
-      mapOllamaFinishReason(finishSource.done_reason) ?? ('stop' as unknown as LanguageModelV3FinishReason);
+      mapOllamaFinishReason(finishSource.done_reason) ??
+      mapOllamaFinishReason('stop');
 
     const providerDetails: Record<string, JSONValue> = {};
 
@@ -834,8 +847,8 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
           if (result.error !== undefined) {
             toolResult.error = result.error;
           }
-          return toolResult;
-        }) as unknown as JSONValue;
+          return toolResult as JSONValue;
+        });
       }
     }
 
@@ -909,7 +922,9 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
         tools: ollamaTools,
         stream: false,
         ...(keep_alive !== undefined && { keep_alive }),
-        ...(this.settings.think !== undefined && { think: this.settings.think }),
+        ...(this.settings.think !== undefined && {
+          think: this.settings.think,
+        }),
       })) as ChatResponse;
 
       lastResponse = response;
@@ -1104,7 +1119,9 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
           tools,
           stream: false,
           ...(keep_alive !== undefined && { keep_alive }),
-          ...(this.settings.think !== undefined && { think: this.settings.think }),
+          ...(this.settings.think !== undefined && {
+            think: this.settings.think,
+          }),
         })) as ChatResponse;
 
         lastResponse = response;
@@ -1272,7 +1289,9 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
           format: params.format,
           tools: params.tools,
           reliable_object_generation: true,
-          ...(params.keep_alive !== undefined && { keep_alive: params.keep_alive }),
+          ...(params.keep_alive !== undefined && {
+            keep_alive: params.keep_alive,
+          }),
         },
       },
       response: {
@@ -1306,11 +1325,14 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
         tools,
         stream: true,
         ...(keep_alive !== undefined && { keep_alive }),
-        ...(this.settings.think !== undefined && { think: this.settings.think }),
+        ...(this.settings.think !== undefined && {
+          think: this.settings.think,
+        }),
       });
 
       let usage: LanguageModelV3Usage = createUsage();
-      let finishReason: LanguageModelV3FinishReason = 'unknown' as unknown as LanguageModelV3FinishReason;
+      let finishReason: LanguageModelV3FinishReason =
+        mapOllamaFinishReason(null);
 
       // Track if we've emitted stream-start
       let streamStartEmitted = false;
@@ -1384,7 +1406,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
             // If we saw tool calls, use 'stop' as the finish reason
             // (tool calls are already represented in the content array)
             finishReason = hasToolCalls
-              ? ('stop' as unknown as LanguageModelV3FinishReason)
+              ? mapOllamaFinishReason('stop')
               : mapOllamaFinishReason(chunk.done_reason);
 
             controller.enqueue({

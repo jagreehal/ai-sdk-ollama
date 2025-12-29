@@ -161,7 +161,8 @@ export class OllamaEmbeddingRerankingModel implements RerankingModelV3 {
       warnings.push({
         type: 'compatibility',
         feature: 'object documents',
-        details: 'Object documents are converted to JSON strings for embedding.',
+        details:
+          'Object documents are converted to JSON strings for embedding.',
       });
       documentValues = documents.values.map((v) => JSON.stringify(v));
     } else {
@@ -196,7 +197,10 @@ export class OllamaEmbeddingRerankingModel implements RerankingModelV3 {
 
     // Sort by score (descending) and limit to topN
     // Using spread + sort instead of toSorted for ES2020 compatibility
-    const maxResults = Math.min(topN ?? documentValues.length, documentValues.length);
+    const maxResults = Math.min(
+      topN ?? documentValues.length,
+      documentValues.length,
+    );
 
     const ranking = [...scores]
       // eslint-disable-next-line unicorn/no-array-sort -- toSorted requires ES2023, browser target is ES2020

@@ -167,7 +167,8 @@ export function convertToOllamaChatMessages(
               const contentValue =
                 part.output.type === 'text' || part.output.type === 'error-text'
                   ? part.output.value
-                  : part.output.type === 'json' || part.output.type === 'error-json'
+                  : part.output.type === 'json' ||
+                      part.output.type === 'error-json'
                     ? JSON.stringify(part.output.value)
                     : JSON.stringify(part.output);
 

@@ -3,7 +3,9 @@ import { Ollama } from 'ollama';
 import { createOllama } from './provider';
 
 // Mock the ollama module to capture constructor calls
-type OllamaConfig = { headers?: Record<string, string> | Headers | [string, string][] };
+type OllamaConfig = {
+  headers?: Record<string, string> | Headers | [string, string][];
+};
 
 // Augment globalThis with proper typing to store captured configs
 // This avoids 'as any' while working around vi.mock hoisting
@@ -18,7 +20,8 @@ vi.mock('ollama', async () => {
     ...actual,
     Ollama: class MockOllama extends actual.Ollama {
       constructor(config?: OllamaConfig) {
-        globalThis.__capturedOllamaConfigs = globalThis.__capturedOllamaConfigs ?? [];
+        globalThis.__capturedOllamaConfigs =
+          globalThis.__capturedOllamaConfigs ?? [];
         globalThis.__capturedOllamaConfigs.push(config ?? {});
         super(config);
       }

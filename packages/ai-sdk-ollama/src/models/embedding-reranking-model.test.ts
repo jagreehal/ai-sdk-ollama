@@ -48,12 +48,7 @@ describe('OllamaEmbeddingRerankingModel', () => {
       const model = createModel();
 
       mockEmbed.mockResolvedValueOnce(
-        createMockEmbeddings(
-          [1, 0, 0],
-          [1, 0, 0],
-          [0, 1, 0],
-          [0.7, 0.7, 0],
-        ),
+        createMockEmbeddings([1, 0, 0], [1, 0, 0], [0, 1, 0], [0.7, 0.7, 0]),
       );
 
       await model.doRerank({
@@ -134,12 +129,7 @@ describe('OllamaEmbeddingRerankingModel', () => {
         embeddingModel: 'nomic-embed-text',
       });
 
-      mockEmbed.mockResolvedValueOnce(
-        createMockEmbeddings(
-          [1, 0],
-          [1, 0],
-        ),
-      );
+      mockEmbed.mockResolvedValueOnce(createMockEmbeddings([1, 0], [1, 0]));
 
       await model.doRerank({
         documents: { type: 'text', values: ['doc'] },
@@ -156,11 +146,7 @@ describe('OllamaEmbeddingRerankingModel', () => {
       const model = createModel();
 
       mockEmbed.mockResolvedValueOnce(
-        createMockEmbeddings(
-          [1, 0],
-          [0.9, 0.1],
-          [0.5, 0.5],
-        ),
+        createMockEmbeddings([1, 0], [0.9, 0.1], [0.5, 0.5]),
       );
 
       const result = await model.doRerank({

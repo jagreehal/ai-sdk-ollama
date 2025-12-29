@@ -93,7 +93,11 @@ export function createOllama(
   const normalizedHeaders = normalizeHeaders(options.headers);
 
   // Add Authorization header if apiKey is available and not already set
-  if (options.apiKey && !normalizedHeaders.Authorization && !normalizedHeaders.authorization) {
+  if (
+    options.apiKey &&
+    !normalizedHeaders.Authorization &&
+    !normalizedHeaders.authorization
+  ) {
     normalizedHeaders.Authorization = `Bearer ${options.apiKey}`;
   }
 
@@ -102,8 +106,9 @@ export function createOllama(
   const client = new OllamaBrowser({
     host: options.baseURL,
     fetch: options.fetch,
-    headers: Object.keys(normalizedHeaders).length > 0 ? normalizedHeaders : undefined,
-  }) as unknown as Ollama;
+    headers:
+      Object.keys(normalizedHeaders).length > 0 ? normalizedHeaders : undefined,
+  }) as Ollama;
 
   const createChatModel = (
     modelId: string,
@@ -182,8 +187,10 @@ export function createOllama(
   };
 
   provider.tools = toolsWithClient;
+  provider.specificationVersion = 'v3' as const;
+  provider.embeddingModel = createEmbeddingModel;
 
-  return provider as unknown as OllamaProvider;
+  return provider;
 }
 
 /**

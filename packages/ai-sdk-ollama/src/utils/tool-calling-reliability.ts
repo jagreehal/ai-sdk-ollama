@@ -61,11 +61,10 @@ export interface ToolCallingOptions {
   toolTimeout?: number;
 }
 
-export interface ResolvedToolCallingOptions
-  extends Omit<
-    ToolCallingOptions,
-    'maxRetries' | 'forceCompletion' | 'normalizeParameters' | 'validateResults'
-  > {
+export interface ResolvedToolCallingOptions extends Omit<
+  ToolCallingOptions,
+  'maxRetries' | 'forceCompletion' | 'normalizeParameters' | 'validateResults'
+> {
   maxRetries: number;
   forceCompletion: boolean;
   normalizeParameters: boolean;

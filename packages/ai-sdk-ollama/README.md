@@ -309,6 +309,7 @@ const { text } = await generateText({
 ```
 
 **Accepted values:**
+
 - Duration strings: `"10m"`, `"24h"`, `"30s"` (minutes, hours, seconds)
 - Numbers: seconds as a number (e.g., `3600` for 1 hour)
 - Negative numbers: keep loaded indefinitely (e.g., `-1`)
@@ -454,11 +455,14 @@ console.log('Most relevant:', rerankedDocuments[0]);
 
 // Each ranking item includes score and original index
 ranking.forEach((item, i) => {
-  console.log(`${i + 1}. Score: ${item.score.toFixed(3)}, Index: ${item.originalIndex}`);
+  console.log(
+    `${i + 1}. Score: ${item.score.toFixed(3)}, Index: ${item.originalIndex}`,
+  );
 });
 ```
 
 **Use Cases:**
+
 - **RAG Pipelines**: Rerank retrieved documents before passing to LLM
 - **Search Results**: Improve relevance of search results
 - **Customer Support**: Find most relevant help articles
@@ -480,8 +484,8 @@ const result = streamText({
   model: ollama('llama3.2'),
   prompt: 'Write a poem about the ocean.',
   experimental_transform: smoothStream({
-    delayInMs: 50,      // 50ms between chunks
-    chunking: 'word',   // 'word' | 'line' | RegExp
+    delayInMs: 50, // 50ms between chunks
+    chunking: 'word', // 'word' | 'line' | RegExp
   }),
 });
 
@@ -491,6 +495,7 @@ for await (const chunk of result.textStream) {
 ```
 
 **Chunking Options:**
+
 - `'word'` - Emit word by word (default)
 - `'line'` - Emit line by line
 - `RegExp` - Custom pattern (e.g., `/[.!?]\s+/` for sentences)
@@ -518,7 +523,11 @@ if (result.state === 'repaired-parse' || result.state === 'successful-parse') {
 Wrap language models with middleware for parameter transformation, logging, or custom behavior:
 
 ```typescript
-import { ollama, wrapLanguageModel, defaultSettingsMiddleware } from 'ai-sdk-ollama';
+import {
+  ollama,
+  wrapLanguageModel,
+  defaultSettingsMiddleware,
+} from 'ai-sdk-ollama';
 import { generateText } from 'ai';
 
 // Apply default settings to all calls
@@ -559,13 +568,17 @@ const middleware = defaultSettingsMiddleware({
 Extract reasoning/thinking from model outputs that use XML tags:
 
 ```typescript
-import { ollama, wrapLanguageModel, extractReasoningMiddleware } from 'ai-sdk-ollama';
+import {
+  ollama,
+  wrapLanguageModel,
+  extractReasoningMiddleware,
+} from 'ai-sdk-ollama';
 
 const model = wrapLanguageModel({
   model: ollama('deepseek-r1:7b'),
   middleware: extractReasoningMiddleware({
-    tagName: 'think',        // Extract content from <think> tags
-    separator: '\n',          // Separator for multiple reasoning blocks
+    tagName: 'think', // Extract content from <think> tags
+    separator: '\n', // Separator for multiple reasoning blocks
     startWithReasoning: true, // Model starts with reasoning
   }),
 });
@@ -599,18 +612,24 @@ const agent = new ToolLoopAgent({
     weather: tool({
       description: 'Get weather for a location',
       inputSchema: z.object({ location: z.string() }),
-      execute: async ({ location }: { location: string }) => ({ temp: 72, condition: 'sunny' }),
+      execute: async ({ location }: { location: string }) => ({
+        temp: 72,
+        condition: 'sunny',
+      }),
     }),
     done: tool({
       description: 'Call when task is complete',
       inputSchema: z.object({ summary: z.string() }),
-      execute: async ({ summary }: { summary: string }) => ({ completed: true, summary }),
+      execute: async ({ summary }: { summary: string }) => ({
+        completed: true,
+        summary,
+      }),
     }),
   },
   maxOutputTokens: 1000,
   stopWhen: [
-    stepCountIs(10),      // Stop after 10 steps max
-    hasToolCall('done'),  // Stop when 'done' tool is called
+    stepCountIs(10), // Stop after 10 steps max
+    hasToolCall('done'), // Stop when 'done' tool is called
   ],
   onStepFinish: (stepResult) => {
     console.log(`Step:`, stepResult.toolCalls.length, 'tool calls');
@@ -627,6 +646,7 @@ console.log('Tokens:', result.totalUsage.totalTokens ?? 'undefined');
 ```
 
 **Stop Conditions:**
+
 - `stepCountIs(n)` - Stop after n steps
 - `hasToolCall(name)` - Stop when specific tool is called
 - Custom: `(options: { steps: StepResult[] }) => boolean | Promise<boolean>`
@@ -677,11 +697,11 @@ const { text } = await generateText({
 
 Different runtimes handle environment variables differently:
 
-| Runtime | `.env` Auto-Loading |
-|---------|---------------------|
-| Node.js | ❌ No (requires `dotenv`) |
-| Bun | ✅ Yes (usually) |
-| Deno | ❌ No |
+| Runtime         | `.env` Auto-Loading           |
+| --------------- | ----------------------------- |
+| Node.js         | ❌ No (requires `dotenv`)     |
+| Bun             | ✅ Yes (usually)              |
+| Deno            | ❌ No                         |
 | Edge/Serverless | ❌ No (platform injects vars) |
 
 Passing `apiKey` explicitly works reliably everywhere and avoids surprises.
@@ -796,7 +816,7 @@ const { text } = await generateText({
 
 The provider includes automatic JSON repair that handles 14+ types of common JSON issues from LLM outputs:
 
-```typescript
+````typescript
 import { ollama } from 'ai-sdk-ollama';
 import { generateObject } from 'ai';
 import { z } from 'zod';
@@ -826,7 +846,7 @@ const { object } = await generateObject({
 // ✅ Incomplete objects/arrays
 // ✅ Smart quotes and special characters
 // ✅ And more...
-```
+````
 
 **Control Options:**
 
@@ -980,7 +1000,6 @@ For detailed testing information, see [Integration Tests Documentation](./src/in
 📦 **[Structured Output + Tools](../../examples/node/src/v6-structured-output-example.ts)** - Tool calling with structured output generation
 
 🔗 **[MCP Tools Example](../../examples/node/src/mcp-tools-example.ts)** - Model Context Protocol integration
-
 
 ## License
 

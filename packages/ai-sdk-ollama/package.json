@@ -89,7 +89,7 @@
     "ollama": "^0.6.3"
   },
   "peerDependencies": {
-    "ai": "^6.0.0"
+    "ai": "^6.0.3"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",

@@ -131,39 +131,15 @@ export async function generateText(
         _generateTextOptions as Parameters<typeof _generateText>[0],
       );
 
-      // Preserve original prototype while merging properties
-      const enhancedResult = Object.create(
-        Object.getPrototypeOf(structuredResult),
-        Object.getOwnPropertyDescriptors(structuredResult),
-      ) as typeof structuredResult;
-
-      // Override properties with tool metadata
-      Object.defineProperty(enhancedResult, 'toolCalls', {
-        value: toolResult.toolCalls,
-        enumerable: true,
-      });
-      Object.defineProperty(enhancedResult, 'toolResults', {
-        value: toolResult.toolResults,
-        enumerable: true,
-      });
-      Object.defineProperty(enhancedResult, 'staticToolCalls', {
-        value: toolResult.staticToolCalls,
-        enumerable: true,
-      });
-      Object.defineProperty(enhancedResult, 'dynamicToolCalls', {
-        value: toolResult.dynamicToolCalls,
-        enumerable: true,
-      });
-      Object.defineProperty(enhancedResult, 'staticToolResults', {
-        value: toolResult.staticToolResults,
-        enumerable: true,
-      });
-      Object.defineProperty(enhancedResult, 'dynamicToolResults', {
-        value: toolResult.dynamicToolResults,
-        enumerable: true,
-      });
-      Object.defineProperty(enhancedResult, 'usage', {
-        value: {
+      // Merge tool metadata into structured result
+      const enhancedResult = Object.assign(structuredResult, {
+        toolCalls: toolResult.toolCalls,
+        toolResults: toolResult.toolResults,
+        staticToolCalls: toolResult.staticToolCalls,
+        dynamicToolCalls: toolResult.dynamicToolCalls,
+        staticToolResults: toolResult.staticToolResults,
+        dynamicToolResults: toolResult.dynamicToolResults,
+        usage: {
           inputTokens:
             (toolResult.usage.inputTokens || 0) +
             (structuredResult.usage.inputTokens || 0),
@@ -174,10 +150,9 @@ export async function generateText(
             (toolResult.usage.totalTokens || 0) +
             (structuredResult.usage.totalTokens || 0),
         },
-        enumerable: true,
       });
 
-      return enhancedResult as unknown as Awaited<ReturnType<typeof _generateText>>;
+      return enhancedResult;
     }
   }
 
@@ -186,7 +161,10 @@ export async function generateText(
   const result = await _generateText({
     ...(generateTextOptions as Parameters<typeof _generateText>[0]),
     // Only set stopWhen default if user didn't provide one and tools are enabled
-    stopWhen: (generateTextOptions.stopWhen ?? (hasTools ? stepCountIs(5) : undefined)) as Parameters<typeof _generateText>[0]['stopWhen'],
+    stopWhen: (generateTextOptions.stopWhen ??
+      (hasTools ? stepCountIs(5) : undefined)) as Parameters<
+      typeof _generateText
+    >[0]['stopWhen'],
   });
 
   // Check if we need synthesis (tools called but no meaningful text)
@@ -198,7 +176,7 @@ export async function generateText(
     !result.text || result.text.trim().length < minResponseLength;
 
   if (!hasTools || !toolsWereCalled || !hasMinimalText || !enableSynthesis) {
-    return result as unknown as Awaited<ReturnType<typeof _generateText>>;
+    return result;
   }
 
   // Attempt synthesis with tool results
@@ -268,19 +246,10 @@ ${synthesisPrompt}`;
         synthesisResult.text &&
         synthesisResult.text.trim().length >= minResponseLength
       ) {
-        // Preserve original prototype while merging properties
-        const enhancedResult = Object.create(
-          Object.getPrototypeOf(result),
-          Object.getOwnPropertyDescriptors(result),
-        ) as typeof result;
-
-        // Override text and usage properties
-        Object.defineProperty(enhancedResult, 'text', {
-          value: synthesisResult.text,
-          enumerable: true,
-        });
-        Object.defineProperty(enhancedResult, 'usage', {
-          value: {
+        // Merge synthesis text and combined usage into result
+        const enhancedResult = Object.assign(result, {
+          text: synthesisResult.text,
+          usage: {
             inputTokens:
               (result.usage.inputTokens || 0) +
               (synthesisResult.usage.inputTokens || 0),
@@ -291,15 +260,14 @@ ${synthesisPrompt}`;
               (result.usage.totalTokens || 0) +
               (synthesisResult.usage.totalTokens || 0),
           },
-          enumerable: true,
         });
 
-        return enhancedResult as unknown as Awaited<ReturnType<typeof _generateText>>;
+        return enhancedResult;
       }
     } catch {
       // Silently continue to next attempt
     }
   }
 
-  return result as unknown as Awaited<ReturnType<typeof _generateText>>;
+  return result;
 }
