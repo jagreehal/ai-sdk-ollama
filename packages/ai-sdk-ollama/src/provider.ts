@@ -53,7 +53,10 @@ export type {
  * Settings for configuring the Ollama provider.
  * Extends from Ollama's Config type for consistency with the underlying client.
  */
-export interface OllamaProviderSettings extends Pick<Config, 'headers' | 'fetch'> {
+export interface OllamaProviderSettings extends Pick<
+  Config,
+  'headers' | 'fetch'
+> {
   /**
    * Base URL for the Ollama API (defaults to http://127.0.0.1:11434)
    * Maps to Config.host in the Ollama client
@@ -173,8 +176,10 @@ export interface OllamaProvider extends ProviderV3 {
   };
 }
 
-export interface OllamaChatSettings
-  extends Pick<ChatRequest, 'keep_alive' | 'format' | 'tools' | 'think'> {
+export interface OllamaChatSettings extends Pick<
+  ChatRequest,
+  'keep_alive' | 'format' | 'tools' | 'think'
+> {
   /**
    * Additional model parameters - uses extended Options type that includes min_p
    * This automatically includes ALL Ollama parameters including new ones like 'dimensions'
@@ -247,7 +252,10 @@ export interface OllamaChatSettings
  * Settings for configuring Ollama embedding models.
  * Uses Pick from EmbedRequest for type consistency with the Ollama API.
  */
-export interface OllamaEmbeddingSettings extends Pick<EmbedRequest, 'dimensions'> {
+export interface OllamaEmbeddingSettings extends Pick<
+  EmbedRequest,
+  'dimensions'
+> {
   /**
    * Additional embedding parameters (temperature, num_ctx, etc.)
    */
@@ -344,7 +352,11 @@ export function createOllama(
   const normalizedHeaders = normalizeHeaders(options.headers);
 
   // Add Authorization header if apiKey is provided and not already set
-  if (options.apiKey && !normalizedHeaders.Authorization && !normalizedHeaders.authorization) {
+  if (
+    options.apiKey &&
+    !normalizedHeaders.Authorization &&
+    !normalizedHeaders.authorization
+  ) {
     normalizedHeaders.Authorization = `Bearer ${options.apiKey}`;
   }
 
@@ -354,7 +366,10 @@ export function createOllama(
     new Ollama({
       host: options.baseURL,
       fetch: options.fetch,
-      headers: Object.keys(normalizedHeaders).length > 0 ? normalizedHeaders : undefined,
+      headers:
+        Object.keys(normalizedHeaders).length > 0
+          ? normalizedHeaders
+          : undefined,
     });
 
   const createChatModel = (
@@ -434,8 +449,10 @@ export function createOllama(
   };
 
   provider.tools = toolsWithClient;
+  provider.specificationVersion = 'v3' as const;
+  provider.embeddingModel = createEmbeddingModel;
 
-  return provider as unknown as OllamaProvider;
+  return provider;
 }
 
 /**

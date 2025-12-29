@@ -60,7 +60,11 @@ describe('OllamaRerankingModel', () => {
       const mockResponse = {
         model: 'bge-reranker-v2-m3',
         results: [
-          { index: 1, document: 'ML uses neural networks', relevance_score: 0.95 },
+          {
+            index: 1,
+            document: 'ML uses neural networks',
+            relevance_score: 0.95,
+          },
           { index: 0, document: 'ML is a subset of AI', relevance_score: 0.85 },
           { index: 2, document: 'Weather is sunny', relevance_score: 0.1 },
         ],
@@ -180,7 +184,9 @@ describe('OllamaRerankingModel', () => {
       const model = createModel();
       const mockResponse = {
         model: 'bge-reranker-v2-m3',
-        results: [{ index: 0, document: '{"title":"Doc1"}', relevance_score: 0.9 }],
+        results: [
+          { index: 0, document: '{"title":"Doc1"}', relevance_score: 0.9 },
+        ],
       };
 
       mockFetch.mockResolvedValueOnce({
