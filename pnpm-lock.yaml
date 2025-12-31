@@ -195,8 +195,8 @@ importers:
   packages/ai-sdk-ollama:
     dependencies:
       '@ai-sdk/provider':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.0.1
+        version: 3.0.1
       '@ai-sdk/provider-utils':
         specifier: ^4.0.2
         version: 4.0.2(zod@4.2.1)
