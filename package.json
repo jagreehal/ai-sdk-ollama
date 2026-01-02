@@ -37,7 +37,7 @@
     "node": ">=22",
     "pnpm": ">=8"
   },
-  "packageManager": "pnpm@10.26.2",
+  "packageManager": "pnpm@10.27.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jagreehal/ai-sdk-ollama.git"

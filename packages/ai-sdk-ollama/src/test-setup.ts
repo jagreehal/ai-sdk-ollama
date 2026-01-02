@@ -1,5 +1,14 @@
 import { beforeEach, vi, type Mock } from 'vitest';
 
+// Re-export AI SDK test utilities for consistency with other providers
+export {
+  convertArrayToAsyncIterable,
+  convertArrayToReadableStream,
+  convertAsyncIterableToArray,
+  convertReadableStreamToArray,
+  mockId,
+} from '@ai-sdk/provider-utils/test';
+
 // Mock console methods during tests to avoid noise
 beforeEach(() => {
   vi.spyOn(console, 'warn').mockImplementation(() => {});

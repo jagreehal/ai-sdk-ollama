@@ -59,7 +59,7 @@
       "cache": false
     },
     "quality": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "build"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "!dist/**"
