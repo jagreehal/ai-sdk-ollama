@@ -7,11 +7,20 @@ import {
   LanguageModelV3FunctionTool,
 } from '@ai-sdk/provider';
 import { Ollama, AbortableAsyncIterator, ChatResponse } from 'ollama';
+import { convertArrayToAsyncIterable } from '@ai-sdk/provider-utils/test';
 
 // Mock Ollama client
 const mockOllamaClient = {
   chat: vi.fn(),
 } as unknown as Ollama;
+
+// Helper to mock streaming chat responses (consistent with AI SDK provider patterns)
+function mockChatStream(data: ChatResponse[]): void {
+  const stream = convertArrayToAsyncIterable(data);
+  (mockOllamaClient.chat as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+    stream as unknown as AbortableAsyncIterator<ChatResponse>,
+  );
+}
 
 // Helper to create V3 usage format for test expectations
 function createExpectedUsage(inputTokens: number, outputTokens: number) {
@@ -450,22 +459,7 @@ describe('OllamaChatLanguageModel', () => {
         },
       ];
 
-      const mockAsyncIterable = {
-        [Symbol.asyncIterator]: vi.fn().mockReturnValue({
-          next: vi
-            .fn()
-            .mockResolvedValueOnce({ value: mockStreamData[0], done: false })
-            .mockResolvedValueOnce({ value: mockStreamData[1], done: false })
-            .mockResolvedValueOnce({ value: mockStreamData[2], done: false })
-            .mockResolvedValueOnce({ done: true }),
-        }),
-      };
-
-      (
-        mockOllamaClient.chat as unknown as ReturnType<typeof vi.fn>
-      ).mockResolvedValueOnce(
-        mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
-      );
+      mockChatStream(mockStreamData);
 
       const options: LanguageModelV3CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
@@ -813,21 +807,7 @@ describe('OllamaChatLanguageModel', () => {
         },
       ];
 
-      const mockAsyncIterable = {
-        [Symbol.asyncIterator]: vi.fn().mockReturnValue({
-          next: vi
-            .fn()
-            .mockResolvedValueOnce({ value: mockStreamData[0], done: false })
-            .mockResolvedValueOnce({ value: mockStreamData[1], done: false })
-            .mockResolvedValueOnce({ done: true }),
-        }),
-      };
-
-      (
-        mockOllamaClient.chat as unknown as ReturnType<typeof vi.fn>
-      ).mockResolvedValueOnce(
-        mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
-      );
+      mockChatStream(mockStreamData);
 
       const modelWithReasoning = new OllamaChatLanguageModel(
         'llama3.2',
@@ -902,20 +882,7 @@ describe('OllamaChatLanguageModel', () => {
         },
       ];
 
-      const mockAsyncIterable = {
-        [Symbol.asyncIterator]: vi.fn().mockReturnValue({
-          next: vi
-            .fn()
-            .mockResolvedValueOnce({ value: mockStreamData[0], done: false })
-            .mockResolvedValueOnce({ done: true }),
-        }),
-      };
-
-      (
-        mockOllamaClient.chat as unknown as ReturnType<typeof vi.fn>
-      ).mockResolvedValueOnce(
-        mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
-      );
+      mockChatStream(mockStreamData);
 
       const modelWithoutReasoning = new OllamaChatLanguageModel(
         'llama3.2',
@@ -1010,22 +977,7 @@ describe('OllamaChatLanguageModel', () => {
         },
       ];
 
-      const mockAsyncIterable = {
-        [Symbol.asyncIterator]: vi.fn().mockReturnValue({
-          next: vi
-            .fn()
-            .mockResolvedValueOnce({ value: mockStreamData[0], done: false })
-            .mockResolvedValueOnce({ value: mockStreamData[1], done: false })
-            .mockResolvedValueOnce({ value: mockStreamData[2], done: false })
-            .mockResolvedValueOnce({ done: true }),
-        }),
-      };
-
-      (
-        mockOllamaClient.chat as unknown as ReturnType<typeof vi.fn>
-      ).mockResolvedValueOnce(
-        mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
-      );
+      mockChatStream(mockStreamData);
 
       const options: LanguageModelV3CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
@@ -1102,20 +1054,7 @@ describe('OllamaChatLanguageModel', () => {
         },
       ];
 
-      const mockAsyncIterable = {
-        [Symbol.asyncIterator]: vi.fn().mockReturnValue({
-          next: vi
-            .fn()
-            .mockResolvedValueOnce({ value: mockStreamData[0], done: false })
-            .mockResolvedValueOnce({ done: true }),
-        }),
-      };
-
-      (
-        mockOllamaClient.chat as unknown as ReturnType<typeof vi.fn>
-      ).mockResolvedValueOnce(
-        mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
-      );
+      mockChatStream(mockStreamData);
 
       const options: LanguageModelV3CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
@@ -1171,21 +1110,7 @@ describe('OllamaChatLanguageModel', () => {
         },
       ];
 
-      const mockAsyncIterable = {
-        [Symbol.asyncIterator]: vi.fn().mockReturnValue({
-          next: vi
-            .fn()
-            .mockResolvedValueOnce({ value: mockStreamData[0], done: false })
-            .mockResolvedValueOnce({ value: mockStreamData[1], done: false })
-            .mockResolvedValueOnce({ done: true }),
-        }),
-      };
-
-      (
-        mockOllamaClient.chat as unknown as ReturnType<typeof vi.fn>
-      ).mockResolvedValueOnce(
-        mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
-      );
+      mockChatStream(mockStreamData);
 
       const options: LanguageModelV3CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
@@ -1275,22 +1200,7 @@ describe('OllamaChatLanguageModel', () => {
         },
       ];
 
-      const mockAsyncIterable = {
-        [Symbol.asyncIterator]: vi.fn().mockReturnValue({
-          next: vi
-            .fn()
-            .mockResolvedValueOnce({ value: mockStreamData[0], done: false })
-            .mockResolvedValueOnce({ value: mockStreamData[1], done: false })
-            .mockResolvedValueOnce({ value: mockStreamData[2], done: false })
-            .mockResolvedValueOnce({ done: true }),
-        }),
-      };
-
-      (
-        mockOllamaClient.chat as unknown as ReturnType<typeof vi.fn>
-      ).mockResolvedValueOnce(
-        mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
-      );
+      mockChatStream(mockStreamData);
 
       const options: LanguageModelV3CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
