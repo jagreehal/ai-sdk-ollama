@@ -848,6 +848,16 @@ describe('OllamaChatLanguageModel', () => {
         'Let me think about this step by step.',
       );
       expect(reasoningEnd).toBeDefined();
+
+      // Verify that all reasoning events use the same ID
+      // This is critical for AI SDK to properly aggregate reasoning content
+      expect(reasoningStart?.id).toBeDefined();
+      expect(reasoningDelta?.id).toBeDefined();
+      expect(reasoningEnd?.id).toBeDefined();
+      expect(reasoningStart?.id).toBe(reasoningDelta?.id);
+      expect(reasoningDelta?.id).toBe(reasoningEnd?.id);
+      expect(reasoningStart?.id).toBe(reasoningEnd?.id);
+
       // Final text may be emitted on the done chunk; accept either behavior
       // If text was emitted, it should match our final chunk content
       if (textDelta) {

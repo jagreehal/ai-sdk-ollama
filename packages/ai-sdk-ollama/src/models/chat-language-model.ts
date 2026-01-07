@@ -1419,20 +1419,21 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
             if (chunk.message.thinking && reasoningEnabled) {
               // For reasoning, we'll emit it as a single reasoning content
               // since Ollama doesn't stream reasoning in chunks
+              const reasoningId = crypto.randomUUID();
               controller.enqueue({
                 type: 'reasoning-start',
-                id: crypto.randomUUID(),
+                id: reasoningId,
               });
 
               controller.enqueue({
                 type: 'reasoning-delta',
-                id: crypto.randomUUID(),
+                id: reasoningId,
                 delta: chunk.message.thinking,
               });
 
               controller.enqueue({
                 type: 'reasoning-end',
-                id: crypto.randomUUID(),
+                id: reasoningId,
               });
             }
 
