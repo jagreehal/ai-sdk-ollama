@@ -1398,6 +1398,24 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
               });
             }
 
+            // Check for tool_calls in final chunk (some models send them here)
+            if (
+              chunk.message &&
+              chunk.message.tool_calls &&
+              chunk.message.tool_calls.length > 0
+            ) {
+              hasToolCalls = true;
+              for (const toolCall of chunk.message.tool_calls) {
+                const toolInput = toolCall.function.arguments || {};
+                controller.enqueue({
+                  type: 'tool-call',
+                  toolCallId: crypto.randomUUID(),
+                  toolName: toolCall.function.name,
+                  input: JSON.stringify(toolInput),
+                });
+              }
+            }
+
             // Final chunk with metadata
             usage = createUsage(
               chunk.prompt_eval_count ?? undefined,
