@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.1.0
+
+### Minor Changes
+
+- bb2dbf3: Updated ai-sdk to v6.0.26
+
 ## 3.0.1
 
 ### Patch Changes
