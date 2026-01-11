@@ -89,7 +89,7 @@
     "ollama": "^0.6.3"
   },
   "peerDependencies": {
-    "ai": "^6.0.26"
+    "ai": "^6.0.27"
   },
   "devDependencies": {
     "@ai-sdk/test-server": "^1.0.1",
@@ -98,7 +98,7 @@
     "@total-typescript/ts-reset": "^0.6.1",
     "@total-typescript/tsconfig": "^1.0.4",
     "@types/eslint-config-prettier": "^6.11.3",
-    "@types/node": "^25.0.3",
+    "@types/node": "^25.0.6",
     "@typescript-eslint/eslint-plugin": "^8.52.0",
     "@typescript-eslint/parser": "^8.52.0",
     "eslint-config-prettier": "^10.1.8",
