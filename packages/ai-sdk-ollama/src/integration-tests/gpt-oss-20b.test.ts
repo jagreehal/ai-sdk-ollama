@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateText, generateObject, streamText } from 'ai';
+import { generateText, Output, streamText } from 'ai';
 import { z } from 'zod';
 import { ollama } from '../index';
 
@@ -100,20 +100,20 @@ describe('GPT-OSS:20B Model Integration Tests', () => {
     });
 
     try {
-      const result = await generateObject({
+      const result = await generateText({
         model: ollama(modelName, { structuredOutputs: true }),
-        schema,
+        output: Output.object({ schema }),
         prompt:
           'Generate a fictional person profile with name, age, and occupation',
       });
 
-      expect(result.object).toBeTruthy();
-      expect(typeof result.object.name).toBe('string');
-      expect(typeof result.object.age).toBe('number');
-      expect(typeof result.object.occupation).toBe('string');
-      expect(result.object.name.length).toBeGreaterThan(0);
-      expect(result.object.age).toBeGreaterThan(0);
-      expect(result.object.occupation.length).toBeGreaterThan(0);
+      expect(result.output).toBeTruthy();
+      expect(typeof result.output.name).toBe('string');
+      expect(typeof result.output.age).toBe('number');
+      expect(typeof result.output.occupation).toBe('string');
+      expect(result.output.name.length).toBeGreaterThan(0);
+      expect(result.output.age).toBeGreaterThan(0);
+      expect(result.output.occupation.length).toBeGreaterThan(0);
     } catch (error) {
       // If structured outputs aren't supported, we'll get an error
       // This is expected for some models
