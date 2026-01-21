@@ -54,7 +54,7 @@ describe('OllamaChatLanguageModel HTTP-level tests', () => {
       expect(result.content).toEqual([
         { type: 'text', text: 'Hello from HTTP test!' },
       ]);
-      expect(result.finishReason).toBe('stop');
+      expect(result.finishReason).toEqual({ unified: 'stop', raw: 'stop' });
 
       // Verify the HTTP request was correct
       const requestBody = await server.calls[0]!.requestBodyJson;

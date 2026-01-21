@@ -62,6 +62,11 @@ This directory contains comprehensive examples demonstrating the enhanced Ollama
     - Basic reasoning example
     - Run: `npx tsx src/reasoning-example-simple.ts`
 
+14. **`quoted-json-example.ts`** - Quoted JSON Fix Example
+    - Demonstrates the fix for JSON wrapped in quotes or markdown
+    - Shows how string values are preserved during JSON repair
+    - Run: `npx tsx src/quoted-json-example.ts`
+
 ## Key Features Demonstrated
 
 ### Enhanced Ollama Provider Features
@@ -74,9 +79,9 @@ This directory contains comprehensive examples demonstrating the enhanced Ollama
 ### Standard AI SDK Functions
 All examples use the standard AI SDK functions with the enhanced Ollama provider:
 - `generateText` - Text generation with tools
-- `generateObject` - Structured object generation
+- `generateText` with `Output.object()` - Structured object generation
 - `streamText` - Real-time text streaming
-- `streamObject` - Real-time object streaming
+- `streamText` with `Output.object()` - Real-time object streaming
 - `embed` - Text embeddings
 
 ## Usage Patterns
@@ -107,17 +112,17 @@ const result = await generateText({
 ### For Object Generation
 ```typescript
 import { ollama } from 'ai-sdk-ollama';
-import { generateObject } from 'ai';
+import { generateText, Output } from 'ai';
 import { z } from 'zod';
 
 const schema = z.object({
   // your schema
 });
 
-const result = await generateObject({
+const result = await generateText({
   model: ollama('llama3.2'),
   prompt: 'Your prompt here',
-  schema,
+  output: Output.object({ schema }),
 });
 ```
 

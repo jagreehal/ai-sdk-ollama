@@ -3,54 +3,95 @@ import { mapOllamaFinishReason } from './map-ollama-finish-reason';
 
 describe('mapOllamaFinishReason', () => {
   describe('valid reasons', () => {
-    it('should map "stop" to "stop"', () => {
-      expect(mapOllamaFinishReason('stop')).toBe('stop');
+    it('should map "stop" to V3 format with unified "stop"', () => {
+      const result = mapOllamaFinishReason('stop');
+      expect(result).toEqual({ unified: 'stop', raw: 'stop' });
     });
 
-    it('should map "length" to "length"', () => {
-      expect(mapOllamaFinishReason('length')).toBe('length');
+    it('should map "length" to V3 format with unified "length"', () => {
+      const result = mapOllamaFinishReason('length');
+      expect(result).toEqual({ unified: 'length', raw: 'length' });
     });
   });
 
   describe('invalid/unknown reasons', () => {
-    it('should map unknown string to "unknown"', () => {
-      expect(mapOllamaFinishReason('unknown_reason')).toBe('unknown');
-      expect(mapOllamaFinishReason('error')).toBe('unknown');
-      expect(mapOllamaFinishReason('timeout')).toBe('unknown');
-      expect(mapOllamaFinishReason('cancelled')).toBe('unknown');
+    it('should map unknown string to V3 format with unified "other"', () => {
+      expect(mapOllamaFinishReason('unknown_reason')).toEqual({
+        unified: 'other',
+        raw: 'unknown_reason',
+      });
+      expect(mapOllamaFinishReason('error')).toEqual({
+        unified: 'other',
+        raw: 'error',
+      });
+      expect(mapOllamaFinishReason('timeout')).toEqual({
+        unified: 'other',
+        raw: 'timeout',
+      });
+      expect(mapOllamaFinishReason('cancelled')).toEqual({
+        unified: 'other',
+        raw: 'cancelled',
+      });
     });
 
-    it('should handle null as "unknown"', () => {
-      expect(mapOllamaFinishReason(null)).toBe('unknown');
+    it('should handle null as unified "stop" (normal completion)', () => {
+      const result = mapOllamaFinishReason(null);
+      expect(result).toEqual({ unified: 'stop', raw: undefined });
     });
 
-    it('should handle undefined as "unknown"', () => {
-      expect(mapOllamaFinishReason()).toBe('unknown');
+    it('should handle undefined as unified "stop" (normal completion)', () => {
+      const result = mapOllamaFinishReason();
+      expect(result).toEqual({ unified: 'stop', raw: undefined });
     });
 
-    it('should handle empty string as "unknown"', () => {
-      expect(mapOllamaFinishReason('')).toBe('unknown');
+    it('should handle empty string as unified "stop" (normal completion)', () => {
+      const result = mapOllamaFinishReason('');
+      expect(result).toEqual({ unified: 'stop', raw: undefined });
     });
   });
 
   describe('case sensitivity', () => {
     it('should be case sensitive for valid reasons', () => {
-      expect(mapOllamaFinishReason('STOP')).toBe('unknown');
-      expect(mapOllamaFinishReason('Stop')).toBe('unknown');
-      expect(mapOllamaFinishReason('LENGTH')).toBe('unknown');
-      expect(mapOllamaFinishReason('Length')).toBe('unknown');
+      expect(mapOllamaFinishReason('STOP')).toEqual({
+        unified: 'other',
+        raw: 'STOP',
+      });
+      expect(mapOllamaFinishReason('Stop')).toEqual({
+        unified: 'other',
+        raw: 'Stop',
+      });
+      expect(mapOllamaFinishReason('LENGTH')).toEqual({
+        unified: 'other',
+        raw: 'LENGTH',
+      });
+      expect(mapOllamaFinishReason('Length')).toEqual({
+        unified: 'other',
+        raw: 'Length',
+      });
     });
   });
 
   describe('edge cases', () => {
-    it('should handle whitespace', () => {
-      expect(mapOllamaFinishReason(' stop ')).toBe('unknown');
-      expect(mapOllamaFinishReason('\tstop\n')).toBe('unknown');
+    it('should handle whitespace as unknown', () => {
+      expect(mapOllamaFinishReason(' stop ')).toEqual({
+        unified: 'other',
+        raw: ' stop ',
+      });
+      expect(mapOllamaFinishReason('\tstop\n')).toEqual({
+        unified: 'other',
+        raw: '\tstop\n',
+      });
     });
 
-    it('should handle special characters', () => {
-      expect(mapOllamaFinishReason('stop!')).toBe('unknown');
-      expect(mapOllamaFinishReason('stop-reason')).toBe('unknown');
+    it('should handle special characters as unknown', () => {
+      expect(mapOllamaFinishReason('stop!')).toEqual({
+        unified: 'other',
+        raw: 'stop!',
+      });
+      expect(mapOllamaFinishReason('stop-reason')).toEqual({
+        unified: 'other',
+        raw: 'stop-reason',
+      });
     });
   });
 });

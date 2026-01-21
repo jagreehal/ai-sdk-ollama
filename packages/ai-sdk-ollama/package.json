@@ -89,7 +89,7 @@
     "ollama": "^0.6.3"
   },
   "peerDependencies": {
-    "ai": "^6.0.27"
+    "ai": "^6.0.44"
   },
   "devDependencies": {
     "@ai-sdk/test-server": "^1.0.1",
@@ -103,13 +103,13 @@
     "@typescript-eslint/parser": "^8.53.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-unicorn": "^62.0.0",
-    "prettier": "^3.8.0",
+    "prettier": "^3.8.1",
     "rimraf": "^6.1.2",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.53.1",
     "vite-tsconfig-paths": "^6.0.4",
-    "vitest": "^4.0.16",
+    "vitest": "^4.0.17",
     "zod": "^4.3.5"
   },
   "engines": {

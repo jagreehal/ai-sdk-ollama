@@ -302,7 +302,7 @@ ollama serve
 
 The integration tests comprehensively cover:
 
-- ✅ All AI SDK core functions (`generateText`, `streamText`, `generateObject`, `streamObject`)
+- ✅ All AI SDK core functions (`generateText`, `streamText`, `generateText` with `Output.object()`, `streamText` with `Output.object()`)
 - ✅ Embedding functions (`embed`, `embedMany`, `cosineSimilarity`)
 - ✅ Advanced features (tool calling, multi-step, JSON schema, multimodal)
 - ✅ Ollama-specific parameters and configurations

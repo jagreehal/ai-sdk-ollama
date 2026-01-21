@@ -233,7 +233,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
 
   get supportsStructuredOutputs(): boolean {
     // Auto-detect structured outputs when JSON schema is provided
-    // This allows generateObject and streamObject to work without explicit structuredOutputs: true
+    // This allows generateText with Output.object() and streamText with Output.object() to work without explicit structuredOutputs: true
     return this.settings.structuredOutputs ?? false;
   }
 
@@ -254,7 +254,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       if (this.settings.structuredOutputs === false) {
         console.warn(
           'Ollama: structuredOutputs was set to false but auto-enabled for object generation. ' +
-            'This ensures generateObject and streamObject work correctly.',
+            'This ensures generateText with Output.object() and streamText with Output.object() work correctly.',
         );
       }
       return true;

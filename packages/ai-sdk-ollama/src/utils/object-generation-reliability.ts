@@ -11,6 +11,7 @@
  */
 
 import type { JSONSchema7 } from '@ai-sdk/provider';
+import { safeParseJSON } from '@ai-sdk/provider-utils';
 
 /**
  * A function that attempts to repair the raw output of the model
@@ -408,6 +409,368 @@ export function fixTypeMismatches(
 }
 
 /**
+ * Remove block comments (slash-star ... star-slash) but only when outside strings
+ */
+function removeBlockCommentsOutsideStrings(text: string): string {
+  let result = '';
+  let i = 0;
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let escaped = false;
+
+  while (i < text.length) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+
+    if (escaped) {
+      result += char;
+      escaped = false;
+      i++;
+      continue;
+    }
+
+    if (char === '\\') {
+      result += char;
+      escaped = true;
+      i++;
+      continue;
+    }
+
+    // Track quote state
+    if (char === "'" && !inDoubleQuote) {
+      inSingleQuote = !inSingleQuote;
+      result += char;
+      i++;
+      continue;
+    } else if (char === '"' && !inSingleQuote) {
+      inDoubleQuote = !inDoubleQuote;
+      result += char;
+      i++;
+      continue;
+    }
+
+    // Check for block comment start /* when NOT inside a string
+    if (char === '/' && nextChar === '*' && !inSingleQuote && !inDoubleQuote) {
+      // Skip until we find */
+      i += 2; // Skip /*
+      while (i < text.length - 1) {
+        if (text[i] === '*' && text[i + 1] === '/') {
+          i += 2; // Skip */
+          break;
+        }
+        i++;
+      }
+      continue;
+    }
+
+    result += char;
+    i++;
+  }
+
+  return result;
+}
+
+/**
+ * Replace Python constants (None, True, False) but only when outside strings
+ */
+function replacePythonConstantsOutsideStrings(text: string): string {
+  let result = '';
+  let i = 0;
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let escaped = false;
+
+  while (i < text.length) {
+    const char = text[i];
+
+    if (escaped) {
+      result += char;
+      escaped = false;
+      i++;
+      continue;
+    }
+
+    if (char === '\\') {
+      result += char;
+      escaped = true;
+      i++;
+      continue;
+    }
+
+    // Track quote state
+    if (char === "'" && !inDoubleQuote) {
+      inSingleQuote = !inSingleQuote;
+      result += char;
+      i++;
+      continue;
+    } else if (char === '"' && !inSingleQuote) {
+      inDoubleQuote = !inDoubleQuote;
+      result += char;
+      i++;
+      continue;
+    }
+
+    // Only process replacements when NOT inside a string
+    if (!inSingleQuote && !inDoubleQuote) {
+      // Check for Python constants with word boundaries
+      const remaining = text.slice(i);
+      const noneRegex = /^\bNone\b/;
+      const trueRegex = /^\bTrue\b/;
+      const falseRegex = /^\bFalse\b/;
+
+      if (noneRegex.test(remaining)) {
+        result += 'null';
+        i += 4; // Skip "None"
+        continue;
+      } else if (trueRegex.test(remaining)) {
+        result += 'true';
+        i += 4; // Skip "True"
+        continue;
+      } else if (falseRegex.test(remaining)) {
+        result += 'false';
+        i += 5; // Skip "False"
+        continue;
+      }
+    }
+
+    result += char;
+    i++;
+  }
+
+  return result;
+}
+
+/**
+ * Replace smart quotes with regular quotes, but only when outside strings.
+ * This prevents corruption of string values that intentionally contain smart quotes.
+ *
+ * Smart quotes replaced:
+ * - Single: \u2018 ('), \u2019 ('), \u0060 (`), \u00B4 (´) → '
+ * - Double: \u201C ("), \u201D (") → "
+ */
+function replaceSmartQuotesOutsideStrings(text: string): string {
+  let result = '';
+  let i = 0;
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let inSmartDoubleQuote = false; // Track smart double quotes (\u201C and \u201D)
+  let escaped = false;
+
+  while (i < text.length) {
+    const char = text[i];
+
+    if (escaped) {
+      result += char;
+      escaped = false;
+      i++;
+      continue;
+    }
+
+    if (char === '\\') {
+      result += char;
+      escaped = true;
+      i++;
+      continue;
+    }
+
+    // Track quote state - including smart quotes as delimiters
+    if (char === "'" && !inDoubleQuote && !inSmartDoubleQuote) {
+      inSingleQuote = !inSingleQuote;
+      result += char;
+      i++;
+      continue;
+    } else if (char === '"' && !inSingleQuote && !inSmartDoubleQuote) {
+      inDoubleQuote = !inDoubleQuote;
+      result += char;
+      i++;
+      continue;
+    } else if (
+      char === '\u201C' &&
+      !inSingleQuote &&
+      !inDoubleQuote &&
+      !inSmartDoubleQuote
+    ) {
+      // Opening smart double quote (\u201C) - start of smart-quoted string
+      inSmartDoubleQuote = true;
+      result += '"'; // Convert to regular quote
+      i++;
+      continue;
+    } else if (char === '\u201D' && inSmartDoubleQuote) {
+      // Check if this is the closing quote by looking ahead
+      // If we're inside a smart-quoted string and see \u201D, we need to determine
+      // if it's closing the current string or if it's an inner quote.
+      // We'll use a heuristic: if we're at end-of-text OR the next non-whitespace
+      // character is a structural character that cannot be inside a string value.
+      let isClosing = false;
+      let j = i + 1;
+
+      // Skip whitespace
+      while (j < text.length) {
+        const nextChar = text[j];
+        if (nextChar === ' ' || nextChar === '\t' || nextChar === '\n') {
+          j++;
+          continue;
+        }
+
+        // Check for } or ] - these are structural characters that cannot be inside strings
+        if (nextChar === '}' || nextChar === ']') {
+          isClosing = true;
+          break;
+        }
+
+        // Check for , - this can be inside strings OR a field separator
+        // If , is followed by whitespace and then a new key (starts with " or smart quote), it's likely closing a value
+        if (nextChar === ',') {
+          let k = j + 1;
+          // Skip whitespace after comma
+          while (k < text.length) {
+            const afterComma = text[k];
+            if (!afterComma) {
+              break;
+            }
+            if (
+              afterComma === ' ' ||
+              afterComma === '\t' ||
+              afterComma === '\n'
+            ) {
+              k++;
+              continue;
+            }
+            // If comma is followed by a key-starting character, it's likely a field separator
+            // Key-starting chars: quote, smart quote, unquoted key (letter, underscore, dollar), or numeric key (digit followed by colon)
+            if (
+              afterComma === '"' ||
+              afterComma === '\u201C' ||
+              (afterComma >= 'a' && afterComma <= 'z') ||
+              (afterComma >= 'A' && afterComma <= 'Z') ||
+              afterComma === '_' ||
+              afterComma === '$'
+            ) {
+              isClosing = true;
+              break; // Found key-starting character, exit comma check loop
+            } else if (afterComma >= '0' && afterComma <= '9') {
+              // Check if digit is followed by colon (numeric key like "2: value")
+              let m = k + 1;
+              while (m < text.length) {
+                const afterDigit = text[m];
+                if (
+                  afterDigit === ' ' ||
+                  afterDigit === '\t' ||
+                  afterDigit === '\n'
+                ) {
+                  m++;
+                  continue;
+                }
+                if (afterDigit === ':') {
+                  isClosing = true;
+                  break; // Found colon, exit early
+                }
+                // Not a colon, so not a numeric key
+                break;
+              }
+              // If we found a numeric key, break out of comma check loop
+              if (isClosing) {
+                break;
+              }
+            }
+            // Otherwise, comma is likely part of string content
+            break;
+          }
+          // If we determined the comma is a field separator, break out of outer loop
+          if (isClosing) {
+            break;
+          }
+        }
+
+        // Check for : - this is tricky because it can be inside strings OR a key-value separator
+        // If : is followed by whitespace and then a value-starting character, it's likely closing a key
+        if (nextChar === ':') {
+          let k = j + 1;
+          // Skip whitespace after colon
+          while (k < text.length) {
+            const afterColon = text[k];
+            if (!afterColon) {
+              break;
+            }
+            if (
+              afterColon === ' ' ||
+              afterColon === '\t' ||
+              afterColon === '\n'
+            ) {
+              k++;
+              continue;
+            }
+            // If colon is followed by a value-starting character, it's likely a key-value separator
+            // Value-starting chars: ", {, [, digit, -, t/T (true/True), f/F (false/False), n/N (null/None), smart quotes
+            if (
+              afterColon === '"' ||
+              afterColon === '\u201C' || // Opening smart quote
+              afterColon === '{' ||
+              afterColon === '[' ||
+              (afterColon >= '0' && afterColon <= '9') ||
+              afterColon === '-' ||
+              afterColon === 't' ||
+              afterColon === 'T' ||
+              afterColon === 'f' ||
+              afterColon === 'F' ||
+              afterColon === 'n' ||
+              afterColon === 'N'
+            ) {
+              isClosing = true;
+            }
+            // Otherwise, colon is likely part of string content
+            break;
+          }
+        }
+
+        break;
+      }
+
+      // If we reached end-of-text (no more characters), it's closing
+      if (j >= text.length) {
+        isClosing = true;
+      }
+
+      if (isClosing) {
+        // Closing smart double quote (\u201D) - end of smart-quoted string
+        inSmartDoubleQuote = false;
+        result += '"'; // Convert to regular quote
+        i++;
+        continue;
+      }
+      // Otherwise, it's an inner smart quote - preserve it
+    }
+
+    // Only replace smart quotes when NOT inside any string
+    if (!inSingleQuote && !inDoubleQuote && !inSmartDoubleQuote) {
+      // Replace smart single quotes
+      if (
+        char === '\u2018' ||
+        char === '\u2019' ||
+        char === '\u0060' ||
+        char === '\u00B4'
+      ) {
+        result += "'";
+        i++;
+        continue;
+      }
+      // Replace smart double quotes when not used as delimiters
+      if (char === '\u201C' || char === '\u201D') {
+        result += '"';
+        i++;
+        continue;
+      }
+    }
+
+    // Inside strings (including smart-quoted strings), preserve all characters
+    result += char;
+    i++;
+  }
+
+  return result;
+}
+
+/**
  * Handles common JSON issues from LLM outputs
  */
 export async function enhancedRepairText(options: {
@@ -419,6 +782,47 @@ export async function enhancedRepairText(options: {
   let repaired = text.trim();
 
   try {
+    // 0. Handle JSON wrapped in quotes (e.g., "{\"key\": \"value\"}")
+    // Check if the entire text is a quoted JSON string
+    if (
+      (repaired.startsWith('"') && repaired.endsWith('"')) ||
+      (repaired.startsWith("'") && repaired.endsWith("'"))
+    ) {
+      try {
+        // Try to parse as a JSON string and extract the inner content
+        const parsed = JSON.parse(repaired);
+        if (typeof parsed === 'string') {
+          const innerTrimmed = parsed.trim();
+          // If the inner content looks like JSON, use it
+          if (
+            (innerTrimmed.startsWith('{') && innerTrimmed.endsWith('}')) ||
+            (innerTrimmed.startsWith('[') && innerTrimmed.endsWith(']'))
+          ) {
+            repaired = innerTrimmed;
+          }
+        }
+      } catch {
+        // If parsing fails, try to manually unwrap quotes
+        if (
+          (repaired.startsWith('"') && repaired.endsWith('"')) ||
+          (repaired.startsWith("'") && repaired.endsWith("'"))
+        ) {
+          const unwrapped = repaired.slice(1, -1);
+          // Unescape escaped quotes
+          const unescaped = unwrapped
+            .replaceAll(String.raw`\"`, '"')
+            .replaceAll(String.raw`\'`, "'");
+          if (
+            (unescaped.trim().startsWith('{') &&
+              unescaped.trim().endsWith('}')) ||
+            (unescaped.trim().startsWith('[') && unescaped.trim().endsWith(']'))
+          ) {
+            repaired = unescaped.trim();
+          }
+        }
+      }
+    }
+
     // 1. Extract JSON from markdown code blocks
     const codeBlockMatch = repaired.match(
       /```(?:json|javascript|js)?\s*(\{[\s\S]*?\}|\[[\s\S]*?\])\s*```/i,
@@ -430,9 +834,13 @@ export async function enhancedRepairText(options: {
     // 2. Remove JSONP notation like callback({...})
     repaired = repaired.replace(/^\w+\s*\((.*)\)\s*;?$/s, '$1');
 
-    // 3. Remove comments (// and /* */) but preserve them inside strings
-    // First remove block comments /* ... */ (these are safer to remove globally)
-    repaired = repaired.replaceAll(/\/\*[\s\S]*?\*\//g, '');
+    // 3. Replace smart quotes with regular quotes FIRST (only outside strings to preserve content)
+    // This must happen before comment removal and Python constant replacement so that string detection works correctly
+    repaired = replaceSmartQuotesOutsideStrings(repaired);
+
+    // 4. Remove comments (// and /* */) but preserve them inside strings
+    // Remove block comments /* ... */ but only when outside strings
+    repaired = removeBlockCommentsOutsideStrings(repaired);
 
     // For line comments, we need to be more careful to not remove // inside strings
     // Split by lines and process each line
@@ -489,16 +897,8 @@ export async function enhancedRepairText(options: {
       })
       .join('\n');
 
-    // 4. Replace Python constants
-    repaired = repaired.replaceAll(/\bNone\b/g, 'null');
-    repaired = repaired.replaceAll(/\bTrue\b/g, 'true');
-    repaired = repaired.replaceAll(/\bFalse\b/g, 'false');
-
-    // 5. Replace smart quotes with regular quotes
-    // Replace various forms of single quotes
-    repaired = repaired.replaceAll(/[\u2018\u2019\u0060\u00B4]/g, "'");
-    // Replace curly double quotes with regular double quotes
-    repaired = repaired.replaceAll(/[\u201C\u201D]/g, '"');
+    // 5. Replace Python constants (only outside strings to avoid corrupting string values)
+    repaired = replacePythonConstantsOutsideStrings(repaired);
 
     // 6. Fix single quotes to double quotes (for keys and string values)
     // Walk through and convert single-quoted strings to double-quoted
@@ -581,7 +981,7 @@ export async function enhancedRepairText(options: {
 
     // 7. Fix unquoted keys
     repaired = repaired.replaceAll(
-      /([{,]\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:/g,
+      /([{,]\s*)([a-zA-Z_$][a-zA-Z0-9_$]*|\d+)\s*:/g,
       '$1"$2":',
     );
 
@@ -629,7 +1029,7 @@ export async function enhancedRepairText(options: {
         extracted = extracted.replaceAll(/,(\s*[}\]])/g, '$1');
         extracted = extracted.replaceAll("'", '"');
         extracted = extracted.replaceAll(
-          /([{,]\s*)([a-zA-Z_$]\w*)\s*:/g,
+          /([{,]\s*)([a-zA-Z_$][a-zA-Z0-9_$]*|\d+)\s*:/g,
           '$1"$2":',
         );
 
@@ -757,31 +1157,82 @@ export async function parseJSONWithRepair(
   error?: Error;
   repaired?: boolean;
 }> {
-  // First try normal parsing
-  try {
-    const parsed = JSON.parse(text);
-    return { success: true, data: parsed };
-  } catch (originalError) {
-    // If repair function is provided, try to repair
-    if (repairFunction) {
-      try {
-        const repairedText = await repairFunction({
-          text,
-          error: originalError as Error,
-          schema,
-        });
+  // First try parsing with safeParseJSON (from AI SDK provider-utils)
+  const parseResult = await safeParseJSON({ text });
 
-        if (repairedText !== null) {
-          const repairedData = JSON.parse(repairedText);
-          return { success: true, data: repairedData, repaired: true };
+  if (parseResult.success) {
+    // Check if the parsed result is a string that looks like JSON
+    // This handles cases where the model returns JSON wrapped in quotes: "{\"key\": \"value\"}"
+    if (typeof parseResult.value === 'string') {
+      const trimmed = parseResult.value.trim();
+      // Check if it looks like JSON (starts with { or [)
+      if (
+        (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+        (trimmed.startsWith('[') && trimmed.endsWith(']'))
+      ) {
+        const reparsedResult = await safeParseJSON({ text: trimmed });
+        if (reparsedResult.success) {
+          return {
+            success: true,
+            data: reparsedResult.value,
+            repaired: true,
+          };
         }
-      } catch (repairError) {
-        return { success: false, error: repairError as Error };
       }
     }
 
-    return { success: false, error: originalError as Error };
+    return { success: true, data: parseResult.value };
   }
+
+  // If parsing failed and repair function is provided, try to repair
+  if (repairFunction) {
+    try {
+      const repairedText = await repairFunction({
+        text,
+        error: parseResult.error,
+        schema,
+      });
+
+      if (repairedText !== null) {
+        const repairedResult = await safeParseJSON({ text: repairedText });
+
+        if (repairedResult.success) {
+          // Also check if the repaired data is a string that needs re-parsing
+          if (typeof repairedResult.value === 'string') {
+            const trimmed = repairedResult.value.trim();
+            if (
+              (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+              (trimmed.startsWith('[') && trimmed.endsWith(']'))
+            ) {
+              const reparsedResult = await safeParseJSON({ text: trimmed });
+              if (reparsedResult.success) {
+                return {
+                  success: true,
+                  data: reparsedResult.value,
+                  repaired: true,
+                };
+              }
+            }
+          }
+
+          return {
+            success: true,
+            data: repairedResult.value,
+            repaired: true,
+          };
+        }
+
+        return {
+          success: false,
+          error: repairedResult.error,
+        };
+      }
+    } catch (repairError) {
+      return { success: false, error: repairError as Error };
+    }
+  }
+
+  return { success: false, error: parseResult.error };
 }
 
 /**
@@ -828,11 +1279,81 @@ export async function attemptSchemaRecovery(
       }
       throw new Error('Zod validation failed');
     } else {
-      // Basic validation for JSONSchema7 - check if the object has required structure
-      if (typeof parsedObject === 'object' && parsedObject !== null) {
-        return { success: true, object: parsedObject, repaired: wasRepaired };
+      // Basic validation for JSONSchema7
+      // Handle both object and non-object schemas (string, number, array, etc.)
+      const jsonSchema = schema as JSONSchema7;
+
+      // If schema specifies a type, validate against it
+      if (jsonSchema.type) {
+        const expectedType = jsonSchema.type;
+        const actualType = Array.isArray(parsedObject)
+          ? 'array'
+          : parsedObject === null
+            ? 'null'
+            : typeof parsedObject;
+
+        // Handle union types (type is an array of allowed types)
+        if (Array.isArray(expectedType)) {
+          // Check if actual type matches any of the allowed types
+          const typeMatches = expectedType.some((allowedType) => {
+            if (allowedType === 'array') {
+              return Array.isArray(parsedObject);
+            }
+            if (allowedType === 'object') {
+              return (
+                typeof parsedObject === 'object' &&
+                parsedObject !== null &&
+                !Array.isArray(parsedObject)
+              );
+            }
+            if (allowedType === 'null') {
+              return parsedObject === null;
+            }
+            return actualType === allowedType;
+          });
+
+          if (!typeMatches) {
+            throw new Error(
+              `Expected one of [${expectedType.join(', ')}], got ${actualType}`,
+            );
+          }
+        } else {
+          // Single type validation
+          // For array type, check if it's an array
+          if (expectedType === 'array' && !Array.isArray(parsedObject)) {
+            throw new Error('Expected array type');
+          }
+
+          // For object type, check if it's an object (but not null or array)
+          if (
+            expectedType === 'object' &&
+            (typeof parsedObject !== 'object' ||
+              parsedObject === null ||
+              Array.isArray(parsedObject))
+          ) {
+            throw new Error('Expected object type');
+          }
+
+          // For null type
+          if (expectedType === 'null' && parsedObject !== null) {
+            throw new Error('Expected null type');
+          }
+
+          // For primitive types, validate the type matches
+          if (
+            typeof expectedType === 'string' &&
+            expectedType !== 'object' &&
+            expectedType !== 'array' &&
+            expectedType !== 'null' &&
+            actualType !== expectedType
+          ) {
+            throw new Error(`Expected ${expectedType} type, got ${actualType}`);
+          }
+        }
       }
-      throw new Error('Invalid object structure');
+
+      // If no type specified or type check passed, return the parsed object
+      return { success: true, object: parsedObject, repaired: wasRepaired };
     }
   } catch (error) {
     if (!options.attemptRecovery) {

@@ -167,7 +167,7 @@ npx tsx examples/node/src/web-search-ai-sdk-ollama.ts error    # Run error handl
 
 ```typescript
 import { ollama } from 'ai-sdk-ollama';
-import { generateText, streamText, generateObject, streamObject, embed, tool } from 'ai';
+import { generateText, streamText, Output, embed, tool } from 'ai';
 import { z } from 'zod';
 
 // Text generation - works exactly like OpenAI, Anthropic, etc.
@@ -184,22 +184,26 @@ const { textStream } = await streamText({
 });
 
 // Structured object generation
-const { object } = await generateObject({
+const { output } = await generateText({
   model: ollama('llama3.2'),
-  schema: z.object({
-    name: z.string(),
-    age: z.number(),
-    interests: z.array(z.string()),
+  output: Output.object({
+    schema: z.object({
+      name: z.string(),
+      age: z.number(),
+      interests: z.array(z.string()),
+    }),
   }),
   prompt: 'Generate a random person profile',
 });
 
 // Streaming structured objects
-const { objectStream } = await streamObject({
+const { partialOutputStream } = await streamText({
   model: ollama('llama3.2'),
-  schema: z.object({
-    step: z.string(),
-    result: z.string(),
+  output: Output.object({
+    schema: z.object({
+      step: z.string(),
+      result: z.string(),
+    }),
   }),
   prompt: 'Break down the process of making coffee',
 });
@@ -271,16 +275,18 @@ const { text } = await generateText({
 ### Structured Object Generation
 
 ```typescript
-import { generateObject } from 'ai';
+import { generateText, Output } from 'ai';
 import { z } from 'zod';
 
 // Auto-detection: structured outputs enabled automatically
-const { object } = await generateObject({
+const { output } = await generateText({
   model: ollama('llama3.2'),
-  schema: z.object({
-    name: z.string(),
-    age: z.number(),
-    interests: z.array(z.string()),
+  output: Output.object({
+    schema: z.object({
+      name: z.string(),
+      age: z.number(),
+      interests: z.array(z.string()),
+    }),
   }),
   prompt: 'Generate a random person profile',
 });
