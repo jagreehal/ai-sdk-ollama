@@ -754,29 +754,33 @@ const { text } = await generateText({
 ### Structured Output
 
 ```typescript
-import { generateObject } from 'ai';
+import { generateText, Output } from 'ai';
 import { z } from 'zod';
 
 // Auto-detection: structuredOutputs is automatically enabled for object generation
-const { object } = await generateObject({
+const { output } = await generateText({
   model: ollama('llama3.2'), // No need to set structuredOutputs: true
-  schema: z.object({
-    name: z.string(),
-    age: z.number(),
-    interests: z.array(z.string()),
+  output: Output.object({
+    schema: z.object({
+      name: z.string(),
+      age: z.number(),
+      interests: z.array(z.string()),
+    }),
   }),
   prompt: 'Generate a random person profile',
 });
 
-console.log(object);
+console.log(output);
 // { name: "Alice", age: 28, interests: ["reading", "hiking"] }
 
 // Explicit setting still works
-const { object: explicitObject } = await generateObject({
+const { output: explicitOutput } = await generateText({
   model: ollama('llama3.2', { structuredOutputs: true }), // Explicit
-  schema: z.object({
-    name: z.string(),
-    age: z.number(),
+  output: Output.object({
+    schema: z.object({
+      name: z.string(),
+      age: z.number(),
+    }),
   }),
   prompt: 'Generate a person',
 });
@@ -786,20 +790,22 @@ const { object: explicitObject } = await generateObject({
 
 The provider automatically detects when structured outputs are needed:
 
-- **Object Generation**: `generateObject` and `streamObject` automatically enable `structuredOutputs: true`
+- **Object Generation**: `generateText` with `Output.object()` and `streamText` with `Output.object()` automatically enable `structuredOutputs: true`
 - **Text Generation**: `generateText` and `streamText` require explicit `structuredOutputs: true` for JSON output
 - **Backward Compatibility**: Explicit settings are respected, with warnings when overridden
 - **No Breaking Changes**: Existing code continues to work as expected
 
 ```typescript
 import { ollama } from 'ai-sdk-ollama';
-import { generateObject, generateText } from 'ai';
+import { generateText, Output } from 'ai';
 import { z } from 'zod';
 
 // This works without explicit structuredOutputs: true
-const { object } = await generateObject({
+const { output } = await generateText({
   model: ollama('llama3.2'),
-  schema: z.object({ name: z.string() }),
+  output: Output.object({
+    schema: z.object({ name: z.string() }),
+  }),
   prompt: 'Generate a name',
 });
 
@@ -818,16 +824,18 @@ The provider includes automatic JSON repair that handles 14+ types of common JSO
 
 ````typescript
 import { ollama } from 'ai-sdk-ollama';
-import { generateObject } from 'ai';
+import { generateText, Output } from 'ai';
 import { z } from 'zod';
 
 // JSON repair is enabled by default for all object generation
-const { object } = await generateObject({
+const { output } = await generateText({
   model: ollama('llama3.2'),
-  schema: z.object({
-    name: z.string(),
-    email: z.string().email(),
-    age: z.number(),
+  output: Output.object({
+    schema: z.object({
+      name: z.string(),
+      email: z.string().email(),
+      age: z.number(),
+    }),
   }),
   prompt: 'Generate a person profile',
   // reliableObjectGeneration: true is the default
@@ -852,16 +860,18 @@ const { object } = await generateObject({
 
 ```typescript
 // Disable all reliability features (not recommended)
-const { object } = await generateObject({
+const { output } = await generateText({
   model: ollama('llama3.2', {
     reliableObjectGeneration: false, // Everything off
   }),
-  schema: z.object({ message: z.string() }),
+  output: Output.object({
+    schema: z.object({ message: z.string() }),
+  }),
   prompt: 'Generate a message',
 });
 
 // Fine-grained control: disable only repair, keep retries
-const { object: withRetries } = await generateObject({
+const { output: withRetries } = await generateText({
   model: ollama('llama3.2', {
     reliableObjectGeneration: true,
     objectGenerationOptions: {
@@ -869,12 +879,14 @@ const { object: withRetries } = await generateObject({
       maxRetries: 3, // But keep retries
     },
   }),
-  schema: z.object({ message: z.string() }),
+  output: Output.object({
+    schema: z.object({ message: z.string() }),
+  }),
   prompt: 'Generate a message',
 });
 
 // Custom repair function (advanced)
-const { object: custom } = await generateObject({
+const { output: custom } = await generateText({
   model: ollama('llama3.2', {
     objectGenerationOptions: {
       repairText: async ({ text, error }) => {
@@ -883,7 +895,9 @@ const { object: custom } = await generateObject({
       },
     },
   }),
-  schema: z.object({ message: z.string() }),
+  output: Output.object({
+    schema: z.object({ message: z.string() }),
+  }),
   prompt: 'Generate a message',
 });
 ```

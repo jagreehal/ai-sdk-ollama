@@ -108,7 +108,7 @@ describe('OllamaChatLanguageModel', () => {
       const result = await model.doGenerate(options);
 
       expect(result.content).toEqual([{ type: 'text', text: 'Hello, world!' }]);
-      expect(result.finishReason).toBe('stop');
+      expect(result.finishReason).toEqual({ unified: 'stop', raw: 'stop' });
       // V3 uses structured usage format
       expect(result.usage).toEqual(createExpectedUsage(5, 10));
 
@@ -411,7 +411,7 @@ describe('OllamaChatLanguageModel', () => {
 
       const result = await model.doGenerate(options);
 
-      expect(result.finishReason).toBe('length');
+      expect(result.finishReason).toEqual({ unified: 'length', raw: 'length' });
     });
   });
 
@@ -504,7 +504,7 @@ describe('OllamaChatLanguageModel', () => {
       });
       expect(chunks[6]).toEqual({
         type: 'finish',
-        finishReason: 'stop',
+        finishReason: { unified: 'stop', raw: 'stop' },
         usage: createExpectedUsage(8, 15),
       });
 
@@ -719,7 +719,7 @@ describe('OllamaChatLanguageModel', () => {
         },
         { type: 'text', text: 'The answer is 42.' },
       ]);
-      expect(result.finishReason).toBe('stop');
+      expect(result.finishReason).toEqual({ unified: 'stop', raw: 'stop' });
       expect(result.usage).toEqual(createExpectedUsage(8, 15));
     });
 
@@ -764,7 +764,7 @@ describe('OllamaChatLanguageModel', () => {
       expect(result.content).toEqual([
         { type: 'text', text: 'The answer is 42.' },
       ]);
-      expect(result.finishReason).toBe('stop');
+      expect(result.finishReason).toEqual({ unified: 'stop', raw: 'stop' });
     });
   });
 
@@ -868,7 +868,7 @@ describe('OllamaChatLanguageModel', () => {
         });
       }
       expect(finish).toBeDefined();
-      expect(finish?.finishReason).toBe('stop');
+      expect(finish?.finishReason).toEqual({ unified: 'stop', raw: 'stop' });
     });
 
     it('should not emit reasoning stream parts when think is disabled', async () => {
@@ -939,7 +939,7 @@ describe('OllamaChatLanguageModel', () => {
         });
       }
       expect(finish).toBeDefined();
-      expect(finish?.finishReason).toBe('stop');
+      expect(finish?.finishReason).toEqual({ unified: 'stop', raw: 'stop' });
     });
   });
 
@@ -1042,7 +1042,7 @@ describe('OllamaChatLanguageModel', () => {
       // Check finish is emitted last
       expect(chunks[6]).toEqual({
         type: 'finish',
-        finishReason: 'stop',
+        finishReason: { unified: 'stop', raw: 'stop' },
         usage: createExpectedUsage(8, 15),
       });
     });
@@ -1085,7 +1085,7 @@ describe('OllamaChatLanguageModel', () => {
       });
       expect(chunks[1]).toEqual({
         type: 'finish',
-        finishReason: 'stop',
+        finishReason: { unified: 'stop', raw: 'stop' },
         usage: createExpectedUsage(5, 0),
       });
     });
@@ -1162,7 +1162,7 @@ describe('OllamaChatLanguageModel', () => {
 
       expect(chunks[4]).toEqual({
         type: 'finish',
-        finishReason: 'stop',
+        finishReason: { unified: 'stop', raw: 'stop' },
         usage: createExpectedUsage(8, 15),
       });
     });

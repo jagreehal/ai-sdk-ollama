@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateObject, streamObject, jsonSchema } from 'ai';
+import { generateText, streamText, Output, jsonSchema } from 'ai';
 import { ollama } from '../index';
 
 describe('JSON Schema Integration Tests', { timeout: 120_000 }, () => {
@@ -18,17 +18,17 @@ describe('JSON Schema Integration Tests', { timeout: 120_000 }, () => {
       required: ['name', 'age'],
     });
 
-    const result = await generateObject({
+    const result = await generateText({
       model: ollama('llama3.2'),
       prompt: 'Generate a person named John who is 30 years old',
-      schema,
+      output: Output.object({ schema }),
       temperature: 0,
     });
 
-    expect(result.object).toBeDefined();
-    expect(result.object.name).toBeTruthy();
-    expect(typeof result.object.name).toBe('string');
-    expect(typeof result.object.age).toBe('number');
+    expect(result.output).toBeDefined();
+    expect(result.output.name).toBeTruthy();
+    expect(typeof result.output.name).toBe('string');
+    expect(typeof result.output.age).toBe('number');
   });
 
   it('should stream object with jsonSchema', async () => {
@@ -44,15 +44,15 @@ describe('JSON Schema Integration Tests', { timeout: 120_000 }, () => {
       required: ['title', 'completed'],
     });
 
-    const result = await streamObject({
+    const result = streamText({
       model: ollama('llama3.2'),
       prompt: 'Generate a todo item for grocery shopping',
-      schema,
+      output: Output.object({ schema }),
       temperature: 0,
     });
 
     const chunks: Record<string, unknown>[] = [];
-    for await (const chunk of result.partialObjectStream) {
+    for await (const chunk of result.partialOutputStream) {
       chunks.push(chunk);
     }
 
@@ -84,18 +84,18 @@ describe('JSON Schema Integration Tests', { timeout: 120_000 }, () => {
       required: ['status', 'priority'],
     });
 
-    const result = await generateObject({
+    const result = await generateText({
       model: ollama('llama3.2'),
       prompt: 'Generate a task with high priority that is in progress',
-      schema,
+      output: Output.object({ schema }),
       temperature: 0,
     });
 
-    expect(result.object).toBeDefined();
+    expect(result.output).toBeDefined();
     expect(['pending', 'in_progress', 'completed']).toContain(
-      result.object.status,
+      result.output.status,
     );
-    expect(result.object.priority).toBeGreaterThanOrEqual(1);
-    expect(result.object.priority).toBeLessThanOrEqual(5);
+    expect(result.output.priority).toBeGreaterThanOrEqual(1);
+    expect(result.output.priority).toBeLessThanOrEqual(5);
   });
 });
