@@ -126,13 +126,46 @@ async function main() {
     console.log('✅ Generated object:', JSON.stringify(result4.output, null, 2));
     console.log('   Note: String values should be preserved, not converted.\n');
 
+    // Example 5: Array type coercion test (Issue #440 follow-up)
+    // Tests the new type coercion when model returns raw array but schema expects {elements: [...]}
+    console.log('📝 Example 5: Array type coercion');
+    console.log(
+      '   (Handles when model returns raw array but schema expects wrapped format)\n',
+    );
+
+    const result5 = await generateText({
+      model: ollama('llama3.2', {
+        structuredOutputs: true,
+      }),
+      output: Output.object({
+        schema: z.object({
+          results: z.array(
+            z.object({
+              status: z.enum(['passed', 'failed', 'skipped']),
+              message: z.string(),
+              id: z.string(),
+            }),
+          ),
+        }),
+      }),
+      prompt:
+        'Generate test results: 3 items with status (passed/failed/skipped), message, and id. Return as JSON.',
+    });
+
+    console.log(
+      '✅ Generated test results:',
+      JSON.stringify(result5.output, null, 2),
+    );
+    console.log();
+
     console.log('✨ All examples completed successfully!');
     console.log(
       '\n💡 The fix ensures that:\n' +
         '   - JSON wrapped in quotes is correctly parsed\n' +
         '   - JSON in markdown code blocks is extracted\n' +
         '   - String values are not corrupted during repair\n' +
-        '   - Non-object schemas (string, number, array) are handled correctly',
+        '   - Non-object schemas (string, number, array) are handled correctly\n' +
+        '   - Array/object type mismatches are coerced to match the schema',
     );
   } catch (error) {
     console.error('❌ Error:', error);

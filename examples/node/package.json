@@ -8,12 +8,12 @@
     "quality": "pnpm build"
   },
   "dependencies": {
-    "@ai-sdk/mcp": "^1.0.11",
-    "ai": "^6.0.44",
+    "@ai-sdk/mcp": "^1.0.13",
+    "ai": "^6.0.48",
     "ai-sdk-ollama": "workspace:*",
     "dotenv": "^17.2.3",
     "ollama": "^0.6.3",
-    "zod": "^4.3.5"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.0.10",
