@@ -1236,6 +1236,109 @@ export async function parseJSONWithRepair(
 }
 
 /**
+ * Attempt to coerce the parsed object to match the expected schema type.
+ * This handles cases where Ollama returns:
+ * - An array when an object is expected
+ * - A raw array when {elements: [...]} wrapper is expected
+ * - An object when an array is expected
+ */
+function coerceToSchemaType(
+  parsedObject: unknown,
+  schema: JSONSchema7 | unknown,
+): { coerced: unknown; wasCoerced: boolean } {
+  if (typeof schema !== 'object' || schema === null) {
+    return { coerced: parsedObject, wasCoerced: false };
+  }
+
+  const jsonSchema = schema as JSONSchema7;
+
+  // Case 1: Schema expects object with "elements" array property (AI SDK array output pattern)
+  // but model returned a raw array
+  if (
+    jsonSchema.type === 'object' &&
+    jsonSchema.properties &&
+    'elements' in jsonSchema.properties &&
+    Array.isArray(parsedObject)
+  ) {
+    return {
+      coerced: { elements: parsedObject },
+      wasCoerced: true,
+    };
+  }
+
+  // Case 2: Schema expects an object but got an array
+  // Try to extract first element if it's a single-element array containing an object
+  if (
+    jsonSchema.type === 'object' &&
+    Array.isArray(parsedObject) &&
+    parsedObject.length === 1 &&
+    typeof parsedObject[0] === 'object' &&
+    parsedObject[0] !== null &&
+    !Array.isArray(parsedObject[0])
+  ) {
+    return {
+      coerced: parsedObject[0],
+      wasCoerced: true,
+    };
+  }
+
+  // Case 3: Schema expects an array but got an object
+  // Check if the object has properties that look like array items
+  if (
+    jsonSchema.type === 'array' &&
+    typeof parsedObject === 'object' &&
+    parsedObject !== null &&
+    !Array.isArray(parsedObject)
+  ) {
+    const obj = parsedObject as Record<string, unknown>;
+
+    // If object has an "elements" property that's an array, extract it
+    if (Array.isArray(obj.elements)) {
+      return {
+        coerced: obj.elements,
+        wasCoerced: true,
+      };
+    }
+
+    // If object has a "data" or "items" property that's an array, extract it
+    if (Array.isArray(obj.data)) {
+      return {
+        coerced: obj.data,
+        wasCoerced: true,
+      };
+    }
+    if (Array.isArray(obj.items)) {
+      return {
+        coerced: obj.items,
+        wasCoerced: true,
+      };
+    }
+
+    // If the object has numeric keys (0, 1, 2...), convert to array
+    const keys = Object.keys(obj);
+    if (keys.every((k) => /^\d+$/.test(k))) {
+      const maxIndex = Math.max(...keys.map(Number));
+      const arr: unknown[] = [];
+      for (let i = 0; i <= maxIndex; i++) {
+        arr.push(obj[String(i)]);
+      }
+      return {
+        coerced: arr,
+        wasCoerced: true,
+      };
+    }
+
+    // Last resort: wrap the single object in an array
+    return {
+      coerced: [parsedObject],
+      wasCoerced: true,
+    };
+  }
+
+  return { coerced: parsedObject, wasCoerced: false };
+}
+
+/**
  * Validate and attempt to recover from schema validation failures
  */
 export async function attemptSchemaRecovery(
@@ -1268,6 +1371,13 @@ export async function attemptSchemaRecovery(
     wasRepaired = parseResult.repaired || false;
   } else {
     parsedObject = rawObject;
+  }
+
+  // Attempt to coerce the parsed object to match the schema type
+  const { coerced, wasCoerced } = coerceToSchemaType(parsedObject, schema);
+  parsedObject = coerced;
+  if (wasCoerced) {
+    wasRepaired = true;
   }
 
   try {
