@@ -84,15 +84,15 @@
     "tool-calling"
   ],
   "dependencies": {
-    "@ai-sdk/provider": "^3.0.4",
-    "@ai-sdk/provider-utils": "^4.0.8",
+    "@ai-sdk/provider": "^3.0.5",
+    "@ai-sdk/provider-utils": "^4.0.9",
     "ollama": "^0.6.3"
   },
   "peerDependencies": {
-    "ai": "^6.0.44"
+    "ai": "^6.0.48"
   },
   "devDependencies": {
-    "@ai-sdk/test-server": "^1.0.1",
+    "@ai-sdk/test-server": "^1.0.3",
     "@arethetypeswrong/cli": "^0.18.2",
     "@edge-runtime/vm": "^5.0.0",
     "@total-typescript/ts-reset": "^0.6.1",
@@ -109,8 +109,8 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.53.1",
     "vite-tsconfig-paths": "^6.0.4",
-    "vitest": "^4.0.17",
-    "zod": "^4.3.5"
+    "vitest": "^4.0.18",
+    "zod": "^4.3.6"
   },
   "engines": {
     "node": ">=22"

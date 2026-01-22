@@ -409,5 +409,190 @@ describe('Enhanced JSON Repair', () => {
       });
       expect(result.success).toBe(false);
     });
+
+    describe('schema type coercion', () => {
+      it('should wrap raw array in {elements: [...]} when schema expects that pattern', async () => {
+        const { attemptSchemaRecovery } =
+          await import('./object-generation-reliability');
+
+        // This is the AI SDK's array output pattern
+        const schema = {
+          type: 'object',
+          properties: {
+            elements: {
+              type: 'array',
+              items: { type: 'object' },
+            },
+          },
+          required: ['elements'],
+        };
+
+        // Model returns raw array instead of wrapped
+        const input = '[{"status": "passed"}, {"status": "failed"}]';
+        const result = await attemptSchemaRecovery(input, schema);
+
+        expect(result.success).toBe(true);
+        expect(result.repaired).toBe(true);
+        expect(result.object).toEqual({
+          elements: [{ status: 'passed' }, { status: 'failed' }],
+        });
+      });
+
+      it('should handle markdown-wrapped array with elements schema', async () => {
+        const { attemptSchemaRecovery } =
+          await import('./object-generation-reliability');
+
+        const schema = {
+          type: 'object',
+          properties: {
+            elements: { type: 'array', items: { type: 'object' } },
+          },
+        };
+
+        // Simulating the exact raw data format from the issue
+        const input =
+          '```json\n[\n  {"status": "passed", "message": "Test Message"}\n]\n```';
+        const result = await attemptSchemaRecovery(input, schema);
+
+        expect(result.success).toBe(true);
+        expect(result.repaired).toBe(true);
+        expect(result.object).toEqual({
+          elements: [{ status: 'passed', message: 'Test Message' }],
+        });
+      });
+
+      it('should extract first element when schema expects object but got single-element array', async () => {
+        const { attemptSchemaRecovery } =
+          await import('./object-generation-reliability');
+
+        const schema = {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            age: { type: 'number' },
+          },
+        };
+
+        // Model returns array with single object instead of object
+        const input = '[{"name": "John", "age": 30}]';
+        const result = await attemptSchemaRecovery(input, schema);
+
+        expect(result.success).toBe(true);
+        expect(result.repaired).toBe(true);
+        expect(result.object).toEqual({ name: 'John', age: 30 });
+      });
+
+      it('should NOT extract from multi-element array when schema expects object', async () => {
+        const { attemptSchemaRecovery } =
+          await import('./object-generation-reliability');
+
+        const schema = {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+          },
+        };
+
+        // Model returns array with multiple objects - cannot safely extract
+        const input = '[{"name": "John"}, {"name": "Jane"}]';
+        const result = await attemptSchemaRecovery(input, schema);
+
+        // Should fail because we can't safely convert multi-element array to single object
+        expect(result.success).toBe(false);
+      });
+
+      it('should extract elements property when schema expects array but got wrapper object', async () => {
+        const { attemptSchemaRecovery } =
+          await import('./object-generation-reliability');
+
+        const schema = {
+          type: 'array',
+          items: { type: 'object' },
+        };
+
+        // Model returns {elements: [...]} when raw array was expected
+        const input = '{"elements": [{"id": 1}, {"id": 2}]}';
+        const result = await attemptSchemaRecovery(input, schema);
+
+        expect(result.success).toBe(true);
+        expect(result.repaired).toBe(true);
+        expect(result.object).toEqual([{ id: 1 }, { id: 2 }]);
+      });
+
+      it('should extract data property when schema expects array but got data wrapper', async () => {
+        const { attemptSchemaRecovery } =
+          await import('./object-generation-reliability');
+
+        const schema = {
+          type: 'array',
+          items: { type: 'string' },
+        };
+
+        // Some models wrap arrays in {data: [...]}
+        const input = '{"data": ["a", "b", "c"]}';
+        const result = await attemptSchemaRecovery(input, schema);
+
+        expect(result.success).toBe(true);
+        expect(result.repaired).toBe(true);
+        expect(result.object).toEqual(['a', 'b', 'c']);
+      });
+
+      it('should extract items property when schema expects array but got items wrapper', async () => {
+        const { attemptSchemaRecovery } =
+          await import('./object-generation-reliability');
+
+        const schema = {
+          type: 'array',
+          items: { type: 'number' },
+        };
+
+        // Some models wrap arrays in {items: [...]}
+        const input = '{"items": [1, 2, 3]}';
+        const result = await attemptSchemaRecovery(input, schema);
+
+        expect(result.success).toBe(true);
+        expect(result.repaired).toBe(true);
+        expect(result.object).toEqual([1, 2, 3]);
+      });
+
+      it('should convert numeric-keyed object to array when schema expects array', async () => {
+        const { attemptSchemaRecovery } =
+          await import('./object-generation-reliability');
+
+        const schema = {
+          type: 'array',
+          items: { type: 'string' },
+        };
+
+        // Some models return {"0": "a", "1": "b"} instead of ["a", "b"]
+        const input = '{"0": "first", "1": "second", "2": "third"}';
+        const result = await attemptSchemaRecovery(input, schema);
+
+        expect(result.success).toBe(true);
+        expect(result.repaired).toBe(true);
+        expect(result.object).toEqual(['first', 'second', 'third']);
+      });
+
+      it('should wrap single object in array when schema expects array', async () => {
+        const { attemptSchemaRecovery } =
+          await import('./object-generation-reliability');
+
+        const schema = {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: { name: { type: 'string' } },
+          },
+        };
+
+        // Model returns single object instead of array of one
+        const input = '{"name": "John"}';
+        const result = await attemptSchemaRecovery(input, schema);
+
+        expect(result.success).toBe(true);
+        expect(result.repaired).toBe(true);
+        expect(result.object).toEqual([{ name: 'John' }]);
+      });
+    });
   });
 });
