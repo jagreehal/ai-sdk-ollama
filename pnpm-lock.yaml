@@ -198,8 +198,8 @@ importers:
         specifier: ^3.0.5
         version: 3.0.5
       '@ai-sdk/provider-utils':
-        specifier: ^4.0.9
-        version: 4.0.9(zod@4.3.6)
+        specifier: ^4.0.10
+        version: 4.0.10(zod@4.3.6)
       ai:
         specifier: ^6.0.48
         version: 6.0.48(zod@4.3.6)
@@ -281,6 +281,12 @@ packages:
 
   '@ai-sdk/mcp@1.0.13':
     resolution: {integrity: sha512-yQEa+X5/QNmWlNwURAMlobmipvg4i/3L0iTz7pJQ/Z2Imjgp/y8gRAxkIzXL1HzlOxF4Dm/4PHpHrXaSV+EAUQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/provider-utils@4.0.10':
+    resolution: {integrity: sha512-VeDAiCH+ZK8Xs4hb9Cw7pHlujWNL52RKe8TExOkrw6Ir1AmfajBZTb9XUdKOZO08RwQElIKA8+Ltm+Gqfo8djQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -3865,6 +3871,13 @@ snapshots:
       '@ai-sdk/provider': 3.0.5
       '@ai-sdk/provider-utils': 4.0.9(zod@4.3.6)
       pkce-challenge: 5.0.1
+      zod: 4.3.6
+
+  '@ai-sdk/provider-utils@4.0.10(zod@4.3.6)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.5
+      '@standard-schema/spec': 1.1.0
+      eventsource-parser: 3.0.6
       zod: 4.3.6
 
   '@ai-sdk/provider-utils@4.0.9(zod@4.3.6)':
