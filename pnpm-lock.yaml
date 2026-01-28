@@ -161,8 +161,8 @@ importers:
   examples/node:
     dependencies:
       '@ai-sdk/mcp':
-        specifier: ^1.0.13
-        version: 1.0.13(zod@4.3.6)
+        specifier: ^1.0.14
+        version: 1.0.14(zod@4.3.6)
       ai:
         specifier: ^6.0.50
         version: 6.0.50(zod@4.3.6)
@@ -279,8 +279,14 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/mcp@1.0.13':
-    resolution: {integrity: sha512-yQEa+X5/QNmWlNwURAMlobmipvg4i/3L0iTz7pJQ/Z2Imjgp/y8gRAxkIzXL1HzlOxF4Dm/4PHpHrXaSV+EAUQ==}
+  '@ai-sdk/mcp@1.0.14':
+    resolution: {integrity: sha512-Rv8dORNPHH9RddwHfxBf9IBPSgmKa9YsWxnfH24PgnocDFE26Abqq8gPGMmFtN6gjZmC7qGrfqxTww+/dTtMCg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/provider-utils@4.0.10':
+    resolution: {integrity: sha512-VeDAiCH+ZK8Xs4hb9Cw7pHlujWNL52RKe8TExOkrw6Ir1AmfajBZTb9XUdKOZO08RwQElIKA8+Ltm+Gqfo8djQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -3860,11 +3866,18 @@ snapshots:
       '@vercel/oidc': 3.1.0
       zod: 4.3.6
 
-  '@ai-sdk/mcp@1.0.13(zod@4.3.6)':
+  '@ai-sdk/mcp@1.0.14(zod@4.3.6)':
     dependencies:
       '@ai-sdk/provider': 3.0.5
-      '@ai-sdk/provider-utils': 4.0.9(zod@4.3.6)
+      '@ai-sdk/provider-utils': 4.0.10(zod@4.3.6)
       pkce-challenge: 5.0.1
+      zod: 4.3.6
+
+  '@ai-sdk/provider-utils@4.0.10(zod@4.3.6)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.5
+      '@standard-schema/spec': 1.1.0
+      eventsource-parser: 3.0.6
       zod: 4.3.6
 
   '@ai-sdk/provider-utils@4.0.9(zod@4.3.6)':
