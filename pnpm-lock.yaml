@@ -49,8 +49,8 @@ importers:
   examples/browser:
     dependencies:
       '@ai-sdk/react':
-        specifier: ^3.0.59
-        version: 3.0.59(react@19.2.4)(zod@4.3.6)
+        specifier: ^3.0.61
+        version: 3.0.61(react@19.2.4)(zod@4.3.6)
       '@radix-ui/react-avatar':
         specifier: ^1.1.11
         version: 1.1.11(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(react-dom@19.2.3(react@19.2.4))(react@19.2.4)
@@ -307,8 +307,8 @@ packages:
     resolution: {integrity: sha512-2Xmoq6DBJqmSl80U6V9z5jJSJP7ehaJJQMy2iFUqTay06wdCqTnPVBBQbtEL8RCChenL+q5DC5H5WzU3vV3v8w==}
     engines: {node: '>=18'}
 
-  '@ai-sdk/react@3.0.59':
-    resolution: {integrity: sha512-oUzalId/oEd2E1/3wkrVUDp3VFTBJlBzr2PaKbr6DxGzsUSftFGSAQVaG/Xv+DId+sCfhzhRzVo4XpL4vKgQqw==}
+  '@ai-sdk/react@3.0.61':
+    resolution: {integrity: sha512-vCjZBnY2+TawFBXamSKt6elAt9n1MXMfcjSd9DSgT9peCJN27qNGVSXgaGNh/B3cUgeOktFfhB2GVmIqOjvmLQ==}
     engines: {node: '>=18'}
     peerDependencies:
       react: ^18 || ~19.0.1 || ~19.1.2 || ^19.2.1
@@ -3904,10 +3904,10 @@ snapshots:
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/react@3.0.59(react@19.2.4)(zod@4.3.6)':
+  '@ai-sdk/react@3.0.61(react@19.2.4)(zod@4.3.6)':
     dependencies:
       '@ai-sdk/provider-utils': 4.0.10(zod@4.3.6)
-      ai: 6.0.57(zod@4.3.6)
+      ai: 6.0.59(zod@4.3.6)
       react: 19.2.4
       swr: 2.3.8(react@19.2.4)
       throttleit: 2.1.0
