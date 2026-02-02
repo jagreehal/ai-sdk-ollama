@@ -198,8 +198,8 @@ importers:
         specifier: ^3.0.7
         version: 3.0.7
       '@ai-sdk/provider-utils':
-        specifier: ^4.0.10
-        version: 4.0.10(zod@4.3.6)
+        specifier: ^4.0.13
+        version: 4.0.13(zod@4.3.6)
       ai:
         specifier: ^6.0.48
         version: 6.0.48(zod@4.3.6)
@@ -305,10 +305,6 @@ packages:
 
   '@ai-sdk/provider@3.0.5':
     resolution: {integrity: sha512-2Xmoq6DBJqmSl80U6V9z5jJSJP7ehaJJQMy2iFUqTay06wdCqTnPVBBQbtEL8RCChenL+q5DC5H5WzU3vV3v8w==}
-    engines: {node: '>=18'}
-
-  '@ai-sdk/provider@3.0.6':
-    resolution: {integrity: sha512-hSfoJtLtpMd7YxKM+iTqlJ0ZB+kJ83WESMiWuWrNVey3X8gg97x0OdAAaeAeclZByCX3UdPOTqhvJdK8qYA3ww==}
     engines: {node: '>=18'}
 
   '@ai-sdk/provider@3.0.7':
@@ -3903,10 +3899,6 @@ snapshots:
       zod: 4.3.6
 
   '@ai-sdk/provider@3.0.5':
-    dependencies:
-      json-schema: 0.4.0
-
-  '@ai-sdk/provider@3.0.6':
     dependencies:
       json-schema: 0.4.0
 
