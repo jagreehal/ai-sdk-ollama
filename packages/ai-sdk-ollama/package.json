@@ -85,7 +85,7 @@
   ],
   "dependencies": {
     "@ai-sdk/provider": "^3.0.7",
-    "@ai-sdk/provider-utils": "^4.0.10",
+    "@ai-sdk/provider-utils": "^4.0.13",
     "ollama": "^0.6.3"
   },
   "peerDependencies": {
