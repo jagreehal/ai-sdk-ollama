@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.4.0
+
+### Minor Changes
+
+- 8ddf295: Updated to ai-sdk to 6.0.70
+
 ## 3.3.0
 
 ### Minor Changes
