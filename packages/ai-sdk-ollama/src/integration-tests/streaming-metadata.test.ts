@@ -58,18 +58,16 @@ describe('Streaming Metadata Integration Tests', { timeout: 120_000 }, () => {
       temperature: 0.2,
     });
 
-    let streamFinished = false;
     const chunks: string[] = [];
 
     for await (const chunk of result.textStream) {
       chunks.push(chunk);
     }
 
-    streamFinished = true;
     const fullText = chunks.join('');
 
-    // Stream should have completed
-    expect(streamFinished).toBe(true);
+    // Stream should have completed (for-await loop exited normally)
+    expect(true).toBe(true);
     expect(chunks.length).toBeGreaterThan(0);
     expect(fullText.length).toBeGreaterThan(10);
 

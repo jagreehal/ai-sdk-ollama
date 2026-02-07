@@ -651,7 +651,7 @@ export async function reliableToolCall(
 
   const { tools = {}, prompt } = options;
   const errors: string[] = [];
-  let retryCount = 0;
+  let retryCount: number;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     retryCount = attempt;
