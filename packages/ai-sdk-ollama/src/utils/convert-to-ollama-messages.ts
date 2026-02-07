@@ -91,7 +91,7 @@ export function convertToOllamaChatMessages(
       }
 
       case 'assistant': {
-        let content = '';
+        let content: string;
         const toolCalls: Array<{
           id?: string;
           type: 'function';
