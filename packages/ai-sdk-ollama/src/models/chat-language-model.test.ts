@@ -941,6 +941,148 @@ describe('OllamaChatLanguageModel', () => {
       expect(finish).toBeDefined();
       expect(finish?.finishReason).toEqual({ unified: 'stop', raw: 'stop' });
     });
+
+    it('should emit a single reasoning-start/end cycle for multiple reasoning chunks', async () => {
+      // Simulate how models like Qwen 3/DeepSeek-R1 stream reasoning tokens
+      // chunk-by-chunk (each chunk has a thinking field with a small piece)
+      const mockStreamData: ChatResponse[] = [
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: {
+            role: 'assistant',
+            content: '',
+            thinking: 'Let me ',
+          },
+          done: false,
+          done_reason: 'stop',
+          eval_count: 2,
+          prompt_eval_count: 3,
+          total_duration: 200_000_000,
+          load_duration: 50_000_000,
+          prompt_eval_duration: 100_000_000,
+          eval_duration: 100_000_000,
+        },
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: {
+            role: 'assistant',
+            content: '',
+            thinking: 'think about ',
+          },
+          done: false,
+          done_reason: 'stop',
+          eval_count: 4,
+          prompt_eval_count: 3,
+          total_duration: 400_000_000,
+          load_duration: 50_000_000,
+          prompt_eval_duration: 100_000_000,
+          eval_duration: 300_000_000,
+        },
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: {
+            role: 'assistant',
+            content: '',
+            thinking: 'this.',
+          },
+          done: false,
+          done_reason: 'stop',
+          eval_count: 5,
+          prompt_eval_count: 3,
+          total_duration: 500_000_000,
+          load_duration: 50_000_000,
+          prompt_eval_duration: 100_000_000,
+          eval_duration: 350_000_000,
+        },
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: {
+            role: 'assistant',
+            content: 'The answer is 4.',
+            thinking: '',
+          },
+          done: true,
+          done_reason: 'stop',
+          eval_count: 10,
+          prompt_eval_count: 3,
+          total_duration: 1_000_000_000,
+          load_duration: 50_000_000,
+          prompt_eval_duration: 100_000_000,
+          eval_duration: 850_000_000,
+        },
+      ];
+
+      mockChatStream(mockStreamData);
+
+      const modelWithReasoning = new OllamaChatLanguageModel(
+        'llama3.2',
+        { think: true },
+        { client: mockOllamaClient, provider: 'ollama' },
+      );
+
+      const options: LanguageModelV3CallOptions = {
+        prompt: [
+          {
+            role: 'user',
+            content: [{ type: 'text', text: 'What is 2 + 2?' }],
+          },
+        ],
+      };
+
+      const { stream } = await modelWithReasoning.doStream(options);
+      const chunks: LanguageModelV3StreamPart[] = [];
+
+      for await (const chunk of stream) {
+        chunks.push(chunk);
+      }
+
+      // There should be exactly ONE reasoning-start and ONE reasoning-end
+      const reasoningStarts = chunks.filter(
+        (part) => part.type === 'reasoning-start',
+      );
+      const reasoningDeltas = chunks.filter(
+        (part) => part.type === 'reasoning-delta',
+      );
+      const reasoningEnds = chunks.filter(
+        (part) => part.type === 'reasoning-end',
+      );
+
+      expect(reasoningStarts).toHaveLength(1);
+      expect(reasoningEnds).toHaveLength(1);
+      // Three reasoning chunks should produce three deltas
+      expect(reasoningDeltas).toHaveLength(3);
+
+      // All reasoning events must share the same ID
+      const reasoningId = reasoningStarts[0]?.id;
+      expect(reasoningId).toBeDefined();
+      for (const delta of reasoningDeltas) {
+        expect(delta.id).toBe(reasoningId);
+      }
+      expect(reasoningEnds[0]?.id).toBe(reasoningId);
+
+      // Verify the delta content
+      expect(reasoningDeltas[0]?.delta).toBe('Let me ');
+      expect(reasoningDeltas[1]?.delta).toBe('think about ');
+      expect(reasoningDeltas[2]?.delta).toBe('this.');
+
+      // Verify text content follows reasoning
+      const textDelta = chunks.find((part) => part.type === 'text-delta');
+      if (textDelta) {
+        expect(textDelta).toEqual({
+          type: 'text-delta',
+          id: expect.any(String),
+          delta: 'The answer is 4.',
+        });
+      }
+
+      const finish = chunks.find((part) => part.type === 'finish');
+      expect(finish).toBeDefined();
+      expect(finish?.finishReason).toEqual({ unified: 'stop', raw: 'stop' });
+    });
   });
 
   describe('UI Message Stream compatibility', () => {

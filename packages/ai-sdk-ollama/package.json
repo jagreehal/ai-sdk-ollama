@@ -84,12 +84,12 @@
     "tool-calling"
   ],
   "dependencies": {
-    "@ai-sdk/provider": "^3.0.7",
-    "@ai-sdk/provider-utils": "^4.0.13",
+    "@ai-sdk/provider": "^3.0.8",
+    "@ai-sdk/provider-utils": "^4.0.14",
     "ollama": "^0.6.3"
   },
   "peerDependencies": {
-    "ai": "^6.0.70"
+    "ai": "^6.0.77"
   },
   "devDependencies": {
     "@ai-sdk/test-server": "^1.0.3",

@@ -1344,6 +1344,10 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       let textStreamStarted = false;
       let currentTextId: string | null = null;
 
+      // Track reasoning streaming state
+      let reasoningStreamStarted = false;
+      let currentReasoningId: string | null = null;
+
       // Track if we've seen tool calls to set correct finish reason
       let hasToolCalls = false;
 
@@ -1367,6 +1371,16 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
 
           // Regular chunk with content
           if (chunk.done) {
+            // Close any open reasoning stream before finishing
+            if (reasoningStreamStarted && currentReasoningId) {
+              controller.enqueue({
+                type: 'reasoning-end',
+                id: currentReasoningId,
+              });
+              reasoningStreamStarted = false;
+              currentReasoningId = null;
+            }
+
             // If the final chunk carries residual content, emit it before finish
             if (
               chunk.message &&
@@ -1435,23 +1449,18 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
           } else {
             // Handle reasoning in streaming
             if (chunk.message.thinking && reasoningEnabled) {
-              // For reasoning, we'll emit it as a single reasoning content
-              // since Ollama doesn't stream reasoning in chunks
-              const reasoningId = crypto.randomUUID();
-              controller.enqueue({
-                type: 'reasoning-start',
-                id: reasoningId,
-              });
-
+              if (!reasoningStreamStarted) {
+                currentReasoningId = crypto.randomUUID();
+                controller.enqueue({
+                  type: 'reasoning-start',
+                  id: currentReasoningId,
+                });
+                reasoningStreamStarted = true;
+              }
               controller.enqueue({
                 type: 'reasoning-delta',
-                id: reasoningId,
+                id: currentReasoningId!,
                 delta: chunk.message.thinking,
-              });
-
-              controller.enqueue({
-                type: 'reasoning-end',
-                id: reasoningId,
               });
             }
 
@@ -1473,12 +1482,21 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
               }
             }
 
-            // Handle text content in streaming (always emit if present)
             if (
               chunk.message.content &&
               typeof chunk.message.content === 'string' &&
               chunk.message.content.length > 0
             ) {
+              // Close reasoning stream when text content starts
+              if (reasoningStreamStarted && currentReasoningId) {
+                controller.enqueue({
+                  type: 'reasoning-end',
+                  id: currentReasoningId,
+                });
+                currentReasoningId = null;
+                reasoningStreamStarted = false;
+              }
+
               // Start text streaming if not already started
               if (!textStreamStarted) {
                 currentTextId = crypto.randomUUID();
