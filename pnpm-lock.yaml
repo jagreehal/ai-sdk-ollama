@@ -115,8 +115,8 @@ importers:
         specifier: ^16.1.0
         version: 16.1.0(react@19.2.4)
       streamdown:
-        specifier: ^2.1.0
-        version: 2.1.0(react@19.2.4)
+        specifier: ^2.2.0
+        version: 2.2.0(react@19.2.4)
       tailwind-merge:
         specifier: ^3.4.0
         version: 3.4.0
@@ -3239,8 +3239,8 @@ packages:
   remark-stringify@11.0.0:
     resolution: {integrity: sha512-1OSmLd3awB/t8qdoEOMazZkNsfVTeY4fTsgzcQFdXNq8ToTN4ZGwrMnlda4K6smTFKD+GRV6O48i6Z4iKgPPpw==}
 
-  remend@1.1.0:
-    resolution: {integrity: sha512-JENGyuIhTwzUfCarW43X4r9cehoqTo9QyYxfNDZSud2AmqeuWjZ5pfybasTa4q0dxTJAj5m8NB+wR+YueAFpxQ==}
+  remend@1.2.0:
+    resolution: {integrity: sha512-NbKrdWweTRuByPYErzQCNpNtsR9M1QQ0hK2UzmnmlSaEqHnkQ5Korlyi8KpdbOJ0rImJfRy4EAY0uDxYnL9Plw==}
 
   require-directory@2.1.1:
     resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
@@ -3349,8 +3349,8 @@ packages:
   std-env@3.10.0:
     resolution: {integrity: sha512-5GS12FdOZNliM5mAOxFRg7Ir0pWz8MdpYm6AY6VPkGpbA7ZzmbzNcBJQ0GPvvyWgcY7QAhCgf9Uy89I03faLkg==}
 
-  streamdown@2.1.0:
-    resolution: {integrity: sha512-u9gWd0AmjKg1d+74P44XaPlGrMeC21oDOSIhjGNEYMAttDMzCzlJO6lpTyJ9JkSinQQF65YcK4eOd3q9iTvULw==}
+  streamdown@2.2.0:
+    resolution: {integrity: sha512-Y51o1I/sjpAy4Yn7j7R4TbUl9gcUZ7BTrHS+68IhrUBoYpNQZ28z06vww1MBFu4mSwvgF8xQIxIH2b9S9IHDyQ==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
 
@@ -3618,8 +3618,8 @@ packages:
   unist-util-visit-parents@6.0.2:
     resolution: {integrity: sha512-goh1s1TBrqSqukSc8wrjwWhL0hiJxgA8m4kFxGlQ+8FYQ3C/m11FcTs4YYem7V664AhHVvgoQLk890Ssdsr2IQ==}
 
-  unist-util-visit@5.0.0:
-    resolution: {integrity: sha512-MR04uvD+07cwl/yhVuVWAtw+3GOR/knlL55Nd/wAdblk27GCVt3lqpTivy/tkJcZoNPzTwS1Y+KMojlLDhoTzg==}
+  unist-util-visit@5.1.0:
+    resolution: {integrity: sha512-m+vIdyeCOpdr/QeQCu2EzxX/ohgS8KbnPDgFni4dQsfSCtpz8UqDyY5GjRru8PDKuYn7Fq19j1CQ+nJSsGKOzg==}
 
   universalify@0.1.2:
     resolution: {integrity: sha512-rBJeI5CXAlmy1pV+617WB9J63U6XcazHHF2f2dbJix4XzpUF0RS3Zbj0FGIOCAva5P/d/GBOYaACQ1w+0azUkg==}
@@ -5961,7 +5961,7 @@ snapshots:
       mdast-util-to-hast: 13.2.1
       parse5: 7.3.0
       unist-util-position: 5.0.0
-      unist-util-visit: 5.0.0
+      unist-util-visit: 5.1.0
       vfile: 6.0.3
       web-namespaces: 2.0.1
       zwitch: 2.0.4
@@ -6356,7 +6356,7 @@ snapshots:
       micromark-util-sanitize-uri: 2.0.1
       trim-lines: 3.0.1
       unist-util-position: 5.0.0
-      unist-util-visit: 5.0.0
+      unist-util-visit: 5.1.0
       vfile: 6.0.3
 
   mdast-util-to-markdown@2.1.2:
@@ -6368,7 +6368,7 @@ snapshots:
       mdast-util-to-string: 4.0.0
       micromark-util-classify-character: 2.0.1
       micromark-util-decode-string: 2.0.1
-      unist-util-visit: 5.0.0
+      unist-util-visit: 5.1.0
       zwitch: 2.0.4
 
   mdast-util-to-string@4.0.0:
@@ -6861,7 +6861,7 @@ snapshots:
 
   rehype-harden@1.1.7:
     dependencies:
-      unist-util-visit: 5.0.0
+      unist-util-visit: 5.1.0
 
   rehype-raw@7.0.0:
     dependencies:
@@ -6908,7 +6908,7 @@ snapshots:
       mdast-util-to-markdown: 2.1.2
       unified: 11.0.5
 
-  remend@1.1.0: {}
+  remend@1.2.0: {}
 
   require-directory@2.1.1: {}
 
@@ -7033,7 +7033,7 @@ snapshots:
 
   std-env@3.10.0: {}
 
-  streamdown@2.1.0(react@19.2.4):
+  streamdown@2.2.0(react@19.2.4):
     dependencies:
       clsx: 2.1.1
       hast-util-to-jsx-runtime: 2.3.6
@@ -7046,10 +7046,11 @@ snapshots:
       remark-gfm: 4.0.1
       remark-parse: 11.0.0
       remark-rehype: 11.1.2
-      remend: 1.1.0
+      remend: 1.2.0
       tailwind-merge: 3.4.0
       unified: 11.0.5
-      unist-util-visit: 5.0.0
+      unist-util-visit: 5.1.0
+      unist-util-visit-parents: 6.0.2
     transitivePeerDependencies:
       - supports-color
 
@@ -7311,7 +7312,7 @@ snapshots:
       '@types/unist': 3.0.3
       unist-util-is: 6.0.1
 
-  unist-util-visit@5.0.0:
+  unist-util-visit@5.1.0:
     dependencies:
       '@types/unist': 3.0.3
       unist-util-is: 6.0.1
