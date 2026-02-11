@@ -34,7 +34,7 @@ console.log(text);
 - ✅ **Solves tool calling problems** - Response synthesis for reliable tool execution
 - ✅ **Enhanced wrapper functions** - `generateText` and `streamText` guarantees complete responses
 - ✅ **Built-in reliability** - Default reliability features enabled automatically
-- ✅ **Automatic JSON repair** - Fixes 14+ types of malformed JSON from LLM outputs (trailing commas, comments, URLs, Python constants, etc.)
+- ✅ **Automatic JSON repair** - Cascade repair: [jsonrepair](https://github.com/josdejong/jsonrepair) first, then Ollama-specific fallback (trailing commas, comments, URLs, Python constants, etc.)
 - ✅ **Web search and fetch tools** - Built-in web search and fetch tools powered by [Ollama's web search API](https://ollama.com/blog/web-search). Perfect for getting current information and reducing hallucinations.
 - ✅ **Type-safe** - Full TypeScript support with strict typing
 - ✅ **Cross-environment** - Works in Node.js and browsers automatically
@@ -818,9 +818,11 @@ const { text } = await generateText({
 
 ### Automatic JSON Repair
 
-> **🔧 Enhanced Reliability**: Built-in JSON repair automatically fixes malformed LLM outputs for object generation.
+> **🔧 Enhanced Reliability**: Built-in cascade repair automatically fixes malformed LLM outputs for object generation.
 
-The provider includes automatic JSON repair that handles 14+ types of common JSON issues from LLM outputs:
+Repair uses a **cascade**: the [jsonrepair](https://github.com/josdejong/jsonrepair) library runs first (standard JSON issues), then the built-in Ollama-specific repair runs if needed (e.g. Python `True`/`None`, URLs with `//`, smart quotes). You can use the default, disable repair with `enableTextRepair: false`, or pass a custom `repairText` function. Exported helpers: `cascadeRepairText`, `enhancedRepairText` (see [test-cascade-repair example](../../examples/node/src/test-cascade-repair.ts)).
+
+The provider handles 14+ types of common JSON issues from LLM outputs:
 
 ````typescript
 import { ollama } from 'ai-sdk-ollama';
@@ -1014,6 +1016,10 @@ For detailed testing information, see [Integration Tests Documentation](./src/in
 📦 **[Structured Output + Tools](../../examples/node/src/v6-structured-output-example.ts)** - Tool calling with structured output generation
 
 🔗 **[MCP Tools Example](../../examples/node/src/mcp-tools-example.ts)** - Model Context Protocol integration
+
+🔧 **[JSON repair example](../../examples/node/src/json-repair-example.ts)** - Object generation with repair options and custom repair
+
+🔀 **[Cascade repair example](../../examples/node/src/test-cascade-repair.ts)** - `cascadeRepairText` and `enhancedRepairText` (jsonrepair + Ollama-specific)
 
 ## License
 

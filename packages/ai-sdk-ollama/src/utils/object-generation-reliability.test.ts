@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   enhancedRepairText,
+  cascadeRepairText,
   getRepairFunction,
   parseJSONWithRepair,
 } from './object-generation-reliability';
@@ -323,9 +324,9 @@ describe('Enhanced JSON Repair', () => {
       expect(result).toBeUndefined();
     });
 
-    it('should return enhanced repair by default', () => {
+    it('should return cascade repair by default', () => {
       const result = getRepairFunction({});
-      expect(result).toBe(enhancedRepairText);
+      expect(result).toBe(cascadeRepairText);
     });
   });
 
@@ -408,6 +409,48 @@ describe('Enhanced JSON Repair', () => {
         type: ['string', 'number'],
       });
       expect(result.success).toBe(false);
+    });
+
+    it('should fail malformed non-JSON text for object schemas even when recovery is enabled', async () => {
+      const { attemptSchemaRecovery } =
+        await import('./object-generation-reliability');
+
+      const result = await attemptSchemaRecovery(
+        'completely invalid not json at all',
+        {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+          },
+        },
+        {
+          attemptRecovery: true,
+        },
+      );
+
+      expect(result.success).toBe(false);
+    });
+
+    it('should not spread primitive strings into fallback objects', async () => {
+      const { attemptSchemaRecovery } =
+        await import('./object-generation-reliability');
+
+      const result = await attemptSchemaRecovery(
+        'completely invalid not json at all',
+        {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+          },
+        },
+        {
+          attemptRecovery: true,
+          useFallbacks: true,
+        },
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.object).toEqual({ name: '' });
     });
 
     describe('schema type coercion', () => {
@@ -593,6 +636,65 @@ describe('Enhanced JSON Repair', () => {
         expect(result.repaired).toBe(true);
         expect(result.object).toEqual([{ name: 'John' }]);
       });
+    });
+  });
+
+  describe('cascadeRepairText', () => {
+    it('uses jsonrepair for standard trailing commas', async () => {
+      const input = '{"name": "John", "age": 30,}';
+      const result = await cascadeRepairText({
+        text: input,
+        error: new Error('test'),
+      });
+      expect(result).toBeDefined();
+      expect(JSON.parse(result!)).toEqual({ name: 'John', age: 30 });
+    });
+
+    it('uses jsonrepair for unquoted keys', async () => {
+      const input = '{name: "John", age: 30}';
+      const result = await cascadeRepairText({
+        text: input,
+        error: new Error('test'),
+      });
+      expect(result).toBeDefined();
+      expect(JSON.parse(result!)).toEqual({ name: 'John', age: 30 });
+    });
+
+    it('falls back to enhancedRepairText for Python constants', async () => {
+      const input = '{name: "John", active: True, value: None}';
+      const result = await cascadeRepairText({
+        text: input,
+        error: new Error('test'),
+      });
+      expect(result).toBeDefined();
+      expect(JSON.parse(result!)).toEqual({
+        name: 'John',
+        active: true,
+        value: null,
+      });
+    });
+
+    it('falls back for URLs with // in strings', async () => {
+      const input = "{'url': 'https://example.com', 'name': 'foo'}";
+      const result = await cascadeRepairText({
+        text: input,
+        error: new Error('test'),
+      });
+      expect(result).toBeDefined();
+      const parsed = JSON.parse(result!);
+      expect(parsed.url).toBe('https://example.com');
+    });
+
+    it('can repair text to valid JSON primitives', async () => {
+      const input = 'completely invalid not json at all';
+      const result = await cascadeRepairText({
+        text: input,
+        error: new Error('test'),
+      });
+      expect(result).toBeDefined();
+      const parsed = JSON.parse(result!);
+      expect(typeof parsed).toBe('string');
+      expect(parsed).toBe('completely invalid not json at all');
     });
   });
 });

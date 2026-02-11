@@ -34,7 +34,7 @@ console.log(text);
 - **Tool calling reliability** - Enhanced response synthesis for consistent tool execution
 - **Wrapper functions** - `generateText` and `streamText` with improved response handling
 - **Built-in reliability** - Default reliability features enabled automatically
-- **Automatic JSON repair** - Handles common JSON formatting issues from LLM outputs
+- **Automatic JSON repair** - Cascade repair (jsonrepair + Ollama-specific fallback) for malformed object generation output
 - **Web search integration** - Built-in web search and fetch tools powered by [Ollama's web search API](https://ollama.com/blog/web-search)
 - **Reranking** - Document relevance ranking using embedding-based similarity
 - **Middleware system** - Wrap models with `defaultSettingsMiddleware` and `extractReasoningMiddleware`
@@ -537,6 +537,9 @@ npx tsx examples/node/src/tool-loop-agent-example.ts   # Autonomous tool agents
 npx tsx examples/node/src/v6-tool-approval-example.ts # Tool execution approval (AI SDK v6)
 npx tsx examples/node/src/v6-structured-output-example.ts # Structured output + tools (AI SDK v6)
 npx tsx examples/node/src/v6-agent-example.ts         # Advanced agent patterns (AI SDK v6)
+npx tsx examples/node/src/json-repair-example.ts      # JSON repair and objectGenerationOptions
+npx tsx examples/node/src/test-cascade-repair.ts     # Cascade repair (jsonrepair → enhancedRepairText)
+npx tsx examples/node/src/test-cascade-repair.ts --llm  # Same with LLM object generation
 ```
 
 ### Interactive Browser Demo
@@ -562,6 +565,7 @@ Features real-time text generation, model configuration UI, and proper CORS setu
 - **[Middleware System](./packages/ai-sdk-ollama/README.md#middleware-system)** - Model wrapping and customization
 - **[ToolLoopAgent](./packages/ai-sdk-ollama/README.md#toolloopagent)** - Autonomous agents with tool loops
 - **[Streaming Utilities](./packages/ai-sdk-ollama/README.md#streaming-utilities)** - Stream manipulation helpers
+- **[Automatic JSON Repair](./packages/ai-sdk-ollama/README.md#automatic-json-repair)** - Cascade repair (jsonrepair + Ollama-specific) for object generation
 
 ## Supported Models
 
