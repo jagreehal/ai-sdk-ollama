@@ -12,6 +12,7 @@
 
 import type { JSONSchema7 } from '@ai-sdk/provider';
 import { safeParseJSON } from '@ai-sdk/provider-utils';
+import { jsonrepair } from 'jsonrepair';
 
 /**
  * A function that attempts to repair the raw output of the model
@@ -89,17 +90,15 @@ export interface ObjectGenerationOptions {
   fixTypeMismatches?: boolean;
 
   /**
-   * Custom repair function for malformed JSON or validation errors
-   * If provided, this will be used instead of the default jsonrepair
+   * Custom repair function for malformed JSON or validation errors.
+   * If provided, replaces the default cascade (jsonrepair then enhancedRepairText).
    */
   repairText?: RepairTextFunction;
 
   /**
-   * Whether to enable automatic JSON repair for malformed LLM outputs
-   * Default: true (enabled by default for better reliability)
-   * Handles 14+ types of JSON issues including Python constants, JSONP, comments,
-   * escaped quotes, URLs in strings, trailing commas, unquoted keys, etc.
-   * Set to false to disable all automatic repair
+   * Whether to enable automatic JSON repair for malformed LLM outputs.
+   * Default: true. Uses jsonrepair then enhancedRepairText for edge cases.
+   * Set to false to disable.
    */
   enableTextRepair?: boolean;
 }
@@ -1052,6 +1051,27 @@ export async function enhancedRepairText(options: {
   return null;
 }
 
+/** Tries jsonrepair first, then enhancedRepairText for Ollama-specific edge cases. */
+export async function cascadeRepairText(options: {
+  text: string;
+  error: Error;
+  schema?: JSONSchema7 | unknown;
+}): Promise<string | null> {
+  const { text } = options;
+  try {
+    const repairedText = jsonrepair(text);
+    JSON.parse(repairedText);
+    return repairedText;
+  } catch {
+    // pass
+  }
+  try {
+    return await enhancedRepairText(options);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Built-in text repair function for common JSON and Ollama output issues
  */
@@ -1140,8 +1160,7 @@ export function getRepairFunction(
     return undefined;
   }
 
-  // Use enhanced repair by default
-  return enhancedRepairText;
+  return cascadeRepairText;
 }
 
 /**
@@ -1490,16 +1509,93 @@ export async function attemptSchemaRecovery(
         );
       }
 
+      const jsonSchema = schema as JSONSchema7;
+      if (jsonSchema.type) {
+        const expectedType = jsonSchema.type;
+        const actualType = Array.isArray(recoveredObject)
+          ? 'array'
+          : recoveredObject === null
+            ? 'null'
+            : typeof recoveredObject;
+
+        if (Array.isArray(expectedType)) {
+          const typeMatches = expectedType.some((allowedType) => {
+            if (allowedType === 'array') return Array.isArray(recoveredObject);
+            if (allowedType === 'object') {
+              return (
+                typeof recoveredObject === 'object' &&
+                recoveredObject !== null &&
+                !Array.isArray(recoveredObject)
+              );
+            }
+            if (allowedType === 'null') return recoveredObject === null;
+            return actualType === allowedType;
+          });
+
+          if (!typeMatches) {
+            throw new Error(
+              `Recovery produced ${actualType}, but schema expects one of [${expectedType.join(', ')}]`,
+              { cause: error },
+            );
+          }
+        } else {
+          if (expectedType === 'array' && !Array.isArray(recoveredObject)) {
+            throw new Error(
+              `Recovery produced ${actualType}, but schema expects array`,
+              { cause: error },
+            );
+          }
+
+          if (
+            expectedType === 'object' &&
+            (typeof recoveredObject !== 'object' ||
+              recoveredObject === null ||
+              Array.isArray(recoveredObject))
+          ) {
+            throw new Error(
+              `Recovery produced ${actualType}, but schema expects object`,
+              { cause: error },
+            );
+          }
+
+          if (expectedType === 'null' && recoveredObject !== null) {
+            throw new Error(
+              `Recovery produced ${actualType}, but schema expects null`,
+              { cause: error },
+            );
+          }
+
+          if (
+            typeof expectedType === 'string' &&
+            expectedType !== 'object' &&
+            expectedType !== 'array' &&
+            expectedType !== 'null' &&
+            actualType !== expectedType
+          ) {
+            throw new Error(
+              `Recovery produced ${actualType}, but schema expects ${expectedType}`,
+              { cause: error },
+            );
+          }
+        }
+      }
+
       return { success: true, object: recoveredObject, repaired: wasRepaired };
     } catch (recoveryError) {
       // If recovery fails, try using fallback values
       if (options.useFallbacks) {
         try {
           const fallbacks = generateFallbackValues(schema);
-          const merged = {
-            ...fallbacks,
-            ...(parsedObject as Record<string, unknown>),
-          };
+          const merged =
+            typeof parsedObject === 'object' &&
+            parsedObject !== null &&
+            !Array.isArray(parsedObject)
+              ? {
+                  ...fallbacks,
+                  ...(parsedObject as Record<string, unknown>),
+                }
+              : fallbacks;
+
           return { success: true, object: merged, repaired: wasRepaired };
         } catch {
           return {

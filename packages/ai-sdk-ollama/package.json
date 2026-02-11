@@ -86,10 +86,11 @@
   "dependencies": {
     "@ai-sdk/provider": "^3.0.8",
     "@ai-sdk/provider-utils": "^4.0.14",
+    "jsonrepair": "^3.13.2",
     "ollama": "^0.6.3"
   },
   "peerDependencies": {
-    "ai": "^6.0.77"
+    "ai": "^6.0.80"
   },
   "devDependencies": {
     "@ai-sdk/test-server": "^1.0.3",
@@ -98,11 +99,11 @@
     "@total-typescript/ts-reset": "^0.6.1",
     "@total-typescript/tsconfig": "^1.0.4",
     "@types/eslint-config-prettier": "^6.11.3",
-    "@types/node": "^25.2.2",
+    "@types/node": "^25.2.3",
     "@typescript-eslint/eslint-plugin": "^8.55.0",
     "@typescript-eslint/parser": "^8.55.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-unicorn": "^62.0.0",
+    "eslint-plugin-unicorn": "^63.0.0",
     "prettier": "^3.8.1",
     "rimraf": "^6.1.2",
     "tsup": "^8.5.1",
