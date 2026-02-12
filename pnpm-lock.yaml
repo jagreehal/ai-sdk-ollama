@@ -259,8 +259,8 @@ importers:
         specifier: ^8.55.0
         version: 8.55.0(eslint@10.0.0(jiti@2.6.1))(typescript@5.9.3)
       vite-tsconfig-paths:
-        specifier: ^6.1.0
-        version: 6.1.0(typescript@5.9.3)(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0))
+        specifier: ^6.1.1
+        version: 6.1.1(typescript@5.9.3)(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0))
       vitest:
         specifier: ^4.0.18
         version: 4.0.18(@edge-runtime/vm@5.0.0)(@opentelemetry/api@1.9.0)(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.12.7(@types/node@25.2.3)(typescript@5.9.3))(tsx@4.21.0)
@@ -3599,8 +3599,8 @@ packages:
   vfile@6.0.3:
     resolution: {integrity: sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q==}
 
-  vite-tsconfig-paths@6.1.0:
-    resolution: {integrity: sha512-kpd3sY9glHIDaq4V/Tlc1Y8WaKtutoc3B525GHxEVKWX42FKfQsXvjFOemu1I8VIN8pNbrMLWVTbW79JaRUxKg==}
+  vite-tsconfig-paths@6.1.1:
+    resolution: {integrity: sha512-2cihq7zliibCCZ8P9cKJrQBkfgdvcFkOOc3Y02o3GWUDLgqjWsZudaoiuOwO/gzTzy17cS5F7ZPo4bsnS4DGkg==}
     peerDependencies:
       vite: '*'
 
@@ -7163,7 +7163,7 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  vite-tsconfig-paths@6.1.0(typescript@5.9.3)(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)):
+  vite-tsconfig-paths@6.1.1(typescript@5.9.3)(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)):
     dependencies:
       debug: 4.4.3
       globrex: 0.1.2
