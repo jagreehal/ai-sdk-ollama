@@ -29,6 +29,10 @@ export type { OllamaErrorData } from './utils/ollama-error';
 export { cosineSimilarity } from './utils/cosine-similarity';
 
 // Re-export tool calling reliability utilities for advanced users
+export {
+  parseToolArguments,
+  resolveToolCallingOptions,
+} from './utils/tool-calling-reliability';
 export type {
   ToolCallingOptions,
   ResolvedToolCallingOptions,

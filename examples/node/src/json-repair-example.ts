@@ -6,10 +6,14 @@ import { z } from 'zod';
  * Example demonstrating enhanced JSON repair for object generation with Ollama
  *
  * This example shows how the enhanced JSON repair automatically fixes
- * common JSON issues from LLM outputs.
+ * common JSON issues from LLM outputs (object generation). Tool-call argument
+ * strings also get automatic repair via parseToolArguments (jsonrepair);
+ * see tool-json-repair-example.ts.
  *
  * Note: Uses generateText with Output.object() instead of the deprecated generateObject.
  * See https://ai-sdk.dev/docs/ai-sdk-core/generating-structured-data
+ *
+ * Run: npx tsx src/json-repair-example.ts
  */
 
 async function main() {
@@ -141,6 +145,7 @@ async function main() {
 
     console.log('✅ Generated post:', JSON.stringify(result5.output, null, 2));
     console.log('\n✨ JSON repair examples completed!');
+    console.log('   Tool-call JSON repair: npx tsx src/tool-json-repair-example.ts');
   } catch (error) {
     console.error('❌ Error:', error);
     process.exit(1);
