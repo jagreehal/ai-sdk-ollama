@@ -1,6 +1,8 @@
 import { LanguageModelV3Prompt } from '@ai-sdk/provider';
 import { Message as OllamaMessage } from 'ollama';
 
+import { parseToolArguments } from './tool-calling-reliability';
+
 /**
  * Enhanced message conversion that supports all Ollama capabilities
  * and handles edge cases better than the referenced implementation
@@ -72,10 +74,7 @@ export function convertToOllamaChatMessages(
                 // Handle Uint8Array by converting to base64
                 return Buffer.from(imageData).toString('base64');
               } else {
-                // Fallback for other types
-                console.warn(
-                  `Unsupported image data type: ${typeof imageData}`,
-                );
+                // Unsupported image data type - skip this image
                 return null;
               }
             })
@@ -121,17 +120,7 @@ export function convertToOllamaChatMessages(
           // Handle tool calls properly - Ollama DOES support native tool calls
           for (const part of message.content) {
             if (part.type === 'tool-call') {
-              // Parse the input - it should be a JSON string from AI SDK
-              let args: Record<string, unknown>;
-              try {
-                args =
-                  typeof part.input === 'string'
-                    ? JSON.parse(part.input)
-                    : (part.input as Record<string, unknown>);
-              } catch (error) {
-                console.warn('Failed to parse tool call input:', error);
-                args = {};
-              }
+              const args = parseToolArguments(part.input);
 
               toolCalls.push({
                 id: part.toolCallId,

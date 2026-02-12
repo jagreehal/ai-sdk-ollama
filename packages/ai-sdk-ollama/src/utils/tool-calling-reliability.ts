@@ -16,6 +16,7 @@ import {
   LanguageModelV3Prompt,
   LanguageModelV3ToolResultPart,
 } from '@ai-sdk/provider';
+import { jsonrepair } from 'jsonrepair';
 
 const DEFAULT_TOOL_CALLING_OPTIONS: Required<
   Pick<
@@ -119,7 +120,7 @@ function ensureRecord(value: unknown): Record<string, unknown> {
   return {};
 }
 
-export function parseToolArguments(input: unknown): Record<string, unknown> {
+export function parseToolArguments(input?: unknown): Record<string, unknown> {
   if (!input) {
     return {};
   }
@@ -127,10 +128,30 @@ export function parseToolArguments(input: unknown): Record<string, unknown> {
   if (typeof input === 'string') {
     try {
       const parsed = JSON.parse(input);
+      // Handle double-encoded JSON (e.g. quoted JSON string from model)
+      if (typeof parsed === 'string') {
+        try {
+          const inner = JSON.parse(parsed);
+          return ensureRecord(inner);
+        } catch {
+          try {
+            const repaired = jsonrepair(parsed);
+            return ensureRecord(JSON.parse(repaired));
+          } catch {
+            return {};
+          }
+        }
+      }
       return ensureRecord(parsed);
-    } catch (error) {
-      console.warn('Failed to parse tool arguments as JSON:', error);
-      return {};
+    } catch {
+      try {
+        const repaired = jsonrepair(input);
+        const parsed = JSON.parse(repaired);
+        return ensureRecord(parsed);
+      } catch (error) {
+        console.warn('Failed to parse tool arguments as JSON:', error);
+        return {};
+      }
     }
   }
 
@@ -400,7 +421,7 @@ export function normalizeToolParameters(
  * Validate tool result and attempt recovery if needed
  */
 export async function validateToolResult(
-  toolName: string,
+  _toolName: string,
   input: Record<string, unknown>,
   result: unknown,
   executeFunction: (params: Record<string, unknown>) => Promise<unknown>,
@@ -416,10 +437,7 @@ export async function validateToolResult(
     !result ||
     (typeof result === 'object' && Object.keys(result).length === 0)
   ) {
-    console.warn(
-      `⚠️ Tool ${toolName} returned empty result, attempting recovery...`,
-    );
-
+    // Tool returned empty result - attempt recovery with normalized parameters
     try {
       const recoveredResult = await executeFunction(normalizedInput);
 

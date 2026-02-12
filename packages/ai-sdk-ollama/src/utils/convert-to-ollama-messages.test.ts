@@ -320,6 +320,41 @@ describe('convertToOllamaChatMessages', () => {
       ]);
     });
 
+    it('should repair malformed tool-call JSON via parseToolArguments', () => {
+      const prompt: LanguageModelV3Prompt = [
+        {
+          role: 'assistant',
+          content: [
+            {
+              type: 'tool-call',
+              toolCallId: 'tc-1',
+              toolName: 'search',
+              input: '{"query": "weather", "limit": 5,}', // trailing comma
+            },
+          ],
+        },
+      ];
+
+      const result = convertToOllamaChatMessages(prompt);
+
+      expect(result).toEqual([
+        {
+          role: 'assistant',
+          content: '',
+          tool_calls: [
+            {
+              id: 'tc-1',
+              type: 'function',
+              function: {
+                name: 'search',
+                arguments: { query: 'weather', limit: 5 },
+              },
+            },
+          ],
+        },
+      ]);
+    });
+
     it('should handle empty assistant message', () => {
       const prompt: LanguageModelV3Prompt = [
         {
