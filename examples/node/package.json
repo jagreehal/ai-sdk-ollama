@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@ai-sdk/mcp": "^1.0.20",
-    "ai": "^6.0.80",
+    "ai": "^6.0.85",
     "ai-sdk-ollama": "workspace:*",
     "dotenv": "^17.2.4",
     "ollama": "^0.6.3",
