@@ -46,3 +46,5 @@ examples/browser/test-results
 
 # Changesets release artifacts
 .changeset/release.json
+
+**/.astro
