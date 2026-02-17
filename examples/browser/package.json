@@ -16,7 +16,7 @@
     "quality": "pnpm type-check && pnpm build"
   },
   "dependencies": {
-    "@ai-sdk/react": "^3.0.88",
+    "@ai-sdk/react": "^3.0.91",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
@@ -28,12 +28,12 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@radix-ui/react-use-controllable-state": "^1.2.2",
     "@tailwindcss/vite": "^4.1.18",
-    "ai": "^6.0.86",
+    "ai": "^6.0.89",
     "ai-sdk-ollama": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "embla-carousel-react": "^8.6.0",
-    "lucide-react": "^0.564.0",
+    "lucide-react": "^0.574.0",
     "nanoid": "^5.1.6",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

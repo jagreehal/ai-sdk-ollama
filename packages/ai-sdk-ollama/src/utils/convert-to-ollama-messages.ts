@@ -3,6 +3,32 @@ import { Message as OllamaMessage } from 'ollama';
 
 import { parseToolArguments } from './tool-calling-reliability';
 
+function normalizeImageDataForOllama(
+  imageData: URL | string | Uint8Array,
+): string | null {
+  if (imageData instanceof URL) {
+    if (imageData.protocol === 'data:') {
+      const base64Match = imageData.href.match(/data:[^;]+;base64,(.+)/);
+      const extracted = base64Match?.[1];
+      if (typeof extracted === 'string') return extracted;
+      return imageData.href;
+    }
+    return imageData.href;
+  }
+  if (typeof imageData === 'string') {
+    if (imageData.startsWith('data:')) {
+      const base64Match = imageData.match(/data:[^;]+;base64,(.+)/);
+      const extracted = base64Match?.[1];
+      if (typeof extracted === 'string') return extracted;
+    }
+    return imageData;
+  }
+  if (imageData instanceof Uint8Array) {
+    return Buffer.from(imageData).toString('base64');
+  }
+  return null;
+}
+
 /**
  * Enhanced message conversion that supports all Ollama capabilities
  * and handles edge cases better than the referenced implementation
@@ -40,44 +66,8 @@ export function convertToOllamaChatMessages(
               (part): part is Extract<typeof part, { type: 'file' }> =>
                 part.type === 'file',
             )
-            .filter((part) => {
-              // Support image files only
-              return part.mediaType?.startsWith('image/') || false;
-            })
-            .map((part) => {
-              const imageData = part.data;
-
-              if (imageData instanceof URL) {
-                // Handle image URLs - extract base64 from data URLs or use URL directly
-                if (imageData.protocol === 'data:') {
-                  const base64Match = imageData.href.match(
-                    /data:[^;]+;base64,(.+)/,
-                  );
-                  if (base64Match) {
-                    return base64Match[1]; // Return just the base64 part
-                  }
-                  // If no base64 match, return the full data URL
-                  return imageData.href;
-                }
-                // For HTTP URLs, return as-is (Ollama will handle them)
-                return imageData.href;
-              } else if (typeof imageData === 'string') {
-                // Handle base64 strings
-                if (imageData.startsWith('data:')) {
-                  const base64Match = imageData.match(/data:[^;]+;base64,(.+)/);
-                  if (base64Match) {
-                    return base64Match[1]; // Return just the base64 part
-                  }
-                }
-                return imageData;
-              } else if (imageData instanceof Uint8Array) {
-                // Handle Uint8Array by converting to base64
-                return Buffer.from(imageData).toString('base64');
-              } else {
-                // Unsupported image data type - skip this image
-                return null;
-              }
-            })
+            .filter((part) => part.mediaType?.startsWith('image/') ?? false)
+            .map((part) => normalizeImageDataForOllama(part.data))
             .filter((img): img is string => img !== null);
 
           messages.push({
@@ -150,24 +140,60 @@ export function convertToOllamaChatMessages(
             content: message.content,
           });
         } else {
-          // Handle multi-part tool results
           for (const part of message.content) {
-            if (part.type === 'tool-result') {
-              const contentValue =
-                part.output.type === 'text' || part.output.type === 'error-text'
-                  ? part.output.value
-                  : part.output.type === 'json' ||
-                      part.output.type === 'error-json'
-                    ? JSON.stringify(part.output.value)
-                    : JSON.stringify(part.output);
+            if (part.type !== 'tool-result') continue;
 
-              // Ollama's Message interface supports tool_name field for tool results
+            if (part.output.type === 'content') {
+              const textParts: string[] = [];
+              const imageParts: string[] = [];
+              for (const item of part.output.value) {
+                switch (item.type) {
+                  case 'text': {
+                    textParts.push(item.text);
+                    break;
+                  }
+                  case 'image-data': {
+                    const normalized = normalizeImageDataForOllama(item.data);
+                    if (normalized) imageParts.push(normalized);
+                    break;
+                  }
+                  case 'image-url': {
+                    imageParts.push(item.url);
+                    break;
+                  }
+                  case 'file-data': {
+                    if (item.mediaType?.startsWith('image/')) {
+                      const normalized = normalizeImageDataForOllama(item.data);
+                      if (normalized) imageParts.push(normalized);
+                    }
+                    break;
+                  }
+                }
+              }
               messages.push({
                 role: 'tool',
-                content: contentValue,
+                content: textParts.join('\n') || '',
                 tool_name: part.toolName,
+                images: imageParts.length > 0 ? imageParts : undefined,
               });
+              continue;
             }
+
+            const contentValue =
+              part.output.type === 'text' || part.output.type === 'error-text'
+                ? part.output.value
+                : part.output.type === 'json' ||
+                    part.output.type === 'error-json'
+                  ? JSON.stringify(part.output.value)
+                  : part.output.type === 'execution-denied'
+                    ? ''
+                    : JSON.stringify(part.output);
+
+            messages.push({
+              role: 'tool',
+              content: contentValue,
+              tool_name: part.toolName,
+            });
           }
         }
         break;

@@ -48,25 +48,29 @@ This directory contains comprehensive examples demonstrating the enhanced Ollama
     - Demonstrates `parseToolArguments` (jsonrepair for tool-argument strings)
     - Run: `npx tsx src/tool-json-repair-example.ts`
 
+11. **`tool-result-image-example.ts`** - Tool result with image content
+    - Tool returns content with text and image-data; provider sends images in tool results
+    - Run: `npx tsx src/tool-result-image-example.ts`
+
 ### Advanced Examples
 
-11. **`mcp-tools-example.ts`** - MCP Tools Example
+12. **`mcp-tools-example.ts`** - MCP Tools Example
     - Model Context Protocol tools example
     - Run: `npx tsx src/mcp-tools-example.ts`
 
-12. **`image-handling-example.ts`** - Image Handling Example
+13. **`image-handling-example.ts`** - Image Handling Example
     - Image processing with Ollama
     - Run: `npx tsx src/image-handling-example.ts`
 
-13. **`reasoning-example.ts`** - Reasoning Example
+14. **`reasoning-example.ts`** - Reasoning Example
     - Advanced reasoning capabilities
     - Run: `npx tsx src/reasoning-example.ts`
 
-14. **`reasoning-example-simple.ts`** - Simple Reasoning Example
+15. **`reasoning-example-simple.ts`** - Simple Reasoning Example
     - Basic reasoning example
     - Run: `npx tsx src/reasoning-example-simple.ts`
 
-15. **`quoted-json-example.ts`** - Quoted JSON Fix Example
+16. **`quoted-json-example.ts`** - Quoted JSON Fix Example
     - Demonstrates the fix for JSON wrapped in quotes or markdown
     - Shows how string values are preserved during JSON repair
     - Run: `npx tsx src/quoted-json-example.ts`

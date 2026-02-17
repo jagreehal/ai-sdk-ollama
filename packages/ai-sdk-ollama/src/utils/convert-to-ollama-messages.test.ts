@@ -429,6 +429,187 @@ describe('convertToOllamaChatMessages', () => {
         },
       ]);
     });
+
+    it('should handle tool result with output type content (text only)', () => {
+      const prompt: LanguageModelV3Prompt = [
+        {
+          role: 'tool',
+          content: [
+            {
+              type: 'tool-result',
+              toolCallId: '1',
+              toolName: 'describe',
+              output: {
+                type: 'content',
+                value: [
+                  { type: 'text', text: 'Here is the result:' },
+                  { type: 'text', text: 'Additional information' },
+                ],
+              },
+            },
+          ],
+        },
+      ];
+
+      const result = convertToOllamaChatMessages(prompt);
+
+      expect(result).toEqual([
+        {
+          role: 'tool',
+          content: 'Here is the result:\nAdditional information',
+          tool_name: 'describe',
+        },
+      ]);
+    });
+
+    it('should handle tool result with output type content (image-data)', () => {
+      const base64Png =
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+      const prompt: LanguageModelV3Prompt = [
+        {
+          role: 'tool',
+          content: [
+            {
+              type: 'tool-result',
+              toolCallId: '1',
+              toolName: 'getImage',
+              output: {
+                type: 'content',
+                value: [
+                  {
+                    type: 'image-data',
+                    data: base64Png,
+                    mediaType: 'image/png',
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ];
+
+      const result = convertToOllamaChatMessages(prompt);
+
+      expect(result).toEqual([
+        {
+          role: 'tool',
+          content: '',
+          tool_name: 'getImage',
+          images: [base64Png],
+        },
+      ]);
+    });
+
+    it('should handle tool result with output type content (text + image-data)', () => {
+      const base64Png = '/9j/4AAQ';
+      const prompt: LanguageModelV3Prompt = [
+        {
+          role: 'tool',
+          content: [
+            {
+              type: 'tool-result',
+              toolCallId: '1',
+              toolName: 'getImage',
+              output: {
+                type: 'content',
+                value: [
+                  { type: 'text', text: 'Caption: A red pixel.' },
+                  {
+                    type: 'image-data',
+                    data: base64Png,
+                    mediaType: 'image/jpeg',
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ];
+
+      const result = convertToOllamaChatMessages(prompt);
+
+      expect(result).toEqual([
+        {
+          role: 'tool',
+          content: 'Caption: A red pixel.',
+          tool_name: 'getImage',
+          images: [base64Png],
+        },
+      ]);
+    });
+
+    it('should handle tool result with output type content (image-url)', () => {
+      const prompt: LanguageModelV3Prompt = [
+        {
+          role: 'tool',
+          content: [
+            {
+              type: 'tool-result',
+              toolCallId: '1',
+              toolName: 'getImage',
+              output: {
+                type: 'content',
+                value: [
+                  {
+                    type: 'image-url',
+                    url: 'https://example.com/image.png',
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ];
+
+      const result = convertToOllamaChatMessages(prompt);
+
+      expect(result).toEqual([
+        {
+          role: 'tool',
+          content: '',
+          tool_name: 'getImage',
+          images: ['https://example.com/image.png'],
+        },
+      ]);
+    });
+
+    it('should handle tool result with output type content (file-data image)', () => {
+      const base64Png =
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==';
+      const prompt: LanguageModelV3Prompt = [
+        {
+          role: 'tool',
+          content: [
+            {
+              type: 'tool-result',
+              toolCallId: '1',
+              toolName: 'getImage',
+              output: {
+                type: 'content',
+                value: [
+                  {
+                    type: 'file-data',
+                    data: base64Png,
+                    mediaType: 'image/png',
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ];
+
+      const result = convertToOllamaChatMessages(prompt);
+
+      expect(result).toEqual([
+        {
+          role: 'tool',
+          content: '',
+          tool_name: 'getImage',
+          images: [base64Png],
+        },
+      ]);
+    });
   });
 
   describe('complex conversations', () => {
