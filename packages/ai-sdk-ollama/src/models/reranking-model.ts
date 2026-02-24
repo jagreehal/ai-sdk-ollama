@@ -8,6 +8,7 @@ import {
   createJsonResponseHandler,
   createJsonErrorResponseHandler,
   FetchFunction,
+  parseProviderOptions,
   postJsonToApi,
 } from '@ai-sdk/provider-utils';
 import { z } from 'zod';
@@ -60,22 +61,19 @@ export interface OllamaRerankingSettings {
 }
 
 /**
- * Ollama provider options for reranking calls
- */
-export interface OllamaRerankingProviderOptions {
-  /**
-   * Custom instruction for this specific reranking call.
-   * Overrides the instruction set in model settings.
-   */
-  instruction?: string;
-}
-
-/**
  * Schema for validating Ollama reranking provider options
  */
-const ollamaRerankingProviderOptionsSchema = z.object({
+export const ollamaRerankingProviderOptionsSchema = z.object({
+  /** Custom instruction for this specific reranking call. Overrides the instruction set in model settings. */
   instruction: z.string().optional(),
 });
+
+/**
+ * Ollama provider options for reranking calls
+ */
+export type OllamaRerankingProviderOptions = z.infer<
+  typeof ollamaRerankingProviderOptionsSchema
+>;
 
 /**
  * Ollama error response schema
@@ -168,15 +166,11 @@ export class OllamaRerankingModel implements RerankingModelV3 {
     const warnings: SharedV3Warning[] = [];
 
     // Parse provider options
-    let rerankingOptions: OllamaRerankingProviderOptions | undefined;
-    if (providerOptions?.ollama) {
-      const parsed = ollamaRerankingProviderOptionsSchema.safeParse(
-        providerOptions.ollama,
-      );
-      if (parsed.success) {
-        rerankingOptions = parsed.data;
-      }
-    }
+    const rerankingOptions = await parseProviderOptions({
+      provider: 'ollama',
+      providerOptions,
+      schema: ollamaRerankingProviderOptionsSchema,
+    });
 
     // Handle object documents by converting to strings with a warning
     let documentValues: string[];

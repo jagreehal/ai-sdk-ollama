@@ -1,6 +1,9 @@
 export {
   createOllama,
   ollama,
+  ollamaProviderOptionsSchema,
+  ollamaChatProviderOptionsSchema,
+  ollamaEmbeddingProviderOptionsSchema,
   type OllamaProvider,
   type OllamaProviderSettings,
   type OllamaChatSettings,
@@ -13,6 +16,7 @@ export {
 
 export {
   OllamaRerankingModel,
+  ollamaRerankingProviderOptionsSchema,
   type OllamaRerankingSettings,
   type OllamaRerankingProviderOptions,
 } from './models/reranking-model';
@@ -21,6 +25,8 @@ export {
   OllamaEmbeddingRerankingModel,
   type OllamaEmbeddingRerankingSettings,
 } from './models/embedding-reranking-model';
+
+export { OllamaImageModel } from './models/image-model';
 
 export { OllamaError } from './utils/ollama-error';
 export type { OllamaErrorData } from './utils/ollama-error';
