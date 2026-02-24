@@ -1,5 +1,4 @@
 // Browser-specific provider that uses ollama/browser
-import { NoSuchModelError } from '@ai-sdk/provider';
 import { Ollama as OllamaBrowser } from 'ollama/browser';
 import type { Ollama } from 'ollama';
 import { OllamaChatLanguageModel } from './models/chat-language-model';
@@ -12,6 +11,7 @@ import {
   OllamaEmbeddingRerankingModel,
   OllamaEmbeddingRerankingSettings,
 } from './models/embedding-reranking-model';
+import { OllamaImageModel } from './models/image-model';
 import { ollamaTools } from './ollama-tools';
 
 // Re-export all the types
@@ -172,13 +172,17 @@ export function createOllama(
   provider.reranking = createRerankingModel;
   provider.rerankingModel = createRerankingModel;
   provider.embeddingReranking = createEmbeddingRerankingModel;
-  provider.imageModel = (modelId: string) => {
-    throw new NoSuchModelError({
+
+  const baseURL = options.baseURL ?? 'http://127.0.0.1:11434';
+  const createImageModel = (modelId: string) =>
+    new OllamaImageModel(modelId, {
+      provider: 'ollama',
       modelId,
-      modelType: 'imageModel',
-      message: 'Image generation is not supported by Ollama',
+      baseURL,
+      headers: () => normalizedHeaders,
+      fetch: options.fetch,
     });
-  };
+  provider.imageModel = createImageModel;
 
   // Create tools with the Ollama client injected
   const toolsWithClient = {

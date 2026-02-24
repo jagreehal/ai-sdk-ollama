@@ -3,7 +3,6 @@ import {
   EmbeddingModelV3,
   RerankingModelV3,
   ProviderV3,
-  NoSuchModelError,
 } from '@ai-sdk/provider';
 import {
   Ollama,
@@ -12,6 +11,7 @@ import {
   type EmbedRequest,
   type Config,
 } from 'ollama';
+import { z } from 'zod';
 import { OllamaChatLanguageModel } from './models/chat-language-model';
 import { OllamaEmbeddingModel } from './models/embedding-model';
 import {
@@ -22,6 +22,7 @@ import {
   OllamaEmbeddingRerankingModel,
   OllamaEmbeddingRerankingSettings,
 } from './models/embedding-reranking-model';
+import { OllamaImageModel } from './models/image-model';
 import { ollamaTools } from './ollama-tools';
 import type { WebSearchToolOptions } from './tool/web-search';
 import type { WebFetchToolOptions } from './tool/web-fetch';
@@ -263,34 +264,43 @@ export interface OllamaEmbeddingSettings extends Pick<
 }
 
 /**
+ * Schema for validating Ollama provider options
+ */
+export const ollamaProviderOptionsSchema = z.object({
+  /** Additional headers to include in requests */
+  headers: z.record(z.string(), z.string()).optional(),
+});
+
+/**
  * Options for configuring Ollama provider calls
  */
-export interface OllamaProviderOptions {
-  /**
-   * Additional headers to include in requests
-   */
-  headers?: Record<string, string>;
-}
+export type OllamaProviderOptions = z.infer<typeof ollamaProviderOptionsSchema>;
+
+/**
+ * Schema for validating Ollama chat provider options
+ */
+export const ollamaChatProviderOptionsSchema = ollamaProviderOptionsSchema.extend({
+  /** Enable structured output mode for object generation */
+  structuredOutputs: z.boolean().optional(),
+});
 
 /**
  * Options for configuring Ollama chat model calls
  */
-export interface OllamaChatProviderOptions extends OllamaProviderOptions {
-  /**
-   * Enable structured output mode for object generation
-   */
-  structuredOutputs?: boolean;
-}
+export type OllamaChatProviderOptions = z.infer<typeof ollamaChatProviderOptionsSchema>;
+
+/**
+ * Schema for validating Ollama embedding provider options
+ */
+export const ollamaEmbeddingProviderOptionsSchema = ollamaProviderOptionsSchema.extend({
+  /** Maximum number of embeddings to process in a single call */
+  maxEmbeddingsPerCall: z.number().optional(),
+});
 
 /**
  * Options for configuring Ollama embedding model calls
  */
-export interface OllamaEmbeddingProviderOptions extends OllamaProviderOptions {
-  /**
-   * Maximum number of embeddings to process in a single call
-   */
-  maxEmbeddingsPerCall?: number;
-}
+export type OllamaEmbeddingProviderOptions = z.infer<typeof ollamaEmbeddingProviderOptionsSchema>;
 
 /**
  * Type guard to check if an object is Headers-like (has entries method)
@@ -434,13 +444,17 @@ export function createOllama(
   provider.reranking = createRerankingModel;
   provider.rerankingModel = createRerankingModel;
   provider.embeddingReranking = createEmbeddingRerankingModel;
-  provider.imageModel = (modelId: string) => {
-    throw new NoSuchModelError({
+
+  const baseURL = options.baseURL ?? 'http://127.0.0.1:11434';
+  const createImageModel = (modelId: string) =>
+    new OllamaImageModel(modelId, {
+      provider: 'ollama',
       modelId,
-      modelType: 'imageModel',
-      message: 'Image generation is not supported by Ollama',
+      baseURL,
+      headers: () => normalizedHeaders,
+      fetch: options.fetch,
     });
-  };
+  provider.imageModel = createImageModel;
 
   // Create tools with the Ollama client injected - following AI SDK pattern
   const toolsWithClient = {
