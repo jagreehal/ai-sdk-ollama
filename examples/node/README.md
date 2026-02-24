@@ -99,6 +99,21 @@ This example demonstrates image handling capabilities with AI SDK v5 format
 npx tsx examples/image-handling-example.ts
 ```
 
+### **image-generation-example.ts** - Image Generation (Experimental)
+
+This example uses the AI SDK's `generateImage()` with the Ollama provider's image model (`ollama.imageModel()`).
+
+- Uses `generateImage({ model: ollama.imageModel('x/z-image-turbo'), prompt })` (AI SDK way)
+- Optional `size`, `aspectRatio`, `seed`, `providerOptions.ollama` (e.g. steps, negative_prompt)
+- Saves images to `output/`
+
+**Prerequisites**: `ollama pull x/z-image-turbo`. Image generation is experimental (macOS first).
+
+```bash
+npx tsx src/image-generation-example.ts
+npx tsx src/image-generation-example.ts "Your prompt here"
+```
+
 ### **streaming-simple-test.ts** - Streaming Basics
 
 This example covers streaming fundamentals for real-time applications

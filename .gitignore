@@ -43,6 +43,7 @@ coverage/
 # Playwright
 examples/browser/playwright-report
 examples/browser/test-results
+examples/node/output
 
 # Changesets release artifacts
 .changeset/release.json

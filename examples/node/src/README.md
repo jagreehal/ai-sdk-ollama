@@ -62,15 +62,19 @@ This directory contains comprehensive examples demonstrating the enhanced Ollama
     - Image processing with Ollama
     - Run: `npx tsx src/image-handling-example.ts`
 
-14. **`reasoning-example.ts`** - Reasoning Example
+14. **`image-generation-example.ts`** - Image Generation (Experimental)
+    - AI SDK `generateImage()` with `ollama.imageModel()` (e.g. x/z-image-turbo)
+    - Run: `npx tsx src/image-generation-example.ts [prompt]`
+
+15. **`reasoning-example.ts`** - Reasoning Example
     - Advanced reasoning capabilities
     - Run: `npx tsx src/reasoning-example.ts`
 
-15. **`reasoning-example-simple.ts`** - Simple Reasoning Example
+16. **`reasoning-example-simple.ts`** - Simple Reasoning Example
     - Basic reasoning example
     - Run: `npx tsx src/reasoning-example-simple.ts`
 
-16. **`quoted-json-example.ts`** - Quoted JSON Fix Example
+17. **`quoted-json-example.ts`** - Quoted JSON Fix Example
     - Demonstrates the fix for JSON wrapped in quotes or markdown
     - Shows how string values are preserved during JSON repair
     - Run: `npx tsx src/quoted-json-example.ts`
