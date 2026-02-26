@@ -49,8 +49,8 @@ importers:
   examples/browser:
     dependencies:
       '@ai-sdk/react':
-        specifier: ^3.0.101
-        version: 3.0.101(react@19.2.4)(zod@4.3.6)
+        specifier: ^3.0.103
+        version: 3.0.103(react@19.2.4)(zod@4.3.6)
       '@radix-ui/react-avatar':
         specifier: ^1.1.11
         version: 1.1.11(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -298,8 +298,8 @@ packages:
     resolution: {integrity: sha512-oGMAgGoQdBXbZqNG0Ze56CHjDZ1IDYOwGYxYjO5KLSlz5HiNQ9udIXsPZ61VWaHGZ5XW/jyjmr6t2xz2jGVwbQ==}
     engines: {node: '>=18'}
 
-  '@ai-sdk/react@3.0.101':
-    resolution: {integrity: sha512-ifQtOldMUbIncxQsaotP4UOM1yBk0EVwR211NFu51+El/DptHz9GhKlBbTVLiqoMeTeVhPlGianhc7MRiKFJnA==}
+  '@ai-sdk/react@3.0.103':
+    resolution: {integrity: sha512-9kpQpOVv4Jf2I7lX/GCaO6u5F03e8QkVNIsneWJTH8P/txwPoaAp6T0rt9VVTE8bH65sEv/tZo9Ohst0GP/flQ==}
     engines: {node: '>=18'}
     peerDependencies:
       react: ^18 || ~19.0.1 || ~19.1.2 || ^19.2.1
@@ -1890,6 +1890,12 @@ packages:
     resolution: {integrity: sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw==}
     engines: {node: '>=0.4.0'}
     hasBin: true
+
+  ai@6.0.101:
+    resolution: {integrity: sha512-Ur/NgbgOp1rdhyDiKDk6EOpSgd1g5ADlbcD1cjQJtQsnmhEngz3Rf8nK5JetDh0vnbLy2aEBpaQeL+zvLRWuaA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
 
   ai@6.0.89:
     resolution: {integrity: sha512-5Hc0oCnANYo59oaNMK6VeWrR7MwTKT9FdvVV2giQAQbkZjJjgL+qJFKe8c2SpmLZvuObfc2BXpm8xRwOinKiTw==}
@@ -3874,10 +3880,10 @@ snapshots:
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/react@3.0.101(react@19.2.4)(zod@4.3.6)':
+  '@ai-sdk/react@3.0.103(react@19.2.4)(zod@4.3.6)':
     dependencies:
       '@ai-sdk/provider-utils': 4.0.15(zod@4.3.6)
-      ai: 6.0.99(zod@4.3.6)
+      ai: 6.0.101(zod@4.3.6)
       react: 19.2.4
       swr: 2.4.0(react@19.2.4)
       throttleit: 2.1.0
@@ -5335,6 +5341,14 @@ snapshots:
   acorn@8.15.0: {}
 
   acorn@8.16.0: {}
+
+  ai@6.0.101(zod@4.3.6):
+    dependencies:
+      '@ai-sdk/gateway': 3.0.55(zod@4.3.6)
+      '@ai-sdk/provider': 3.0.8
+      '@ai-sdk/provider-utils': 4.0.15(zod@4.3.6)
+      '@opentelemetry/api': 1.9.0
+      zod: 4.3.6
 
   ai@6.0.89(zod@4.3.6):
     dependencies:
