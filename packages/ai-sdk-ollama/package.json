@@ -100,7 +100,7 @@
     "@total-typescript/tsconfig": "^1.0.4",
     "@types/eslint-config-prettier": "^6.11.3",
     "@types/node": "^25.3.0",
-    "@typescript-eslint/eslint-plugin": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-unicorn": "^63.0.0",
