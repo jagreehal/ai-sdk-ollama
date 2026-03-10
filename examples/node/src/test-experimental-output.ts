@@ -3,16 +3,16 @@ import { ollama, generateText } from 'ai-sdk-ollama';
 import { z } from 'zod';
 
 async function main() {
-  console.log('Testing experimental_output with new types...\n');
+  console.log('Testing output with new types...\n');
   console.log('='.repeat(70));
 
   try {
-    // Test 1: Using experimental_output with generateText (no tools)
-    console.log('\nTest 1: experimental_output without tools');
+    // Test 1: Using output with generateText (no tools)
+    console.log('\nTest 1: output without tools');
     const result1 = await generateText({
       model: ollama('llama3.2'),
       prompt: 'Generate a simple greeting message with a number from 1-10 for enthusiasm level',
-      experimental_output: Output.object({
+      output: Output.object({
         schema: z.object({
           greeting: z.string(),
           enthusiasm: z.number().min(1).max(10),
@@ -20,12 +20,12 @@ async function main() {
       }),
     });
 
-    console.log('Result:', result1.experimental_output);
-    console.log('   Type - greeting:', typeof result1.experimental_output.greeting);
-    console.log('   Type - enthusiasm:', typeof result1.experimental_output.enthusiasm);
+    console.log('Result:', result1.output);
+    console.log('   Type - greeting:', typeof result1.output.greeting);
+    console.log('   Type - enthusiasm:', typeof result1.output.enthusiasm);
 
-    // Test 2: Using experimental_output WITH tools
-    console.log('\nTest 2: experimental_output WITH tool calling');
+    // Test 2: Using output WITH tools
+    console.log('\nTest 2: output WITH tool calling');
 
     const weatherTool = tool({
       description: 'Get current weather for a location',
@@ -52,7 +52,7 @@ async function main() {
         tools: {
           getWeather: weatherTool as any, // Type assertion needed due to AI SDK ToolSet type restrictions
         },
-        experimental_output: Output.object({
+        output: Output.object({
           schema: z.object({
             location: z.string(),
             summary: z.string(),
@@ -64,19 +64,19 @@ async function main() {
       });
 
       console.log('Tool calls:', result2.toolCalls.length);
-      console.log('Result:', result2.experimental_output);
-      console.log('   Type - location:', typeof result2.experimental_output.location);
-      console.log('   Type - summary:', typeof result2.experimental_output.summary);
-      console.log('   Type - recommendation:', typeof result2.experimental_output.recommendation);
-      console.log('   Type - shouldBringUmbrella:', typeof result2.experimental_output.shouldBringUmbrella);
+      console.log('Result:', result2.output);
+      console.log('   Type - location:', typeof result2.output.location);
+      console.log('   Type - summary:', typeof result2.output.summary);
+      console.log('   Type - recommendation:', typeof result2.output.recommendation);
+      console.log('   Type - shouldBringUmbrella:', typeof result2.output.shouldBringUmbrella);
     } catch (error) {
       console.log('Tool calls: ERROR -', error instanceof Error ? error.message : String(error));
       console.log('Result: ERROR - Could not generate structured output');
-      result2 = { toolCalls: [], experimental_output: null };
+      result2 = { toolCalls: [], output: null };
     }
 
-    // Test 3: Tool calling WITHOUT experimental_output (to verify tool works)
-    console.log('\nTest 3: Tool calling WITHOUT experimental_output');
+    // Test 3: Tool calling WITHOUT output (to verify tool works)
+    console.log('\nTest 3: Tool calling WITHOUT output');
     const result3 = await generateText({
       model: ollama('llama3.2'),
       prompt:
