@@ -28,12 +28,12 @@ function withOverrides<T extends object>(
       );
     },
     ownKeys(target) {
-      return Array.from(
-        new Set([
+      return [
+        ...new Set([
           ...Reflect.ownKeys(target),
           ...Reflect.ownKeys(overrides as object),
         ]),
-      );
+      ];
     },
     getOwnPropertyDescriptor(target, prop) {
       if (Object.prototype.hasOwnProperty.call(overrides, prop)) {
@@ -151,7 +151,7 @@ export async function generateText(
       // Build context with tool results
       const toolContext = toolResult.toolResults
         ?.map(
-          (tr: any, i: number) =>
+          (tr, i: number) =>
             `${toolResult.toolCalls?.[i]?.toolName}: ${JSON.stringify(tr.output || tr)}`,
         )
         .join('\n');
