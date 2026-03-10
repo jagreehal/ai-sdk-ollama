@@ -142,7 +142,7 @@ async function testStandardGenerateText(scenario: typeof testScenarios[number]):
     const result = await generateText({
       model: ollama('llama3.2'),
       prompt: scenario.prompt,
-      tools: scenario.tools,
+      tools: scenario.tools as Parameters<typeof generateText>[0]['tools'],
       stopWhen: stepCountIs(5), // Enable multi-turn tool calling
     });
 
@@ -189,7 +189,7 @@ async function testGenerateTextOllama(scenario: typeof testScenarios[number]): P
     const result = await generateTextOllama({
       model: ollama('llama3.2'),
       prompt: scenario.prompt,
-      tools: scenario.tools,
+      tools: scenario.tools as Parameters<typeof generateTextOllama>[0]['tools'],
     });
 
     // Check if tools were called in ANY step (not just the last one)
