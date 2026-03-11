@@ -5,7 +5,7 @@
  * that addresses the core Ollama limitation: tools execute but no final text is generated.
  */
 
-import { generateText as _generateText, stepCountIs } from 'ai';
+import { generateText as _generateText, stepCountIs, ToolSet, TypedToolResult } from 'ai';
 
 /**
  * Safely override readonly/getter-backed result fields without mutating the source object.
@@ -140,18 +140,17 @@ export async function generateText(
     requiresTools &&
     hasTools
   ) {
-    // Phase 1: Execute tools without output
-    const toolResult = await _generateText({
-      ...generateTextOptions,
-      output: undefined,
-    });
+    // Phase 1: Execute tools without output (omit the key entirely)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { output: _output, ...phase1Options } = generateTextOptions;
+    const toolResult = await _generateText(phase1Options);
 
     // If tools were called, use their results in Phase 2
     if (toolResult.toolCalls && toolResult.toolCalls.length > 0) {
       // Build context with tool results
       const toolContext = toolResult.toolResults
         ?.map(
-          (tr, i: number) =>
+          (tr: TypedToolResult<ToolSet>, i: number) =>
             `${toolResult.toolCalls?.[i]?.toolName}: ${JSON.stringify(tr.output || tr)}`,
         )
         .join('\n');
@@ -161,16 +160,13 @@ export async function generateText(
           ? `${generateTextOptions.prompt}\n\nTool Results:\n${toolContext}\n\nPlease provide a structured response based on these tool results.`
           : generateTextOptions.prompt;
 
-      const _generateTextOptions = {
-        ...generateTextOptions,
-        prompt: contextualPrompt,
-        tools: undefined,
-        toolChoice: undefined,
-      };
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { tools: _tools, toolChoice: _toolChoice, ...phase2Options } = generateTextOptions;
+      const phase2OptionsWithPrompt = { ...phase2Options, prompt: contextualPrompt };
 
       // Phase 2: Generate structured output with tool context
       const structuredResult = await _generateText(
-        _generateTextOptions as Parameters<typeof _generateText>[0],
+        phase2OptionsWithPrompt as Parameters<typeof _generateText>[0],
       );
 
       // Merge tool metadata into structured result (without mutating readonly getters)
@@ -205,8 +201,8 @@ export async function generateText(
     // Only set stopWhen default if user didn't provide one and tools are enabled
     stopWhen: (generateTextOptions.stopWhen ??
       (hasTools ? stepCountIs(5) : undefined)) as Parameters<
-      typeof _generateText
-    >[0]['stopWhen'],
+        typeof _generateText
+      >[0]['stopWhen'],
   });
 
   // Check if we need synthesis (tools called but no meaningful text)
@@ -271,16 +267,16 @@ ${synthesisPrompt}`;
       // Use messages pattern if original call used messages, otherwise use prompt
       const synthesisOptions = messages
         ? {
-            ...baseOptions,
-            messages: [
-              ...(messages || []),
-              { role: 'user' as const, content: fullSynthesisPrompt },
-            ],
-          }
+          ...baseOptions,
+          messages: [
+            ...(messages || []),
+            { role: 'user' as const, content: fullSynthesisPrompt },
+          ],
+        }
         : {
-            ...baseOptions,
-            prompt: fullSynthesisPrompt,
-          };
+          ...baseOptions,
+          prompt: fullSynthesisPrompt,
+        };
 
       // Generate synthesis response
       const synthesisResult = await _generateText(
