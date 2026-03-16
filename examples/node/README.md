@@ -75,7 +75,7 @@ npx tsx examples/tool-calling-example.ts
 
 This example demonstrates the `enableToolsWithStructuredOutput` feature
 
-- Standard behavior: tools bypassed when using experimental_output
+- Standard behavior: tools bypassed when using output
 - Enhanced behavior: tools called AND structured output generated
 - Comparison between standard and enhanced modes
 - Real data from tools used in structured output

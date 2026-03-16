@@ -5,7 +5,49 @@
  * that addresses the core Ollama limitation: tools execute but no final text is generated.
  */
 
-import { generateText as _generateText, stepCountIs } from 'ai';
+import { generateText as _generateText, stepCountIs, ToolSet, TypedToolResult } from 'ai';
+
+/**
+ * Safely override readonly/getter-backed result fields without mutating the source object.
+ */
+function withOverrides<T extends object>(
+  base: T,
+  overrides: Partial<T>,
+): T {
+  return new Proxy(base, {
+    get(target, prop, receiver) {
+      if (Object.prototype.hasOwnProperty.call(overrides, prop)) {
+        return (overrides as Record<PropertyKey, unknown>)[prop];
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+    has(target, prop) {
+      return (
+        Object.prototype.hasOwnProperty.call(overrides, prop) ||
+        Reflect.has(target, prop)
+      );
+    },
+    ownKeys(target) {
+      return [
+        ...new Set([
+          ...Reflect.ownKeys(target),
+          ...Reflect.ownKeys(overrides as object),
+        ]),
+      ];
+    },
+    getOwnPropertyDescriptor(target, prop) {
+      if (Object.prototype.hasOwnProperty.call(overrides, prop)) {
+        return {
+          configurable: true,
+          enumerable: true,
+          value: (overrides as Record<PropertyKey, unknown>)[prop],
+          writable: false,
+        };
+      }
+      return Reflect.getOwnPropertyDescriptor(target, prop);
+    },
+  });
+}
 
 /**
  * Enhanced options for Ollama-specific reliability features
@@ -35,11 +77,11 @@ export interface EnhancedOptions {
   minResponseLength?: number;
 
   /**
-   * EXPERIMENTAL: Enable tool calling with structured output (experimental_output)
+   * EXPERIMENTAL: Enable tool calling with structured output (output)
    *
-   * The official AI SDK doesn't support combining toolChoice: 'required' with experimental_output.
+   * The official AI SDK doesn't support combining toolChoice: 'required' with output.
    * When enabled, this uses a two-phase approach:
-   * 1. Execute tools first (without experimental_output)
+   * 1. Execute tools first (without output)
    * 2. Generate structured output with tool results injected as context
    *
    * This is NOT standard AI SDK behavior - only enable if you need both features together.
@@ -85,7 +127,7 @@ export async function generateText(
     Object.keys(generateTextOptions.tools).length > 0;
 
   // EXPERIMENTAL: Support tools with structured output (opt-in only)
-  const hasExperimentalOutput = 'experimental_output' in generateTextOptions;
+  const hasOutput = 'output' in generateTextOptions;
   const requiresTools =
     generateTextOptions.toolChoice === 'required' ||
     (typeof generateTextOptions.toolChoice === 'object' &&
@@ -94,22 +136,21 @@ export async function generateText(
 
   if (
     enableToolsWithStructuredOutput &&
-    hasExperimentalOutput &&
+    hasOutput &&
     requiresTools &&
     hasTools
   ) {
-    // Phase 1: Execute tools without experimental_output
-    const toolResult = await _generateText({
-      ...generateTextOptions,
-      experimental_output: undefined,
-    });
+    // Phase 1: Execute tools without output (omit the key entirely)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { output: _output, ...phase1Options } = generateTextOptions;
+    const toolResult = await _generateText(phase1Options);
 
     // If tools were called, use their results in Phase 2
     if (toolResult.toolCalls && toolResult.toolCalls.length > 0) {
       // Build context with tool results
       const toolContext = toolResult.toolResults
         ?.map(
-          (tr, i) =>
+          (tr: TypedToolResult<ToolSet>, i: number) =>
             `${toolResult.toolCalls?.[i]?.toolName}: ${JSON.stringify(tr.output || tr)}`,
         )
         .join('\n');
@@ -119,20 +160,17 @@ export async function generateText(
           ? `${generateTextOptions.prompt}\n\nTool Results:\n${toolContext}\n\nPlease provide a structured response based on these tool results.`
           : generateTextOptions.prompt;
 
-      const _generateTextOptions = {
-        ...generateTextOptions,
-        prompt: contextualPrompt,
-        tools: undefined,
-        toolChoice: undefined,
-      };
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { tools: _tools, toolChoice: _toolChoice, ...phase2Options } = generateTextOptions;
+      const phase2OptionsWithPrompt = { ...phase2Options, prompt: contextualPrompt };
 
       // Phase 2: Generate structured output with tool context
       const structuredResult = await _generateText(
-        _generateTextOptions as Parameters<typeof _generateText>[0],
+        phase2OptionsWithPrompt as Parameters<typeof _generateText>[0],
       );
 
-      // Merge tool metadata into structured result
-      const enhancedResult = Object.assign(structuredResult, {
+      // Merge tool metadata into structured result (without mutating readonly getters)
+      const enhancedResult = withOverrides(structuredResult, {
         toolCalls: toolResult.toolCalls,
         toolResults: toolResult.toolResults,
         staticToolCalls: toolResult.staticToolCalls,
@@ -150,7 +188,7 @@ export async function generateText(
             (toolResult.usage.totalTokens || 0) +
             (structuredResult.usage.totalTokens || 0),
         },
-      });
+      } as Partial<typeof structuredResult>);
 
       return enhancedResult;
     }
@@ -163,14 +201,17 @@ export async function generateText(
     // Only set stopWhen default if user didn't provide one and tools are enabled
     stopWhen: (generateTextOptions.stopWhen ??
       (hasTools ? stepCountIs(5) : undefined)) as Parameters<
-      typeof _generateText
-    >[0]['stopWhen'],
+        typeof _generateText
+      >[0]['stopWhen'],
   });
 
   // Check if we need synthesis (tools called but no meaningful text)
   // Check across all steps to see if any tools were called
   const toolsWereCalled =
-    result.steps?.some((step) => step.toolCalls && step.toolCalls.length > 0) ??
+    result.steps?.some(
+      (step: { toolCalls?: unknown[] }) =>
+        step.toolCalls && step.toolCalls.length > 0,
+    ) ??
     false;
   const hasMinimalText =
     !result.text || result.text.trim().length < minResponseLength;
@@ -226,16 +267,16 @@ ${synthesisPrompt}`;
       // Use messages pattern if original call used messages, otherwise use prompt
       const synthesisOptions = messages
         ? {
-            ...baseOptions,
-            messages: [
-              ...(messages || []),
-              { role: 'user' as const, content: fullSynthesisPrompt },
-            ],
-          }
+          ...baseOptions,
+          messages: [
+            ...(messages || []),
+            { role: 'user' as const, content: fullSynthesisPrompt },
+          ],
+        }
         : {
-            ...baseOptions,
-            prompt: fullSynthesisPrompt,
-          };
+          ...baseOptions,
+          prompt: fullSynthesisPrompt,
+        };
 
       // Generate synthesis response
       const synthesisResult = await _generateText(
@@ -246,8 +287,8 @@ ${synthesisPrompt}`;
         synthesisResult.text &&
         synthesisResult.text.trim().length >= minResponseLength
       ) {
-        // Merge synthesis text and combined usage into result
-        const enhancedResult = Object.assign(result, {
+        // Merge synthesis text and combined usage into result (without mutating readonly getters)
+        const enhancedResult = withOverrides(result, {
           text: synthesisResult.text,
           usage: {
             inputTokens:
@@ -260,7 +301,7 @@ ${synthesisPrompt}`;
               (result.usage.totalTokens || 0) +
               (synthesisResult.usage.totalTokens || 0),
           },
-        });
+        } as Partial<typeof result>);
 
         return enhancedResult;
       }

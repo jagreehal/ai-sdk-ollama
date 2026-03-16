@@ -7,16 +7,17 @@ async function main() {
   console.log('This is an ai-sdk-ollama exclusive feature!\n');
   console.log('='.repeat(70));
 
+  const actualTemperature = 22; // Simulated real weather data for testing
   const weatherTool = tool({
     description: 'Get current weather for a location',
     inputSchema: z.object({
       location: z.string().describe('City name'),
     }),
     execute: async ({ location }: { location: string }) => {
-      console.log(`   🌤️  Weather tool called for: ${location}`);
+      console.log(`   🌤️  Weather tool called for: ${location}, expected temp: ${actualTemperature}`);
       return {
         location,
-        temperature: 22,
+        temperature: actualTemperature,
         condition: 'sunny',
         humidity: 60,
       };
@@ -38,28 +39,28 @@ async function main() {
 
   // Test 1: Standard AI SDK behavior (tools are bypassed)
   console.log('\n📌 Test 1: Standard behavior (no enhancement)');
-  console.log('toolChoice: "required" + experimental_output');
+  console.log('toolChoice: "required" + output');
   const result1 = await generateText({
     model: ollama('llama3.2'),
     prompt,
     tools,
-    experimental_output: experimentalOutput,
+    output: experimentalOutput,
     toolChoice: 'required',
     // NO enhancedOptions - uses official AI SDK behavior
   });
 
   console.log('✅ Tool calls:', result1.toolCalls?.length || 0);
-  console.log('✅ Has actual weather data:', result1.experimental_output.temperature !== 0);
-  console.log('   Result:', JSON.stringify(result1.experimental_output, null, 2));
+  console.log('✅ Has actual weather data:', result1.output.temperature === actualTemperature);
+  console.log('   Result:', JSON.stringify(result1.output, null, 2));
 
   // Test 2: Enhanced behavior (ai-sdk-ollama exclusive!)
   console.log('\n📌 Test 2: ENHANCED behavior (opt-in)');
-  console.log('toolChoice: "required" + experimental_output + enableToolsWithStructuredOutput');
+  console.log('toolChoice: "required" + output + enableToolsWithStructuredOutput');
   const result2 = await generateText({
     model: ollama('llama3.2'),
     prompt,
     tools,
-    experimental_output: experimentalOutput,
+    output: experimentalOutput,
     toolChoice: 'required',
     enhancedOptions: {
       enableToolsWithStructuredOutput: true, // ⚡ Enable the magic!
@@ -68,13 +69,13 @@ async function main() {
 
   console.log('✅ Tool calls:', result2.toolCalls?.length || 0);
   console.log('✅ Tool results:', result2.toolResults?.length || 0);
-  console.log('✅ Has actual weather data:', result2.experimental_output.temperature === 22);
-  console.log('   Result:', JSON.stringify(result2.experimental_output, null, 2));
+  console.log('✅ Has actual weather data:', result2.output.temperature === actualTemperature);
+  console.log('   Result:', JSON.stringify(result2.output, null, 2));
 
   console.log('\n' + '='.repeat(70));
   console.log('🎯 Comparison:');
-  console.log(`   Standard: ${result1.toolCalls?.length || 0} tool calls, temp: ${result1.experimental_output.temperature}`);
-  console.log(`   Enhanced: ${result2.toolCalls?.length || 0} tool calls, temp: ${result2.experimental_output.temperature}`);
+  console.log(`   Standard: ${result1.toolCalls?.length || 0} tool calls, temp: ${result1.output.temperature}`);
+  console.log(`   Enhanced: ${result2.toolCalls?.length || 0} tool calls, temp: ${result2.output.temperature}`);
   console.log('\n💡 The enhanced mode actually calls the tool and uses real data!');
   console.log('   This is ONLY available in ai-sdk-ollama.');
   console.log('='.repeat(70));
