@@ -5,48 +5,25 @@
  * that addresses the core Ollama limitation: tools execute but no final text is generated.
  */
 
-import { generateText as _generateText, stepCountIs, ToolSet, TypedToolResult } from 'ai';
+import { generateText as _generateText, stepCountIs } from 'ai';
 
 /**
- * Safely override readonly/getter-backed result fields without mutating the source object.
+ * Create a new object that inherits from `base` (preserving its getters/prototype)
+ * but with specific properties overridden via own-property descriptors.
  */
-function withOverrides<T extends object>(
+function resultWithOverrides<T extends object>(
   base: T,
   overrides: Partial<T>,
 ): T {
-  return new Proxy(base, {
-    get(target, prop, receiver) {
-      if (Object.prototype.hasOwnProperty.call(overrides, prop)) {
-        return (overrides as Record<PropertyKey, unknown>)[prop];
-      }
-      return Reflect.get(target, prop, receiver);
-    },
-    has(target, prop) {
-      return (
-        Object.prototype.hasOwnProperty.call(overrides, prop) ||
-        Reflect.has(target, prop)
-      );
-    },
-    ownKeys(target) {
-      return [
-        ...new Set([
-          ...Reflect.ownKeys(target),
-          ...Reflect.ownKeys(overrides as object),
-        ]),
-      ];
-    },
-    getOwnPropertyDescriptor(target, prop) {
-      if (Object.prototype.hasOwnProperty.call(overrides, prop)) {
-        return {
-          configurable: true,
-          enumerable: true,
-          value: (overrides as Record<PropertyKey, unknown>)[prop],
-          writable: false,
-        };
-      }
-      return Reflect.getOwnPropertyDescriptor(target, prop);
-    },
-  });
+  const descriptors: PropertyDescriptorMap = {};
+  for (const key of Object.keys(overrides)) {
+    descriptors[key] = {
+      value: (overrides as Record<string, unknown>)[key],
+      enumerable: true,
+      configurable: true,
+    };
+  }
+  return Object.create(base, descriptors) as T;
 }
 
 /**
@@ -141,28 +118,44 @@ export async function generateText(
     hasTools
   ) {
     // Phase 1: Execute tools without output (omit the key entirely)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { output: _output, ...phase1Options } = generateTextOptions;
-    const toolResult = await _generateText(phase1Options);
+    const phase1Options = Object.fromEntries(
+      Object.entries(generateTextOptions).filter(([key]) => key !== 'output'),
+    );
+    const toolResult = await _generateText(
+      phase1Options as Parameters<typeof _generateText>[0],
+    );
 
     // If tools were called, use their results in Phase 2
     if (toolResult.toolCalls && toolResult.toolCalls.length > 0) {
       // Build context with tool results
       const toolContext = toolResult.toolResults
         ?.map(
-          (tr: TypedToolResult<ToolSet>, i: number) =>
-            `${toolResult.toolCalls?.[i]?.toolName}: ${JSON.stringify(tr.output || tr)}`,
+          (tr, i) =>
+            `${toolResult.toolCalls?.[i]?.toolName}: ${JSON.stringify(tr.output ?? tr)}`,
         )
         .join('\n');
 
-      const contextualPrompt =
-        typeof generateTextOptions.prompt === 'string'
-          ? `${generateTextOptions.prompt}\n\nTool Results:\n${toolContext}\n\nPlease provide a structured response based on these tool results.`
-          : generateTextOptions.prompt;
+      const toolResultsSuffix = `\n\nTool Results:\n${toolContext}\n\nPlease provide a structured response based on these tool results.`;
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { tools: _tools, toolChoice: _toolChoice, ...phase2Options } = generateTextOptions;
-      const phase2OptionsWithPrompt = { ...phase2Options, prompt: contextualPrompt };
+      // Inject tool context into either prompt or messages
+      const phase2Base = Object.fromEntries(
+        Object.entries(generateTextOptions).filter(
+          ([key]) => key !== 'tools' && key !== 'toolChoice',
+        ),
+      ) as typeof generateTextOptions;
+      const phase2OptionsWithPrompt =
+        typeof phase2Base.prompt === 'string'
+          ? { ...phase2Base, prompt: phase2Base.prompt + toolResultsSuffix }
+          : phase2Base.messages
+            ? {
+                ...phase2Base,
+                prompt: undefined,
+                messages: [
+                  ...phase2Base.messages,
+                  { role: 'user' as const, content: toolResultsSuffix.trim() },
+                ],
+              }
+            : phase2Base;
 
       // Phase 2: Generate structured output with tool context
       const structuredResult = await _generateText(
@@ -170,7 +163,7 @@ export async function generateText(
       );
 
       // Merge tool metadata into structured result (without mutating readonly getters)
-      const enhancedResult = withOverrides(structuredResult, {
+      const enhancedResult = resultWithOverrides(structuredResult, {
         toolCalls: toolResult.toolCalls,
         toolResults: toolResult.toolResults,
         staticToolCalls: toolResult.staticToolCalls,
@@ -179,14 +172,14 @@ export async function generateText(
         dynamicToolResults: toolResult.dynamicToolResults,
         usage: {
           inputTokens:
-            (toolResult.usage.inputTokens || 0) +
-            (structuredResult.usage.inputTokens || 0),
+            (toolResult.usage.inputTokens ?? 0) +
+            (structuredResult.usage.inputTokens ?? 0),
           outputTokens:
-            (toolResult.usage.outputTokens || 0) +
-            (structuredResult.usage.outputTokens || 0),
+            (toolResult.usage.outputTokens ?? 0) +
+            (structuredResult.usage.outputTokens ?? 0),
           totalTokens:
-            (toolResult.usage.totalTokens || 0) +
-            (structuredResult.usage.totalTokens || 0),
+            (toolResult.usage.totalTokens ?? 0) +
+            (structuredResult.usage.totalTokens ?? 0),
         },
       } as Partial<typeof structuredResult>);
 
@@ -201,8 +194,8 @@ export async function generateText(
     // Only set stopWhen default if user didn't provide one and tools are enabled
     stopWhen: (generateTextOptions.stopWhen ??
       (hasTools ? stepCountIs(5) : undefined)) as Parameters<
-        typeof _generateText
-      >[0]['stopWhen'],
+      typeof _generateText
+    >[0]['stopWhen'],
   });
 
   // Check if we need synthesis (tools called but no meaningful text)
@@ -211,8 +204,7 @@ export async function generateText(
     result.steps?.some(
       (step: { toolCalls?: unknown[] }) =>
         step.toolCalls && step.toolCalls.length > 0,
-    ) ??
-    false;
+    ) ?? false;
   const hasMinimalText =
     !result.text || result.text.trim().length < minResponseLength;
 
@@ -260,23 +252,28 @@ ${toolContext}
 
 ${synthesisPrompt}`;
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { tools, prompt, messages, ...baseOptions } =
-        generateTextOptions as Parameters<typeof _generateText>[0];
+      const generateOptions = generateTextOptions as Parameters<
+        typeof _generateText
+      >[0];
+      const baseOptions = Object.fromEntries(
+        Object.entries(generateOptions).filter(
+          ([key]) => key !== 'tools' && key !== 'prompt' && key !== 'messages',
+        ),
+      );
 
       // Use messages pattern if original call used messages, otherwise use prompt
-      const synthesisOptions = messages
+      const synthesisOptions = generateOptions.messages
         ? {
-          ...baseOptions,
-          messages: [
-            ...(messages || []),
-            { role: 'user' as const, content: fullSynthesisPrompt },
-          ],
-        }
+            ...baseOptions,
+            messages: [
+              ...(generateOptions.messages || []),
+              { role: 'user' as const, content: fullSynthesisPrompt },
+            ],
+          }
         : {
-          ...baseOptions,
-          prompt: fullSynthesisPrompt,
-        };
+            ...baseOptions,
+            prompt: fullSynthesisPrompt,
+          };
 
       // Generate synthesis response
       const synthesisResult = await _generateText(
@@ -288,18 +285,18 @@ ${synthesisPrompt}`;
         synthesisResult.text.trim().length >= minResponseLength
       ) {
         // Merge synthesis text and combined usage into result (without mutating readonly getters)
-        const enhancedResult = withOverrides(result, {
+        const enhancedResult = resultWithOverrides(result, {
           text: synthesisResult.text,
           usage: {
             inputTokens:
-              (result.usage.inputTokens || 0) +
-              (synthesisResult.usage.inputTokens || 0),
+              (result.usage.inputTokens ?? 0) +
+              (synthesisResult.usage.inputTokens ?? 0),
             outputTokens:
-              (result.usage.outputTokens || 0) +
-              (synthesisResult.usage.outputTokens || 0),
+              (result.usage.outputTokens ?? 0) +
+              (synthesisResult.usage.outputTokens ?? 0),
             totalTokens:
-              (result.usage.totalTokens || 0) +
-              (synthesisResult.usage.totalTokens || 0),
+              (result.usage.totalTokens ?? 0) +
+              (synthesisResult.usage.totalTokens ?? 0),
           },
         } as Partial<typeof result>);
 
