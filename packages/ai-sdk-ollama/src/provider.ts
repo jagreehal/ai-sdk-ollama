@@ -279,28 +279,34 @@ export type OllamaProviderOptions = z.infer<typeof ollamaProviderOptionsSchema>;
 /**
  * Schema for validating Ollama chat provider options
  */
-export const ollamaChatProviderOptionsSchema = ollamaProviderOptionsSchema.extend({
-  /** Enable structured output mode for object generation */
-  structuredOutputs: z.boolean().optional(),
-});
+export const ollamaChatProviderOptionsSchema =
+  ollamaProviderOptionsSchema.extend({
+    /** Enable structured output mode for object generation */
+    structuredOutputs: z.boolean().optional(),
+  });
 
 /**
  * Options for configuring Ollama chat model calls
  */
-export type OllamaChatProviderOptions = z.infer<typeof ollamaChatProviderOptionsSchema>;
+export type OllamaChatProviderOptions = z.infer<
+  typeof ollamaChatProviderOptionsSchema
+>;
 
 /**
  * Schema for validating Ollama embedding provider options
  */
-export const ollamaEmbeddingProviderOptionsSchema = ollamaProviderOptionsSchema.extend({
-  /** Maximum number of embeddings to process in a single call */
-  maxEmbeddingsPerCall: z.number().optional(),
-});
+export const ollamaEmbeddingProviderOptionsSchema =
+  ollamaProviderOptionsSchema.extend({
+    /** Maximum number of embeddings to process in a single call */
+    maxEmbeddingsPerCall: z.number().optional(),
+  });
 
 /**
  * Options for configuring Ollama embedding model calls
  */
-export type OllamaEmbeddingProviderOptions = z.infer<typeof ollamaEmbeddingProviderOptionsSchema>;
+export type OllamaEmbeddingProviderOptions = z.infer<
+  typeof ollamaEmbeddingProviderOptionsSchema
+>;
 
 /**
  * Type guard to check if an object is Headers-like (has entries method)

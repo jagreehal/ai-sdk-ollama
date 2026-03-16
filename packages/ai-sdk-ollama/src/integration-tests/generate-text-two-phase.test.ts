@@ -39,7 +39,8 @@ describe('generateText – two-phase path (enableToolsWithStructuredOutput)', ()
   it('preserves toolCalls/toolResults and returns structured output', async () => {
     const result = await generateText({
       model: ollama('llama3.2', { structuredOutputs: true }),
-      prompt: 'Get the weather for San Francisco and provide a structured summary.',
+      prompt:
+        'Get the weather for San Francisco and provide a structured summary.',
       tools: { getWeather: weatherTool },
       toolChoice: 'required',
       output: weatherOutput,
