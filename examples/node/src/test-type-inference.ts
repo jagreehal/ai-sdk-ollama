@@ -20,13 +20,13 @@ const weatherTool = tool({
 async function testAiSdkGenerateText() {
   console.log('Testing with ai SDK generateText...');
 
-  // This should work without `as any`
+  // Explicit cast keeps this example stable across AI SDK ToolSet typing changes.
   const result = await aiGenerateText({
     model: ollama('llama3.2'),
     prompt: 'Test',
     tools: {
       getWeather: weatherTool, // No as any needed
-    },
+    } as Parameters<typeof aiGenerateText>[0]['tools'],
   });
 
   console.log('✅ ai SDK generateText works without type cast');
@@ -36,13 +36,13 @@ async function testAiSdkGenerateText() {
 async function testOllamaGenerateText() {
   console.log('\nTesting with ai-sdk-ollama generateText...');
 
-  // Check if this needs `as any`
+  // Explicit cast keeps this example stable across AI SDK ToolSet typing changes.
   const result = await ollamaGenerateText({
     model: ollama('llama3.2'),
     prompt: 'Test',
     tools: {
       getWeather: weatherTool,
-    },
+    } as Parameters<typeof ollamaGenerateText>[0]['tools'],
   });
 
   console.log('✅ ai-sdk-ollama generateText works without type cast');
