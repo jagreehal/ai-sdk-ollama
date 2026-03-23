@@ -85,8 +85,8 @@ importers:
         specifier: ^4.2.2
         version: 4.2.2(vite@8.0.1(@types/node@25.5.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0))
       ai:
-        specifier: ^6.0.116
-        version: 6.0.116(zod@4.3.6)
+        specifier: ^6.0.134
+        version: 6.0.134(zod@4.3.6)
       ai-sdk-ollama:
         specifier: workspace:*
         version: link:../../packages/ai-sdk-ollama
@@ -164,8 +164,8 @@ importers:
         specifier: ^1.0.25
         version: 1.0.25(zod@4.3.6)
       ai:
-        specifier: ^6.0.116
-        version: 6.0.116(zod@4.3.6)
+        specifier: ^6.0.134
+        version: 6.0.134(zod@4.3.6)
       ai-sdk-ollama:
         specifier: workspace:*
         version: link:../../packages/ai-sdk-ollama
