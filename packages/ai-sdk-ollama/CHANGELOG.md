@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.8.2
+
+### Patch Changes
+
+- 92ca938: Fix TypeScript 6.0 build failure caused by deprecated baseUrl option in tsup DTS generation
+
 ## 3.8.1
 
 ### Patch Changes
