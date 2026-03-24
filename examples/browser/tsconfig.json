@@ -18,7 +18,6 @@
     "jsxImportSource": "react",
 
     /* Path mapping for shadcn/ui */
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
     },
