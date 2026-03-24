@@ -1,21 +1,7 @@
-/**
- * streamText - Enhanced streamText with Ollama-specific reliability
- *
- * This wrapper provides streaming tool calling reliability by detecting
- * when tools execute but no text is streamed, then providing synthesis.
- *
- * Enhances both `textStream` and `fullStream` with synthesis support.
- */
-
 import { streamText as _streamText, stepCountIs } from 'ai';
 
-// Extract the AI SDK's streamText options type for full compatibility
 type AIStreamTextOptions = Parameters<typeof _streamText>[0];
 
-/**
- * TextStreamPart type for fullStream synthesis
- * Mirrors the AI SDK's TextStreamPart structure
- */
 type SynthesisStreamPart =
   | { type: 'text-start'; id: string }
   | { type: 'text-delta'; id: string; text: string; delta?: string }
@@ -47,53 +33,24 @@ type SynthesisStreamPart =
     }
   | { type: string; [key: string]: unknown };
 
-/**
- * Type for parts from the AI SDK's fullStream
- * This is more permissive to handle all possible stream part types
- */
 type StreamPart = {
   type: string;
   [key: string]: unknown;
 };
 
-/**
- * Enhanced streamText options that extend the official AI SDK options
- * This ensures 100% compatibility - all AI SDK properties are supported
- */
 export type StreamTextOptions = AIStreamTextOptions & {
-  /**
-   * Enhanced options for Ollama-specific reliability features
-   */
   enhancedOptions?: {
-    /**
-     * Enable enhanced tool calling logging
-     * @default true
-     */
+    /** @default true */
     enableToolLogging?: boolean;
-
-    /**
-     * Enable streaming synthesis when tools execute but no text streams
-     * @default true
-     */
+    /** @default true */
     enableStreamingSynthesis?: boolean;
-
-    /**
-     * Minimum streamed characters before considering it successful
-     * @default 10
-     */
+    /** @default 10 */
     minStreamLength?: number;
-
-    /**
-     * Timeout in ms to wait for streaming before applying synthesis
-     * @default 3000
-     */
+    /** @default 3000 */
     synthesisTimeout?: number;
   };
 };
 
-/**
- * Collected stream state for synthesis decision
- */
 interface StreamState {
   textContent: string;
   toolCalls: Array<{ toolCallId: string; toolName: string; input: unknown }>;
@@ -102,10 +59,6 @@ interface StreamState {
   parts: SynthesisStreamPart[];
 }
 
-/**
- * Enhanced streamText function with Ollama-specific reliability improvements
- * Enhances both textStream and fullStream with synthesis support
- */
 export async function streamText(
   options: StreamTextOptions,
 ): Promise<Awaited<ReturnType<typeof _streamText>>> {
@@ -119,21 +72,16 @@ export async function streamText(
 
   const hasTools = options.tools && Object.keys(options.tools).length > 0;
 
-  // If no tools, just use standard streaming - forward all options automatically
   if (!hasTools || !enableStreamingSynthesis) {
     return _streamText(streamTextOptions as Parameters<typeof _streamText>[0]);
   }
 
-  // Enhanced streaming with tool calling reliability
-  // Automatically forward all AI SDK options, only override stopWhen if needed
   const streamResult = await _streamText({
     ...(streamTextOptions as Parameters<typeof _streamText>[0]),
-    // Only set stopWhen default if user didn't provide one and tools are enabled
     stopWhen:
       streamTextOptions.stopWhen ?? (hasTools ? stepCountIs(5) : undefined),
   });
 
-  // Shared state for synthesis
   const state: StreamState = {
     textContent: '',
     toolCalls: [],
@@ -145,16 +93,20 @@ export async function streamText(
   let synthesisApplied = false;
   let synthesisInProgress = false;
 
-  /**
-   * Generate synthesis response and return text chunks
-   */
-  const generateSynthesis = async (): Promise<string> => {
+  // Generates a synthesis response. Accepts overrides for tool calls/results
+  // since state may not be populated when only textStream is consumed.
+  const generateSynthesis = async (
+    toolCallsOverride?: typeof state.toolCalls,
+    toolResultsOverride?: typeof state.toolResults,
+  ): Promise<string> => {
     if (synthesisApplied || synthesisInProgress) {
       return '';
     }
 
-    // Check if synthesis is needed
-    if (state.toolCalls.length === 0) {
+    const toolCalls = toolCallsOverride ?? state.toolCalls;
+    const toolResults = toolResultsOverride ?? state.toolResults;
+
+    if (toolCalls.length === 0) {
       return '';
     }
 
@@ -166,7 +118,7 @@ export async function streamText(
 
     try {
       const toolContext =
-        state.toolResults
+        toolResults
           .map((tr) => {
             return `${tr.toolName}: ${JSON.stringify(tr.output)}`;
           })
@@ -188,7 +140,6 @@ Based on the tool results above, please provide a comprehensive response to the 
       const { tools, prompt, messages, ...baseOptions } =
         streamTextOptions as Parameters<typeof _streamText>[0];
 
-      // Use messages pattern if original call used messages, otherwise use prompt
       const synthesisOptions = messages
         ? {
             ...baseOptions,
@@ -206,7 +157,6 @@ Based on the tool results above, please provide a comprehensive response to the 
         synthesisOptions as Parameters<typeof _streamText>[0],
       );
 
-      // Collect synthesis text
       let synthesisText = '';
       for await (const chunk of synthesisStream.textStream) {
         synthesisText += chunk;
@@ -222,11 +172,9 @@ Based on the tool results above, please provide a comprehensive response to the 
     }
   };
 
-  /**
-   * Create enhanced textStream with synthesis support
-   */
+  // Uses streamResult.steps (not shared state) to detect tool calls,
+  // since textStream may be consumed without fullStream populating state.
   const createEnhancedTextStream = () => {
-    // Get the original text stream
     const originalTextStream = streamResult.textStream;
 
     return new ReadableStream<string>({
@@ -241,7 +189,7 @@ Based on the tool results above, please provide a comprehensive response to the 
             try {
               controller.close();
             } catch {
-              // Controller already closed
+              // already closed
             }
           }
         };
@@ -259,15 +207,55 @@ Based on the tool results above, please provide a comprehensive response to the 
           return false;
         };
 
-        const applySynthesis = async () => {
+        const applySynthesisFromSteps = async () => {
           if (synthesisApplied || controllerClosed) return;
 
-          const synthesisText = await generateSynthesis();
-          if (synthesisText && !controllerClosed) {
-            // Stream synthesis character by character for smooth experience
-            for (const char of synthesisText) {
-              if (!safeEnqueue(char)) break;
+          try {
+            const steps = await streamResult.steps;
+            const allToolCalls: typeof state.toolCalls = [];
+            const allToolResults: typeof state.toolResults = [];
+
+            if (steps) {
+              for (const step of steps) {
+                if (step.toolCalls) {
+                  for (const tc of step.toolCalls) {
+                    allToolCalls.push({
+                      toolCallId: tc.toolCallId,
+                      toolName: tc.toolName,
+                      input: tc.input,
+                    });
+                  }
+                }
+                if (step.toolResults) {
+                  for (const tr of step.toolResults) {
+                    allToolResults.push({
+                      toolCallId: tr.toolCallId,
+                      toolName: tr.toolName,
+                      output: tr.output,
+                    });
+                  }
+                }
+              }
             }
+
+            if (
+              allToolCalls.length > 0 &&
+              state.textContent.length < minStreamLength
+            ) {
+              const synthesisText = await generateSynthesis(
+                allToolCalls,
+                allToolResults,
+              );
+              if (synthesisText && !controllerClosed) {
+                const chunkSize = 20;
+                for (let i = 0; i < synthesisText.length; i += chunkSize) {
+                  if (!safeEnqueue(synthesisText.slice(i, i + chunkSize)))
+                    break;
+                }
+              }
+            }
+          } catch {
+            // steps not available
           }
         };
 
@@ -275,7 +263,7 @@ Based on the tool results above, please provide a comprehensive response to the 
           if (streamTimeout) clearTimeout(streamTimeout);
           streamTimeout = setTimeout(async () => {
             if (!streamComplete && !synthesisApplied && !controllerClosed) {
-              await applySynthesis();
+              await applySynthesisFromSteps();
             }
             safeClose();
           }, synthesisTimeout);
@@ -294,7 +282,7 @@ Based on the tool results above, please provide a comprehensive response to the 
               state.hasFinished = true;
 
               if (!synthesisApplied && !controllerClosed) {
-                await applySynthesis();
+                await applySynthesisFromSteps();
               }
               safeClose();
               break;
@@ -315,19 +303,13 @@ Based on the tool results above, please provide a comprehensive response to the 
     });
   };
 
-  /**
-   * Create enhanced fullStream with synthesis support
-   * Emits proper TextStreamPart objects including synthesized text parts
-   * Streams events in real-time instead of waiting for completion
-   */
   const createEnhancedFullStream = () => {
-    // Get the original fullStream to consume in real-time
     const originalFullStream = streamResult.fullStream;
 
     return new ReadableStream<SynthesisStreamPart>({
       async start(controller) {
         let controllerClosed = false;
-        let hasSeenText = false;
+        let hasSeenMeaningfulText = false;
         let currentTextId: string | null = null;
 
         const safeClose = () => {
@@ -336,7 +318,7 @@ Based on the tool results above, please provide a comprehensive response to the 
             try {
               controller.close();
             } catch {
-              // Controller already closed
+              // already closed
             }
           }
         };
@@ -363,7 +345,6 @@ Based on the tool results above, please provide a comprehensive response to the 
             if (done) {
               state.hasFinished = true;
 
-              // Check if we need synthesis before finishing
               const finalResult = await streamResult;
               const [toolCalls, toolResults, text] = await Promise.all([
                 finalResult.toolCalls,
@@ -371,7 +352,6 @@ Based on the tool results above, please provide a comprehensive response to the 
                 finalResult.text,
               ]);
 
-              // Update state with final values
               state.textContent = text || '';
               if (toolCalls) {
                 state.toolCalls = toolCalls.map((tc) => ({
@@ -388,11 +368,10 @@ Based on the tool results above, please provide a comprehensive response to the 
                 }));
               }
 
-              // Check if synthesis is needed
               if (
                 state.toolCalls.length > 0 &&
                 state.textContent.length < minStreamLength &&
-                !hasSeenText
+                !hasSeenMeaningfulText
               ) {
                 const synthesisText = await generateSynthesis();
                 if (synthesisText && synthesisText.length > 0) {
@@ -400,7 +379,6 @@ Based on the tool results above, please provide a comprehensive response to the 
                   currentTextId = crypto.randomUUID();
                   safeEnqueue({ type: 'text-start', id: currentTextId });
 
-                  // Emit text in chunks for streaming effect
                   const chunkSize = 10;
                   for (let i = 0; i < synthesisText.length; i += chunkSize) {
                     const chunk = synthesisText.slice(i, i + chunkSize);
@@ -415,7 +393,6 @@ Based on the tool results above, please provide a comprehensive response to the 
                 }
               }
 
-              // Emit finish with final usage
               const usage = await finalResult.usage;
               const finishReason = await finalResult.finishReason;
 
@@ -434,22 +411,18 @@ Based on the tool results above, please provide a comprehensive response to the 
             }
 
             if (value) {
-              // Forward the part as-is, but track state
-              // The AI SDK's fullStream returns various stream part types
               const part = value as StreamPart;
 
-              // Track text content - AI SDK uses 'delta' for text-delta events
               switch (part.type) {
                 case 'text-delta':
                 case 'text-delta-text': {
-                  hasSeenText = true;
-                  // AI SDK fullStream uses 'delta' property, but we'll check both for compatibility
                   const delta =
                     typeof part.delta === 'string' ? part.delta : '';
                   const text = typeof part.text === 'string' ? part.text : '';
                   const textDelta = delta || text;
                   if (textDelta) {
                     state.textContent += textDelta;
+                    hasSeenMeaningfulText = true;
                   }
                   if (!currentTextId && typeof part.id === 'string') {
                     currentTextId = part.id;
@@ -458,7 +431,6 @@ Based on the tool results above, please provide a comprehensive response to the 
                   break;
                 }
                 case 'text-start': {
-                  hasSeenText = true;
                   if (typeof part.id === 'string') {
                     currentTextId = part.id;
                   }
@@ -470,10 +442,8 @@ Based on the tool results above, please provide a comprehensive response to the 
 
                   break;
                 }
-                // No default
               }
 
-              // Track tool calls
               if (part.type === 'tool-call') {
                 state.toolCalls.push({
                   toolCallId:
@@ -484,7 +454,6 @@ Based on the tool results above, please provide a comprehensive response to the 
                 });
               }
 
-              // Track tool results
               if (part.type === 'tool-result') {
                 state.toolResults.push({
                   toolCallId:
@@ -495,7 +464,6 @@ Based on the tool results above, please provide a comprehensive response to the 
                 });
               }
 
-              // Forward the part immediately - this ensures flow UIs see events in real-time
               safeEnqueue(part as SynthesisStreamPart);
             }
           }
@@ -508,11 +476,9 @@ Based on the tool results above, please provide a comprehensive response to the 
     });
   };
 
-  // Create lazy-initialized streams
   let enhancedTextStream: ReadableStream<string> | null = null;
   let enhancedFullStream: ReadableStream<SynthesisStreamPart> | null = null;
 
-  // Return enhanced result with our reliable streams
   const enhancedResult = Object.create(
     Object.getPrototypeOf(streamResult),
     Object.getOwnPropertyDescriptors(streamResult),
