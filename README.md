@@ -55,15 +55,19 @@ import { generateText, streamText } from 'ai-sdk-ollama';
 // Enhanced generateText with reliable response synthesis
 const { text } = await generateText({
   model: ollama('llama3.2'),
-  tools: { /* your tools */ },
-  prompt: 'Use the tools and explain the results'
+  tools: {
+    /* your tools */
+  },
+  prompt: 'Use the tools and explain the results',
 });
 
 // Enhanced streaming with tool execution
 const { textStream } = await streamText({
   model: ollama('llama3.2'),
-  tools: { /* your tools */ },
-  prompt: 'Stream with tools'
+  tools: {
+    /* your tools */
+  },
+  prompt: 'Stream with tools',
 });
 ```
 
@@ -333,11 +337,12 @@ await mcpClient.close();
 ```
 
 **Prerequisites**: Install `@ai-sdk/mcp` package:
+
 ```bash
 npm install @ai-sdk/mcp
 ```
 
-See the [MCP Tools documentation](https://sdk.vercel.ai/docs/ai-sdk-core/tools/mcp-tools) for OAuth, resources, prompts, and elicitation support.
+See the [MCP Tools documentation](https://ai-sdk.dev/cookbook/next/mcp-tools#mcp-tools) for OAuth, resources, prompts, and elicitation support.
 
 ### Browser Usage
 
@@ -400,7 +405,9 @@ const { ranking, rerankedDocuments } = await rerank({
 
 // Results sorted by relevance score
 ranking.forEach((item, i) => {
-  console.log(`${i + 1}. Score: ${item.score.toFixed(3)} - ${rerankedDocuments[i]}`);
+  console.log(
+    `${i + 1}. Score: ${item.score.toFixed(3)} - ${rerankedDocuments[i]}`,
+  );
 });
 ```
 
@@ -462,7 +469,8 @@ const agent = new ToolLoopAgent({
     }),
   },
   stopWhen: [stepCountIs(10), hasToolCall('done')],
-  onStepFinish: (step, index) => console.log(`Step ${index + 1}:`, step.finishReason),
+  onStepFinish: (step, index) =>
+    console.log(`Step ${index + 1}:`, step.finishReason),
 });
 
 const result = await agent.generate({
