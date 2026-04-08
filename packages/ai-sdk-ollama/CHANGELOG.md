@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.8.3
+
+### Patch Changes
+
+- 6019088: Updated AI SDK to 6.0.154
+
 ## 3.8.2
 
 ### Patch Changes
