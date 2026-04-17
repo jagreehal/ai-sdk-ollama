@@ -204,8 +204,8 @@ importers:
         specifier: ^6.0.154
         version: 6.0.154(zod@4.3.6)
       jsonrepair:
-        specifier: ^3.13.3
-        version: 3.13.3
+        specifier: ^3.14.0
+        version: 3.14.0
       ollama:
         specifier: ^0.6.3
         version: 0.6.3
@@ -3106,8 +3106,8 @@ packages:
   jsonfile@4.0.0:
     resolution: {integrity: sha512-m6F1R3z8jjlf2imQHS2Qez5sjKWQzbuuhuJ/FKYFRZvPE3PuHcSMVZzfsLhGVOkfd20obL5SWEBew5ShlquNxg==}
 
-  jsonrepair@3.13.3:
-    resolution: {integrity: sha512-BTznj0owIt2CBAH/LTo7+1I5pMvl1e1033LRl/HUowlZmJOIhzC0zbX5bxMngLkfT4WnzPP26QnW5wMr2g9tsQ==}
+  jsonrepair@3.14.0:
+    resolution: {integrity: sha512-tWPGKMZf/8UPim+fcW2EfcQ/d/7aKUrP6IECz9G3Tu6Q5dX0orSleqJ9z6sSw7qrQkjF8/Edo4DvsWBZ8H+HNg==}
     hasBin: true
 
   katex@0.16.38:
@@ -7141,7 +7141,7 @@ snapshots:
     optionalDependencies:
       graceful-fs: 4.2.11
 
-  jsonrepair@3.13.3: {}
+  jsonrepair@3.14.0: {}
 
   katex@0.16.38:
     dependencies:
