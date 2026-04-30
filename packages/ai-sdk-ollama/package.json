@@ -84,7 +84,7 @@
     "tool-calling"
   ],
   "dependencies": {
-    "@ai-sdk/provider": "^3.0.8",
+    "@ai-sdk/provider": "^3.0.9",
     "@ai-sdk/provider-utils": "^4.0.24",
     "jsonrepair": "^3.14.0",
     "ollama": "^0.6.3"
