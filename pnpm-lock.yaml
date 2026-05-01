@@ -198,8 +198,8 @@ importers:
         specifier: ^3.0.9
         version: 3.0.9
       '@ai-sdk/provider-utils':
-        specifier: ^4.0.24
-        version: 4.0.24(zod@4.4.1)
+        specifier: ^4.0.25
+        version: 4.0.25(zod@4.4.1)
       ai:
         specifier: ^6.0.154
         version: 6.0.154(zod@4.4.1)
