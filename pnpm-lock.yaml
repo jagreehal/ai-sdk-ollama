@@ -211,8 +211,8 @@ importers:
         version: 0.6.3
     devDependencies:
       '@ai-sdk/test-server':
-        specifier: ^1.0.4
-        version: 1.0.4(@types/node@25.6.0)(typescript@6.0.3)
+        specifier: ^1.0.5
+        version: 1.0.5(@types/node@25.6.0)(typescript@6.0.3)
       '@arethetypeswrong/cli':
         specifier: ^0.18.2
         version: 0.18.2
@@ -311,8 +311,8 @@ packages:
     peerDependencies:
       react: ^18 || ~19.0.1 || ~19.1.2 || ^19.2.1
 
-  '@ai-sdk/test-server@1.0.4':
-    resolution: {integrity: sha512-LryKZPCyRFy4jc2N52bJo6LC+8BnRi1TmUlRivCg8WW/ak7CsJ0LR16295TzHtYlx8IPhZ7wNZ5BNwJ6RwSLHQ==}
+  '@ai-sdk/test-server@1.0.5':
+    resolution: {integrity: sha512-bQCIjEbNVB4v36KnKbxj0oi6vXROd04JqdSoMrn02loH7XZnHcx29Mo3HqKfkn/wPUAcIO/FsMxFiAVFeUi0qA==}
     engines: {node: '>=18'}
 
   '@andrewbranch/untar.js@1.0.3':
@@ -4396,7 +4396,7 @@ snapshots:
     transitivePeerDependencies:
       - zod
 
-  '@ai-sdk/test-server@1.0.4(@types/node@25.6.0)(typescript@6.0.3)':
+  '@ai-sdk/test-server@1.0.5(@types/node@25.6.0)(typescript@6.0.3)':
     dependencies:
       msw: 2.14.2(@types/node@25.6.0)(typescript@6.0.3)
     transitivePeerDependencies:
