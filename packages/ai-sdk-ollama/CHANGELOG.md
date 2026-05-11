@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.8.4
+
+### Patch Changes
+
+- 6f81c5d: Updated ai-sdk to v6.0.177
+
 ## 3.8.3
 
 ### Patch Changes
