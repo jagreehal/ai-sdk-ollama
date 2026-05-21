@@ -2025,8 +2025,8 @@ packages:
     resolution: {integrity: sha512-/6w/C21Pm1A7aZitlI5Ni/2J6FFQN8i1Cvz3kHABAAbw93v/NlvKdVOqz7CCWz/3iv/JplRSEEZ83XION15ovw==}
     engines: {node: '>=6'}
 
-  ansi-escapes@7.0.0:
-    resolution: {integrity: sha512-GdYO7a61mR0fOlAsvC9/rIHf7L96sBc6dEWzeOu+KAea5bZyQRPIpojrVoI4AXGJS/ycu/fBTdLrUkA4ODrvjw==}
+  ansi-escapes@7.3.0:
+    resolution: {integrity: sha512-BvU8nYgGQBxcmMuEeUEmNTvrMVjJNSH7RgW24vXexN4Ven6qCvy4TntnvlnwnMLTVlcRQQdbRY8NKnaIoeWDNg==}
     engines: {node: '>=18'}
 
   ansi-regex@5.0.1:
@@ -5781,7 +5781,7 @@ snapshots:
 
   ansi-colors@4.1.3: {}
 
-  ansi-escapes@7.0.0:
+  ansi-escapes@7.3.0:
     dependencies:
       environment: 1.1.0
 
@@ -6849,7 +6849,7 @@ snapshots:
 
   marked-terminal@7.3.0(marked@9.1.6):
     dependencies:
-      ansi-escapes: 7.0.0
+      ansi-escapes: 7.3.0
       ansi-regex: 6.1.0
       chalk: 5.5.0
       cli-highlight: 2.1.11
