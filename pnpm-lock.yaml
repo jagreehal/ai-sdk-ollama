@@ -3797,8 +3797,8 @@ packages:
   tinyexec@0.3.2:
     resolution: {integrity: sha512-KQQR9yN7R5+OSwaK0XQoj22pwHoTlgYqmUscPYoknOoWCWfj/5/ABTMRi69FrKU5ffPVh5QcFikpWJI/P1ocHA==}
 
-  tinyexec@1.1.1:
-    resolution: {integrity: sha512-VKS/ZaQhhkKFMANmAOhhXVoIfBXblQxGX1myCQ2faQrfmobMftXeJPcZGp0gS07ocvGJWDLZGyOZDadDBqYIJg==}
+  tinyexec@1.1.2:
+    resolution: {integrity: sha512-dAqSqE/RabpBKI8+h26GfLq6Vb3JVXs30XYQjdMjaj/c2tS8IYYMbIzP599KtRj7c57/wYApb3QjgRgXmrCukA==}
     engines: {node: '>=18'}
 
   tinyglobby@0.2.15:
@@ -4199,7 +4199,7 @@ snapshots:
   '@antfu/install-pkg@1.1.0':
     dependencies:
       package-manager-detector: 1.6.0
-      tinyexec: 1.1.1
+      tinyexec: 1.1.2
 
   '@arethetypeswrong/cli@0.18.2':
     dependencies:
@@ -7834,7 +7834,7 @@ snapshots:
 
   tinyexec@0.3.2: {}
 
-  tinyexec@1.1.1: {}
+  tinyexec@1.1.2: {}
 
   tinyglobby@0.2.15:
     dependencies:
@@ -8091,7 +8091,7 @@ snapshots:
       picomatch: 4.0.4
       std-env: 4.1.0
       tinybench: 2.9.0
-      tinyexec: 1.1.1
+      tinyexec: 1.1.2
       tinyglobby: 0.2.16
       tinyrainbow: 3.1.0
       vite: 8.0.13(@types/node@25.9.1)(esbuild@0.27.0)(jiti@2.7.0)(tsx@4.22.3)
