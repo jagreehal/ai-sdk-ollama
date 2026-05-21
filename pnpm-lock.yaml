@@ -3560,8 +3560,8 @@ packages:
     resolution: {integrity: sha512-iETxpjK6YoRWJG5o6hXLwvjYAoW+FEZn9os0PD/b6AP6xQwsa/Y7lCVgIixBbUPMfhu+i2LtdeAqVTgGlQarfA==}
     hasBin: true
 
-  regjsparser@0.13.0:
-    resolution: {integrity: sha512-NZQZdC5wOE/H3UT28fVGL+ikOZcEzfMGk/c3iN9UGxzWHMa1op7274oyiUVrAG4B2EuFhus8SvkaYnhvW92p9Q==}
+  regjsparser@0.13.1:
+    resolution: {integrity: sha512-dLsljMd9sqwRkby8zhO1gSg3PnJIBFid8f4CQj/sXx+7cKx+E7u0PKhZ+U4wmhx7EfmtvnA318oVaIkAB1lRJw==}
     hasBin: true
 
   rehype-harden@1.1.8:
@@ -6320,7 +6320,7 @@ snapshots:
       jsesc: 3.1.0
       pluralize: 8.0.0
       regexp-tree: 0.1.27
-      regjsparser: 0.13.0
+      regjsparser: 0.13.1
       semver: 7.8.0
       strip-indent: 4.1.1
 
@@ -7539,7 +7539,7 @@ snapshots:
 
   regexp-tree@0.1.27: {}
 
-  regjsparser@0.13.0:
+  regjsparser@0.13.1:
     dependencies:
       jsesc: 3.1.0
 
