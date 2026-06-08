@@ -12,7 +12,7 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "format": "turbo format",
-    "test": "turbo test; node .github/setup.js",
+    "test": "turbo test",
     "test:integration": "turbo test:integration",
     "clean": "turbo clean",
     "type-check": "turbo type-check",
