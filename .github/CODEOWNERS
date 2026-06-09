@@ -1,0 +1,28 @@
+# CODEOWNERS — release-critical paths
+#
+# Purpose: make the files that can change WHAT GETS PUBLISHED reviewable. Combined
+# with branch protection's "Require review from Code Owners", any change to these
+# paths needs sign-off from the owner below.
+#
+# SPLIT AUTHORITY: the owner is @jaggitadmin — a rarely-used admin identity, kept
+# separate from the day-to-day @jagreehal account and not authenticated on developer
+# workstations. So a compromised day-to-day session cannot approve its own changes
+# to the release pipeline.
+#
+# PREREQUISITES for these rules to take effect:
+#   1. @jaggitadmin is a collaborator on this repo with write access (otherwise
+#      GitHub treats the rule as invalid and silently ignores it).
+#   2. Branch protection / ruleset on `main` has "Require review from Code Owners" on.
+#
+# Per-package (nested) package.json files are intentionally NOT owned here, to avoid
+# blocking routine dependency PRs; the root manifest, lockfile, workspace config,
+# changesets, build/release scripts and all workflows ARE covered.
+
+/.github/workflows/      @jaggitadmin
+/.github/CODEOWNERS      @jaggitadmin
+/package.json            @jaggitadmin
+/pnpm-lock.yaml          @jaggitadmin
+/pnpm-workspace.yaml     @jaggitadmin
+/turbo.json              @jaggitadmin
+/.changeset/             @jaggitadmin
+/scripts/                @jaggitadmin
