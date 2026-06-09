@@ -6,9 +6,7 @@ on:
       - main
 
 permissions:
-  id-token: write      # Required for OIDC provenance
-  contents: write      # Required for creating releases/tags
-  pull-requests: write # Required for creating Version Packages PR
+  contents: read
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -16,10 +14,16 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    if: github.repository_owner == 'jagreehal'
+    environment: release
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           registry-url: 'https://registry.npmjs.org'
@@ -34,7 +38,7 @@ jobs:
         run: corepack prepare pnpm@latest --activate
 
       - name: Cache pnpm dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -46,7 +50,7 @@ jobs:
 
       - name: Create Release Pull Request or Publish to npm
         id: changesets
-        uses: changesets/action@v1
+        uses: changesets/action@3841a0683d3cfa6dae0f9bb335290003010fe3f0 # v1.9.0
         with:
           publish: pnpm release
           commit: "chore: release packages"
