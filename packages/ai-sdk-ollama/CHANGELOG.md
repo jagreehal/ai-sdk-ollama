@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.8.7
+
+### Patch Changes
+
+- 40cf495: chore: update dependencies + migrate to vite 8
+
+  Minor/patch dependency refresh via npm-check-updates (--target minor, 3-day cooldown) — no major bumps. Forced vite ^8 and pinned turbo via pnpm override.
+
 ## 3.8.4
 
 ### Patch Changes
