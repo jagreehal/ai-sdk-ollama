@@ -200,6 +200,7 @@ describe('webFetch', () => {
     // Test valid input
     expect(() => schema.parse({ url: 'https://example.com' })).not.toThrow();
     expect(() =>
+      // eslint-disable-next-line unicorn/prefer-https -- HTTP URLs are valid input for this schema.
       schema.parse({ url: 'http://test.org/path?param=value' }),
     ).not.toThrow();
 
