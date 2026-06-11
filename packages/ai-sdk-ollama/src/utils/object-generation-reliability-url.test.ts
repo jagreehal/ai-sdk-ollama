@@ -27,7 +27,7 @@ describe('Enhanced JSON Repair - URL Handling', () => {
   it('should handle multiple URLs in the same object', async () => {
     const input = `{
       api: 'https://api.example.com',
-      website: 'http://example.com',
+      website: 'https://example.com',
       // This is a comment
       cdn: 'https://cdn.example.com'
     }`;
@@ -37,7 +37,7 @@ describe('Enhanced JSON Repair - URL Handling', () => {
     });
     const parsed = JSON.parse(result!);
     expect(parsed.api).toBe('https://api.example.com');
-    expect(parsed.website).toBe('http://example.com');
+    expect(parsed.website).toBe('https://example.com');
     expect(parsed.cdn).toBe('https://cdn.example.com');
   });
 
