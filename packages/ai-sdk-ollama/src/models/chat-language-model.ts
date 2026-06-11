@@ -622,12 +622,10 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
         }
       }
 
-      // Determine finish reason - when tool calls are present, use 'stop' as the finish reason
-      // (tool calls are already represented in the content array)
-      const finishReason: LanguageModelV3FinishReason =
-        parsedToolCalls.length > 0
-          ? mapOllamaFinishReason('stop')
-          : mapOllamaFinishReason(response.done_reason);
+      const finishReason = mapOllamaFinishReason(
+        response.done_reason,
+        parsedToolCalls.length > 0,
+      );
 
       return {
         content,
@@ -1435,11 +1433,10 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
               chunk.prompt_eval_count ?? undefined,
               chunk.eval_count ?? undefined,
             );
-            // If we saw tool calls, use 'stop' as the finish reason
-            // (tool calls are already represented in the content array)
-            finishReason = hasToolCalls
-              ? mapOllamaFinishReason('stop')
-              : mapOllamaFinishReason(chunk.done_reason);
+            finishReason = mapOllamaFinishReason(
+              chunk.done_reason,
+              hasToolCalls,
+            );
 
             controller.enqueue({
               type: 'finish',
