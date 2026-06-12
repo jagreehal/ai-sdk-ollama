@@ -268,6 +268,72 @@ describe('OllamaChatLanguageModel', () => {
       );
     });
 
+    it('should return tool-calls finish reason when generation emits tool calls', async () => {
+      const mockResponse = {
+        model: 'llama3.2',
+        created_at: new Date(),
+        message: {
+          role: 'assistant',
+          content: '',
+          tool_calls: [
+            {
+              function: {
+                name: 'get_weather',
+                arguments: { location: 'Paris' },
+              },
+            },
+          ],
+        },
+        done: true,
+        done_reason: 'stop',
+        eval_count: 10,
+        prompt_eval_count: 5,
+        total_duration: 1_000_000_000,
+        load_duration: 100_000_000,
+        prompt_eval_duration: 200_000_000,
+        eval_duration: 700_000_000,
+      };
+
+      vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
+
+      const options: LanguageModelV3CallOptions = {
+        prompt: [
+          {
+            role: 'user',
+            content: [{ type: 'text', text: 'What is the weather?' }],
+          },
+        ],
+        tools: [
+          {
+            type: 'function',
+            name: 'get_weather',
+            description: 'Get weather for a city',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                location: { type: 'string' },
+              },
+            },
+          },
+        ],
+      };
+
+      const result = await model.doGenerate(options);
+
+      expect(result.finishReason).toEqual({
+        unified: 'tool-calls',
+        raw: 'stop',
+      });
+      expect(result.content).toEqual([
+        {
+          type: 'tool-call',
+          toolCallId: expect.any(String),
+          toolName: 'get_weather',
+          input: JSON.stringify({ location: 'Paris' }),
+        },
+      ]);
+    });
+
     it('should force completion when tool calls succeed without final text', async () => {
       // Create model with reliableToolCalling enabled for this test
       const reliableModel = new OllamaChatLanguageModel(
@@ -514,6 +580,100 @@ describe('OllamaChatLanguageModel', () => {
         stream: true,
         options: expect.objectContaining({}),
       });
+    });
+
+    it('should return tool-calls finish reason when stream emits tool calls', async () => {
+      const mockStreamData = [
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: {
+            role: 'assistant',
+            content: '',
+            tool_calls: [
+              {
+                function: {
+                  name: 'get_weather',
+                  arguments: { location: 'Paris' },
+                },
+              },
+            ],
+          },
+          done: false,
+          done_reason: '',
+          eval_count: 5,
+          prompt_eval_count: 3,
+          total_duration: 500_000_000,
+          load_duration: 50_000_000,
+          prompt_eval_duration: 100_000_000,
+          eval_duration: 350_000_000,
+        },
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: { role: 'assistant', content: '' },
+          done: true,
+          done_reason: 'stop',
+          eval_count: 10,
+          prompt_eval_count: 5,
+          total_duration: 1_000_000_000,
+          load_duration: 100_000_000,
+          prompt_eval_duration: 200_000_000,
+          eval_duration: 700_000_000,
+        },
+      ];
+
+      mockChatStream(mockStreamData);
+
+      const options: LanguageModelV3CallOptions = {
+        prompt: [
+          {
+            role: 'user',
+            content: [{ type: 'text', text: 'What is the weather?' }],
+          },
+        ],
+        tools: [
+          {
+            type: 'function',
+            name: 'get_weather',
+            description: 'Get weather for a city',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                location: { type: 'string' },
+              },
+            },
+          },
+        ],
+      };
+
+      const { stream } = await model.doStream(options);
+      const chunks = [];
+
+      for await (const chunk of stream) {
+        chunks.push(chunk);
+      }
+
+      expect(chunks).toEqual([
+        {
+          type: 'stream-start',
+          warnings: [],
+        },
+        {
+          type: 'tool-call',
+          toolCallId: expect.any(String),
+          toolName: 'get_weather',
+          input: JSON.stringify({ location: 'Paris' }),
+        },
+        {
+          type: 'finish',
+          finishReason: {
+            unified: 'tool-calls',
+            raw: 'stop',
+          },
+          usage: createExpectedUsage(5, 10),
+        },
+      ]);
     });
 
     it('should handle streaming errors', async () => {
