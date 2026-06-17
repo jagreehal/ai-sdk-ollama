@@ -9,7 +9,15 @@ import { LanguageModelV3FinishReason } from '@ai-sdk/provider';
  */
 export function mapOllamaFinishReason(
   reason?: string | null,
+  hasToolCalls = false,
 ): LanguageModelV3FinishReason {
+  if (hasToolCalls) {
+    return {
+      unified: 'tool-calls',
+      raw: reason || undefined,
+    };
+  }
+
   // Map Ollama's finish reasons to AI SDK V3 unified format
   // Default to 'stop' for undefined/null reasons (normal completion)
   if (!reason) {

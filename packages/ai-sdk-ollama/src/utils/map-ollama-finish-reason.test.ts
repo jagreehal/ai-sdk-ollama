@@ -12,6 +12,16 @@ describe('mapOllamaFinishReason', () => {
       const result = mapOllamaFinishReason('length');
       expect(result).toEqual({ unified: 'length', raw: 'length' });
     });
+
+    it('should map tool-call responses to unified "tool-calls"', () => {
+      const result = mapOllamaFinishReason('stop', true);
+      expect(result).toEqual({ unified: 'tool-calls', raw: 'stop' });
+    });
+
+    it('should omit raw reason for tool-call responses without a done reason', () => {
+      const result = mapOllamaFinishReason(null, true);
+      expect(result).toEqual({ unified: 'tool-calls', raw: undefined });
+    });
   });
 
   describe('invalid/unknown reasons', () => {
