@@ -25,18 +25,21 @@ describe('Enhanced JSON Repair - URL Handling', () => {
   });
 
   it('should handle multiple URLs in the same object', async () => {
+    /* eslint-disable unicorn/prefer-https -- HTTP URLs are valid test input. */
     const input = `{
       api: 'https://api.example.com',
       website: 'http://example.com',
       // This is a comment
       cdn: 'https://cdn.example.com'
     }`;
+    /* eslint-enable unicorn/prefer-https */
     const result = await enhancedRepairText({
       text: input,
       error: new Error('test'),
     });
     const parsed = JSON.parse(result!);
     expect(parsed.api).toBe('https://api.example.com');
+    // eslint-disable-next-line unicorn/prefer-https -- HTTP URLs are valid test input.
     expect(parsed.website).toBe('http://example.com');
     expect(parsed.cdn).toBe('https://cdn.example.com');
   });

@@ -14,6 +14,29 @@ import type { JSONSchema7 } from '@ai-sdk/provider';
 import { safeParseJSON } from '@ai-sdk/provider-utils';
 import { jsonrepair } from 'jsonrepair';
 
+const WHITESPACE_CHARS = new Set([' ', '\t', '\n']);
+const STRUCTURAL_CLOSE_CHARS = new Set(['}', ']']);
+const KEY_START_CHARS = new Set(['"', '\u201C', '_', '$']);
+const VALUE_START_CHARS = new Set([
+  '"',
+  '\u201C',
+  '{',
+  '[',
+  '-',
+  't',
+  'T',
+  'f',
+  'F',
+  'n',
+  'N',
+]);
+const SMART_SINGLE_QUOTE_CHARS = new Set([
+  '\u2018',
+  '\u2019',
+  '\u0060',
+  '\u00B4',
+]);
+
 /**
  * A function that attempts to repair the raw output of the model
  * to enable JSON parsing and validation.
@@ -606,13 +629,16 @@ function replaceSmartQuotesOutsideStrings(text: string): string {
       // Skip whitespace
       while (j < text.length) {
         const nextChar = text[j];
-        if (nextChar === ' ' || nextChar === '\t' || nextChar === '\n') {
+        if (!nextChar) {
+          break;
+        }
+        if (WHITESPACE_CHARS.has(nextChar)) {
           j++;
           continue;
         }
 
         // Check for } or ] - these are structural characters that cannot be inside strings
-        if (nextChar === '}' || nextChar === ']') {
+        if (STRUCTURAL_CLOSE_CHARS.has(nextChar)) {
           isClosing = true;
           break;
         }
@@ -627,23 +653,16 @@ function replaceSmartQuotesOutsideStrings(text: string): string {
             if (!afterComma) {
               break;
             }
-            if (
-              afterComma === ' ' ||
-              afterComma === '\t' ||
-              afterComma === '\n'
-            ) {
+            if (WHITESPACE_CHARS.has(afterComma)) {
               k++;
               continue;
             }
             // If comma is followed by a key-starting character, it's likely a field separator
             // Key-starting chars: quote, smart quote, unquoted key (letter, underscore, dollar), or numeric key (digit followed by colon)
             if (
-              afterComma === '"' ||
-              afterComma === '\u201C' ||
+              KEY_START_CHARS.has(afterComma) ||
               (afterComma >= 'a' && afterComma <= 'z') ||
-              (afterComma >= 'A' && afterComma <= 'Z') ||
-              afterComma === '_' ||
-              afterComma === '$'
+              (afterComma >= 'A' && afterComma <= 'Z')
             ) {
               isClosing = true;
               break; // Found key-starting character, exit comma check loop
@@ -652,11 +671,10 @@ function replaceSmartQuotesOutsideStrings(text: string): string {
               let m = k + 1;
               while (m < text.length) {
                 const afterDigit = text[m];
-                if (
-                  afterDigit === ' ' ||
-                  afterDigit === '\t' ||
-                  afterDigit === '\n'
-                ) {
+                if (!afterDigit) {
+                  break;
+                }
+                if (WHITESPACE_CHARS.has(afterDigit)) {
                   m++;
                   continue;
                 }
@@ -691,29 +709,15 @@ function replaceSmartQuotesOutsideStrings(text: string): string {
             if (!afterColon) {
               break;
             }
-            if (
-              afterColon === ' ' ||
-              afterColon === '\t' ||
-              afterColon === '\n'
-            ) {
+            if (WHITESPACE_CHARS.has(afterColon)) {
               k++;
               continue;
             }
             // If colon is followed by a value-starting character, it's likely a key-value separator
             // Value-starting chars: ", {, [, digit, -, t/T (true/True), f/F (false/False), n/N (null/None), smart quotes
             if (
-              afterColon === '"' ||
-              afterColon === '\u201C' || // Opening smart quote
-              afterColon === '{' ||
-              afterColon === '[' ||
-              (afterColon >= '0' && afterColon <= '9') ||
-              afterColon === '-' ||
-              afterColon === 't' ||
-              afterColon === 'T' ||
-              afterColon === 'f' ||
-              afterColon === 'F' ||
-              afterColon === 'n' ||
-              afterColon === 'N'
+              VALUE_START_CHARS.has(afterColon) ||
+              (afterColon >= '0' && afterColon <= '9')
             ) {
               isClosing = true;
             }
@@ -743,12 +747,7 @@ function replaceSmartQuotesOutsideStrings(text: string): string {
     // Only replace smart quotes when NOT inside any string
     if (!inSingleQuote && !inDoubleQuote && !inSmartDoubleQuote) {
       // Replace smart single quotes
-      if (
-        char === '\u2018' ||
-        char === '\u2019' ||
-        char === '\u0060' ||
-        char === '\u00B4'
-      ) {
+      if (char !== undefined && SMART_SINGLE_QUOTE_CHARS.has(char)) {
         result += "'";
         i++;
         continue;
