@@ -38,7 +38,7 @@ describe('webFetch', () => {
     const tool = webFetch({ client: mockClient });
     const result = await tool.execute!(
       { url: 'https://example.com' },
-      { toolCallId: 'test', messages: [], abortSignal: undefined },
+      { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
     );
 
     expect(mockWebFetch).toHaveBeenCalledWith({ url: 'https://example.com' });
@@ -65,7 +65,7 @@ describe('webFetch', () => {
     const tool = webFetch({ client: mockClient, maxContentLength: 100 });
     const result = await tool.execute!(
       { url: 'https://example.com/long-article' },
-      { toolCallId: 'test', messages: [], abortSignal: undefined },
+      { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
     );
 
     expect((result as any).content).toHaveLength(124); // 100 chars + "\n\n[Content truncated...]"
@@ -79,7 +79,7 @@ describe('webFetch', () => {
     await expect(
       tool.execute!(
         { url: 'https://example.com' },
-        { toolCallId: 'test', messages: [], abortSignal: undefined },
+        { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
       ),
     ).rejects.toThrow(OllamaError);
   });
@@ -90,7 +90,7 @@ describe('webFetch', () => {
     const tool = webFetch({ client: mockClient });
     const result = await tool.execute!(
       { url: 'https://example.com/not-found' },
-      { toolCallId: 'test', messages: [], abortSignal: undefined },
+      { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
     );
 
     expect(result).toEqual(
@@ -136,7 +136,7 @@ describe('webFetch', () => {
       const tool = webFetch({ client: mockClient });
       const result = await tool.execute!(
         { url: 'https://example.com' },
-        { toolCallId: 'test', messages: [], abortSignal: undefined },
+        { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
       );
 
       expect((result as any).error).toBe(testCase.expectedMessage);
@@ -152,7 +152,7 @@ describe('webFetch', () => {
     const tool = webFetch({ client: mockClient });
     const result = await tool.execute!(
       { url: 'https://example.com' },
-      { toolCallId: 'test', messages: [], abortSignal: undefined },
+      { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
     );
 
     expect(result).toEqual({
@@ -169,7 +169,7 @@ describe('webFetch', () => {
     const tool = webFetch({ client: mockClient, timeout: 5000 });
     await tool.execute!(
       { url: 'https://example.com' },
-      { toolCallId: 'test', messages: [], abortSignal: undefined },
+      { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
     );
 
     expect(mockWebFetch).toHaveBeenCalledWith({
@@ -187,7 +187,12 @@ describe('webFetch', () => {
     const tool = webFetch({ client: mockClient });
     const result = await tool.execute!(
       { url: 'https://example.com' },
-      { toolCallId: 'test', messages: [], abortSignal: abortController.signal },
+      {
+        toolCallId: 'test',
+        messages: [],
+        abortSignal: abortController.signal,
+        context: {},
+      },
     );
 
     expect((result as any).error).toBe('Web fetch request was cancelled.');
@@ -217,7 +222,7 @@ describe('webFetch', () => {
     const tool = webFetch({ client: mockClient });
     const result = await tool.execute!(
       { url: 'https://example.com' },
-      { toolCallId: 'test', messages: [], abortSignal: undefined },
+      { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
     );
 
     expect((result as any).content).toHaveLength(10_024); // 10_000 + "\n\n[Content truncated...]"

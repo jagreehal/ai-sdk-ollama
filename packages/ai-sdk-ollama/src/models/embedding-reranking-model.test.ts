@@ -23,9 +23,9 @@ describe('OllamaEmbeddingRerankingModel', () => {
     });
 
   describe('constructor', () => {
-    it('should set specificationVersion to v3', () => {
+    it('should set specificationVersion to v4', () => {
       const model = createModel();
-      expect(model.specificationVersion).toBe('v3');
+      expect(model.specificationVersion).toBe('v4');
     });
 
     it('should set modelId correctly', () => {

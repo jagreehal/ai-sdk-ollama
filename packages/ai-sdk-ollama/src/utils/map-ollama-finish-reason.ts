@@ -1,7 +1,7 @@
-import { LanguageModelV3FinishReason } from '@ai-sdk/provider';
+import { LanguageModelV4FinishReason } from '@ai-sdk/provider';
 
 /**
- * Maps Ollama finish reasons to the AI SDK V3 LanguageModelV3FinishReason format.
+ * Maps Ollama finish reasons to the AI SDK V3 LanguageModelV4FinishReason format.
  *
  * In V3, FinishReason is an object with:
  * - unified: standardized reason ('stop', 'length', 'content-filter', 'tool-calls', 'error', 'other')
@@ -10,7 +10,7 @@ import { LanguageModelV3FinishReason } from '@ai-sdk/provider';
 export function mapOllamaFinishReason(
   reason?: string | null,
   hasToolCalls = false,
-): LanguageModelV3FinishReason {
+): LanguageModelV4FinishReason {
   if (hasToolCalls) {
     return {
       unified: 'tool-calls',

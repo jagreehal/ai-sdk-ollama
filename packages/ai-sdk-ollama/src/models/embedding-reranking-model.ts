@@ -1,7 +1,7 @@
 import {
-  RerankingModelV3,
-  RerankingModelV3CallOptions,
-  SharedV3Warning,
+  RerankingModelV4,
+  RerankingModelV4CallOptions,
+  SharedV4Warning,
 } from '@ai-sdk/provider';
 import { Ollama } from 'ollama';
 import { cosineSimilarity } from '../utils/cosine-similarity';
@@ -66,8 +66,8 @@ export interface OllamaEmbeddingRerankingSettings {
  * // Documents sorted by relevance to the query
  * ```
  */
-export class OllamaEmbeddingRerankingModel implements RerankingModelV3 {
-  readonly specificationVersion = 'v3' as const;
+export class OllamaEmbeddingRerankingModel implements RerankingModelV4 {
+  readonly specificationVersion = 'v4' as const;
   readonly modelId: string;
 
   private readonly config: OllamaEmbeddingRerankingConfig;
@@ -150,10 +150,10 @@ export class OllamaEmbeddingRerankingModel implements RerankingModelV3 {
     documents,
     query,
     topN,
-  }: RerankingModelV3CallOptions): Promise<
-    Awaited<ReturnType<RerankingModelV3['doRerank']>>
+  }: RerankingModelV4CallOptions): Promise<
+    Awaited<ReturnType<RerankingModelV4['doRerank']>>
   > {
-    const warnings: SharedV3Warning[] = [];
+    const warnings: SharedV4Warning[] = [];
 
     // Convert documents to strings
     let documentValues: string[];

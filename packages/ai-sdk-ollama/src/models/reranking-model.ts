@@ -1,7 +1,7 @@
 import {
-  RerankingModelV3,
-  RerankingModelV3CallOptions,
-  SharedV3Warning,
+  RerankingModelV4,
+  RerankingModelV4CallOptions,
+  SharedV4Warning,
 } from '@ai-sdk/provider';
 import {
   combineHeaders,
@@ -132,8 +132,8 @@ const ollamaFailedResponseHandler = createJsonErrorResponseHandler({
  * });
  * ```
  */
-export class OllamaRerankingModel implements RerankingModelV3 {
-  readonly specificationVersion = 'v3' as const;
+export class OllamaRerankingModel implements RerankingModelV4 {
+  readonly specificationVersion = 'v4' as const;
   readonly modelId: string;
 
   private readonly config: OllamaRerankingConfig;
@@ -160,10 +160,10 @@ export class OllamaRerankingModel implements RerankingModelV3 {
     topN,
     abortSignal,
     providerOptions,
-  }: RerankingModelV3CallOptions): Promise<
-    Awaited<ReturnType<RerankingModelV3['doRerank']>>
+  }: RerankingModelV4CallOptions): Promise<
+    Awaited<ReturnType<RerankingModelV4['doRerank']>>
   > {
-    const warnings: SharedV3Warning[] = [];
+    const warnings: SharedV4Warning[] = [];
 
     // Parse provider options
     const rerankingOptions = await parseProviderOptions({

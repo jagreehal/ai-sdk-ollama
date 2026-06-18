@@ -5,14 +5,28 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Vercel AI SDK v6 provider for Ollama built on the official `ollama` package. Type safe, future proof, with cross provider compatibility and native Ollama features.
+A Vercel AI SDK provider for Ollama built on the official `ollama` package. Type safe, future proof, with cross provider compatibility and native Ollama features.
 
-> **📌 Version Compatibility**: This version (v3+) requires AI SDK v6. If you're using AI SDK v5, please use `ai-sdk-ollama@^2.0.0` instead.
+> **📌 Version compatibility**
+>
+> Each `ai-sdk-ollama` major targets one AI SDK major. Every line stays published on npm, so pick the one that matches your `ai` version:
+>
+> | `ai-sdk-ollama` | `ai` (peer) | Status |
+> | --- | --- | --- |
+> | `4.x` (`@beta`) | `ai@^7` (beta) | Active. New features land here. |
+> | `3.x` | `ai@^6` | Maintenance. Critical fixes only. |
+> | `2.x` | `ai@^5` | Unmaintained. |
+>
+> While AI SDK v7 is in beta, install v4 from the `beta` tag. The v3 line keeps working for AI SDK v6 the whole time. Once AI SDK v7 ships stable, v4 moves to the `latest` tag.
 
 ## Quick Start
 
 ```bash
-npm install ai-sdk-ollama ai@^6.0.0
+# AI SDK v7 (beta)
+npm install ai-sdk-ollama@beta ai@beta
+
+# AI SDK v6 (stable)
+npm install ai-sdk-ollama@^3 ai@^6
 ```
 
 ```typescript

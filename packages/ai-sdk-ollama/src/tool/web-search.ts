@@ -112,11 +112,14 @@ function hasWebSearch(client: unknown): client is {
 }
 
 export function webSearch(options: WebSearchToolOptions = {}) {
-  return tool<WebSearchInput, WebSearchOutput>({
+  return tool({
     description:
       'Search the web for current information about any topic. Use this when you need up-to-date information, recent news, current statistics, or real-time data that may not be in your training data.',
     inputSchema: webSearchInputSchema,
-    execute: async (input, { abortSignal }) => {
+    execute: async (
+      input: WebSearchInput,
+      { abortSignal }: { abortSignal?: AbortSignal },
+    ): Promise<WebSearchOutput> => {
       const client = options.client;
       if (!client) {
         throw new OllamaError({

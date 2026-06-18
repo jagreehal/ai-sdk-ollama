@@ -10,11 +10,11 @@
  */
 
 import {
-  LanguageModelV3CallOptions,
-  LanguageModelV3Content,
-  LanguageModelV3FunctionTool,
-  LanguageModelV3Prompt,
-  LanguageModelV3ToolResultPart,
+  LanguageModelV4CallOptions,
+  LanguageModelV4Content,
+  LanguageModelV4FunctionTool,
+  LanguageModelV4Prompt,
+  LanguageModelV4ToolResultPart,
 } from '@ai-sdk/provider';
 import { jsonrepair } from 'jsonrepair';
 
@@ -159,7 +159,7 @@ export function parseToolArguments(input?: unknown): Record<string, unknown> {
 }
 
 export function createToolDefinitionMap(
-  tools?: Array<LanguageModelV3FunctionTool>,
+  tools?: Array<LanguageModelV4FunctionTool>,
 ): Record<string, ToolDefinition> {
   if (!tools || tools.length === 0) {
     return {};
@@ -169,7 +169,7 @@ export function createToolDefinitionMap(
   for (const tool of tools) {
     // Skip tools that don't have an execute function
     if (
-      typeof (tool as LanguageModelV3FunctionTool & { execute?: unknown })
+      typeof (tool as LanguageModelV4FunctionTool & { execute?: unknown })
         .execute !== 'function'
     ) {
       continue;
@@ -181,7 +181,7 @@ export function createToolDefinitionMap(
           ? (tool.inputSchema as Record<string, unknown>)
           : { type: 'object', properties: {} },
       execute: (
-        tool as LanguageModelV3FunctionTool & {
+        tool as LanguageModelV4FunctionTool & {
           execute: (params: Record<string, unknown>) => Promise<unknown>;
         }
       ).execute,
@@ -191,7 +191,7 @@ export function createToolDefinitionMap(
 }
 
 export function extractToolCallsFromContent(
-  content: LanguageModelV3Content[],
+  content: LanguageModelV4Content[],
 ): Array<{ toolName: string; input: Record<string, unknown> }> {
   return content
     .filter(
@@ -205,7 +205,7 @@ export function extractToolCallsFromContent(
 }
 
 export function extractToolResultsFromPrompt(
-  prompt: LanguageModelV3Prompt | undefined,
+  prompt: LanguageModelV4Prompt | undefined,
 ): Array<{ toolName: string; result: unknown; toolCallId?: string }> {
   if (!prompt || !Array.isArray(prompt)) {
     return [];
@@ -222,7 +222,7 @@ export function extractToolResultsFromPrompt(
       continue;
     }
 
-    for (const part of message.content as Array<LanguageModelV3ToolResultPart>) {
+    for (const part of message.content as Array<LanguageModelV4ToolResultPart>) {
       if (part.type !== 'tool-result') {
         continue;
       }
@@ -246,17 +246,26 @@ export function extractToolResultsFromPrompt(
             if (item.type === 'text') {
               return { type: 'text', text: item.text };
             }
-            if (item.type === 'file-data') {
+            // AI SDK v7 consolidated `file-data` / `file-url` tool-result
+            // outputs into a single `file` part with a tagged `SharedV4FileData`
+            // payload.
+            if (item.type === 'file') {
+              if (item.data.type === 'url') {
+                return {
+                  type: 'media',
+                  url: String(item.data.url),
+                };
+              }
+              if (item.data.type === 'data') {
+                return {
+                  type: 'media',
+                  mediaType: item.mediaType,
+                  data: item.data.data,
+                };
+              }
               return {
                 type: 'media',
                 mediaType: item.mediaType,
-                data: item.data,
-              };
-            }
-            if (item.type === 'file-url') {
-              return {
-                type: 'media',
-                url: item.url,
               };
             }
             return item;
@@ -614,12 +623,12 @@ export async function executeReliableToolCalls(
 export async function forceCompletion(
   model: {
     doGenerate: (
-      options: LanguageModelV3CallOptions,
-    ) => Promise<{ content: LanguageModelV3Content[] }>;
+      options: LanguageModelV4CallOptions,
+    ) => Promise<{ content: LanguageModelV4Content[] }>;
   },
   originalPrompt: string,
   toolResults: Array<{ toolName: string; result: unknown }>,
-  options: Omit<LanguageModelV3CallOptions, 'prompt'> = {},
+  options: Omit<LanguageModelV4CallOptions, 'prompt'> = {},
 ): Promise<string> {
   const expectsJson = options.responseFormat?.type === 'json';
   const finalInstruction = expectsJson
@@ -654,12 +663,12 @@ ${finalInstruction}`;
  */
 export async function reliableToolCall(
   model: {
-    doGenerate: (options: LanguageModelV3CallOptions) => Promise<{
-      content: LanguageModelV3Content[];
+    doGenerate: (options: LanguageModelV4CallOptions) => Promise<{
+      content: LanguageModelV4Content[];
       toolCalls?: Array<{ toolName: string; input: Record<string, unknown> }>;
     }>;
   },
-  options: LanguageModelV3CallOptions & {
+  options: LanguageModelV4CallOptions & {
     tools?: Record<string, ToolDefinition>;
   },
   reliabilityOptions: ToolCallingOptions = {},
@@ -773,15 +782,15 @@ export async function reliableToolCall(
  */
 export function createReliableToolCallWrapper(
   model: {
-    doGenerate: (options: LanguageModelV3CallOptions) => Promise<{
-      content: LanguageModelV3Content[];
+    doGenerate: (options: LanguageModelV4CallOptions) => Promise<{
+      content: LanguageModelV4Content[];
       toolCalls?: Array<{ toolName: string; input: Record<string, unknown> }>;
     }>;
   },
   reliabilityOptions: ToolCallingOptions = {},
 ) {
   return async (
-    options: LanguageModelV3CallOptions & {
+    options: LanguageModelV4CallOptions & {
       tools?: Record<string, ToolDefinition>;
     },
   ) => {

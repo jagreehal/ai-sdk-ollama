@@ -42,7 +42,7 @@ describe('webSearch', () => {
     const tool = webSearch({ client: mockClient });
     const result = await tool.execute!(
       { query: 'AI developments' },
-      { toolCallId: 'test', messages: [], abortSignal: undefined },
+      { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
     );
 
     expect(mockWebSearch).toHaveBeenCalledWith({
@@ -65,7 +65,7 @@ describe('webSearch', () => {
     const tool = webSearch({ client: mockClient });
     await tool.execute!(
       { query: 'test query', maxResults: 8 },
-      { toolCallId: 'test', messages: [], abortSignal: undefined },
+      { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
     );
 
     expect(mockWebSearch).toHaveBeenCalledWith({
@@ -80,7 +80,7 @@ describe('webSearch', () => {
     const tool = webSearch({ client: mockClient });
     await tool.execute!(
       { query: 'test query', maxResults: 50 },
-      { toolCallId: 'test', messages: [], abortSignal: undefined },
+      { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
     );
 
     expect(mockWebSearch).toHaveBeenCalledWith({
@@ -95,7 +95,7 @@ describe('webSearch', () => {
     await expect(
       tool.execute!(
         { query: 'test query' },
-        { toolCallId: 'test', messages: [], abortSignal: undefined },
+        { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
       ),
     ).rejects.toThrow(OllamaError);
   });
@@ -108,7 +108,7 @@ describe('webSearch', () => {
     await expect(
       tool.execute!(
         { query: 'test query' },
-        { toolCallId: 'test', messages: [], abortSignal: undefined },
+        { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
       ),
     ).rejects.toThrow(OllamaError);
   });
@@ -121,7 +121,7 @@ describe('webSearch', () => {
     await expect(
       tool.execute!(
         { query: 'test query' },
-        { toolCallId: 'test', messages: [], abortSignal: undefined },
+        { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
       ),
     ).rejects.toThrow(OllamaError);
   });
@@ -134,7 +134,7 @@ describe('webSearch', () => {
     await expect(
       tool.execute!(
         { query: 'test query' },
-        { toolCallId: 'test', messages: [], abortSignal: undefined },
+        { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
       ),
     ).rejects.toThrow(OllamaError);
   });
@@ -151,7 +151,7 @@ describe('webSearch', () => {
     const tool = webSearch({ client: mockClient });
     const result = await tool.execute!(
       { query: 'test query' },
-      { toolCallId: 'test', messages: [], abortSignal: undefined },
+      { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
     );
 
     expect((result as any).results).toEqual(expect.any(Array));
@@ -163,7 +163,7 @@ describe('webSearch', () => {
     const tool = webSearch({ client: mockClient, timeout: 5000 });
     await tool.execute!(
       { query: 'test query' },
-      { toolCallId: 'test', messages: [], abortSignal: undefined },
+      { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
     );
 
     expect(mockWebSearch).toHaveBeenCalledWith({

@@ -91,11 +91,14 @@ export type WebFetchOutput = {
  * ```
  */
 export function webFetch(options: WebFetchToolOptions = {}) {
-  return tool<WebFetchInput, WebFetchOutput>({
+  return tool({
     description:
       'Fetch and read content from a specific web URL. Use this to retrieve the full text content of web pages, articles, documentation, or any publicly accessible web content for analysis or summarization.',
     inputSchema: webFetchInputSchema,
-    execute: async (input, context) => {
+    execute: async (
+      input: WebFetchInput,
+      context: { abortSignal?: AbortSignal },
+    ): Promise<WebFetchOutput> => {
       const abortSignal = context?.abortSignal;
       const client = options.client;
       if (!client) {

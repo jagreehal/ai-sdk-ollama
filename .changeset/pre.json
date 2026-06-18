@@ -1,0 +1,10 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "@examples/browser": "1.0.0",
+    "@examples/node": "1.0.0",
+    "ai-sdk-ollama": "3.8.7"
+  },
+  "changesets": []
+}

@@ -1,11 +1,33 @@
-import { LanguageModelV3Prompt } from '@ai-sdk/provider';
+import { LanguageModelV4Prompt, SharedV4FileData } from '@ai-sdk/provider';
 import { Message as OllamaMessage } from 'ollama';
 
 import { parseToolArguments } from './tool-calling-reliability';
 
 function normalizeImageDataForOllama(
-  imageData: URL | string | Uint8Array,
+  fileData: SharedV4FileData | URL | string | Uint8Array,
 ): string | null {
+  // AI SDK v7 (LanguageModelV4) delivers file data as a tagged discriminated
+  // union. Unwrap it to the underlying URL / string / bytes before normalizing.
+  let imageData: URL | string | Uint8Array;
+  if (
+    fileData !== null &&
+    typeof fileData === 'object' &&
+    !(fileData instanceof URL) &&
+    !(fileData instanceof Uint8Array) &&
+    'type' in fileData
+  ) {
+    if (fileData.type === 'data') {
+      imageData = fileData.data;
+    } else if (fileData.type === 'url') {
+      imageData = fileData.url;
+    } else {
+      // `reference` (provider file id) and `text` are not inline image data.
+      return null;
+    }
+  } else {
+    imageData = fileData;
+  }
+
   if (imageData instanceof URL) {
     if (imageData.protocol === 'data:') {
       const base64Match = imageData.href.match(/data:[^;]+;base64,(.+)/);
@@ -34,7 +56,7 @@ function normalizeImageDataForOllama(
  * and handles edge cases better than the referenced implementation
  */
 export function convertToOllamaChatMessages(
-  prompt: LanguageModelV3Prompt,
+  prompt: LanguageModelV4Prompt,
 ): OllamaMessage[] {
   const messages: OllamaMessage[] = [];
 
@@ -152,17 +174,11 @@ export function convertToOllamaChatMessages(
                     textParts.push(item.text);
                     break;
                   }
-                  case 'image-data': {
-                    const normalized = normalizeImageDataForOllama(item.data);
-                    if (normalized) imageParts.push(normalized);
-                    break;
-                  }
-                  case 'image-url': {
-                    imageParts.push(item.url);
-                    break;
-                  }
-                  case 'file-data': {
-                    if (item.mediaType?.startsWith('image/')) {
+                  // AI SDK v7 consolidated the former `image-data` / `image-url`
+                  // / `file-data` tool-result outputs into a single `file` part
+                  // carrying a tagged `SharedV4FileData` payload.
+                  case 'file': {
+                    if (item.mediaType?.startsWith('image')) {
                       const normalized = normalizeImageDataForOllama(item.data);
                       if (normalized) imageParts.push(normalized);
                     }
