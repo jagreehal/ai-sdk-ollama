@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.8.8
+
+### Patch Changes
+
+- b4dde41: Return AI SDK `tool-calls` finish reasons when Ollama responses emit tool calls.
+
 ## 3.8.7
 
 ### Patch Changes
