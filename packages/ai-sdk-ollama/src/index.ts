@@ -98,8 +98,9 @@ export {
   stepCountIs,
   hasToolCall,
   type ToolLoopAgentSettings,
-  type ToolLoopAgentOnFinishCallback,
-  type ToolLoopAgentOnStepFinishCallback,
+  // Renamed in AI SDK v7: the agent now reuses the generateText callbacks.
+  type GenerateTextOnFinishCallback,
+  type GenerateTextOnStepFinishCallback,
   type Agent,
   type AgentCallParameters,
   type AgentStreamParameters,

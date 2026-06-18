@@ -28,6 +28,51 @@ pnpm install
 npx tsx examples/[example-name].ts
 ```
 
+## 🆕 **AI SDK v7 Features**
+
+These examples showcase new functions introduced in AI SDK v7, running against Ollama.
+
+### **agent-tool-loop-example.ts** - ToolLoopAgent + isStepCount
+
+The new `ToolLoopAgent` class bundles a model, instructions, tools, and a stop
+condition into a reusable agent that runs the tool-calling loop for you.
+Uses `isStepCount(n)` (the renamed `stepCountIs`) as the stop condition.
+
+```bash
+npx tsx src/agent-tool-loop-example.ts
+```
+
+### **tool-approval-example.ts** - Tool Approval (human-in-the-loop)
+
+v7 replaces per-tool `needsApproval` with a `toolApproval` policy on
+`generateText` / `streamText` / `ToolLoopAgent`. The policy can auto-approve,
+auto-deny (`{ type: 'denied', reason }`), or route to a human (`'user-approval'`),
+which you answer with a `ToolApprovalResponse`.
+
+```bash
+npx tsx src/tool-approval-example.ts
+```
+
+### **rerank-example.ts** - rerank
+
+The new `rerank` core function reorders documents by relevance to a query.
+Uses `ollama.embeddingReranking(...)` as the `RerankingModel`.
+
+```bash
+npx tsx src/rerank-example.ts
+```
+
+### **reasoning-effort-example.ts** - Per-call reasoning effort
+
+v7 adds a standard `reasoning` option (`'none'` | `'low'` | `'medium'` | `'high'` | …)
+to `generateText` / `streamText` / `ToolLoopAgent`. This provider maps it onto
+Ollama's `think` parameter, so reasoning effort can be set per request without
+changing the model's `think` setting. Needs a reasoning model (e.g. `qwen3.5`).
+
+```bash
+npx tsx src/reasoning-effort-example.ts
+```
+
 ## 🎯 **Essential Examples (Start Here)**
 
 ### **basic-chat.ts** - Quick Start

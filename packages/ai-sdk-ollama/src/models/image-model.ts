@@ -1,10 +1,10 @@
 import type {
-  ImageModelV3,
-  ImageModelV3CallOptions,
-  ImageModelV3ProviderMetadata,
-  ImageModelV3Usage,
+  ImageModelV4,
+  ImageModelV4CallOptions,
+  ImageModelV4ProviderMetadata,
+  ImageModelV4Usage,
 } from '@ai-sdk/provider';
-import type { SharedV3Warning } from '@ai-sdk/provider';
+import type { SharedV4Warning } from '@ai-sdk/provider';
 import { parseProviderOptions } from '@ai-sdk/provider-utils';
 import { z } from 'zod';
 import { OllamaError } from '../utils/ollama-error';
@@ -23,12 +23,12 @@ export interface OllamaImageModelConfig {
 }
 
 /**
- * Ollama image generation model (ImageModelV3).
+ * Ollama image generation model (ImageModelV4).
  * Uses POST /api/generate with image models (e.g. x/z-image-turbo, x/flux2-klein).
  * Experimental; see https://ollama.com/blog/image-generation
  */
-export class OllamaImageModel implements ImageModelV3 {
-  readonly specificationVersion = 'v3' as const;
+export class OllamaImageModel implements ImageModelV4 {
+  readonly specificationVersion = 'v4' as const;
   readonly provider: string;
   readonly modelId: string;
   readonly maxImagesPerCall = 1;
@@ -41,16 +41,16 @@ export class OllamaImageModel implements ImageModelV3 {
     this.provider = config.provider;
   }
 
-  async doGenerate(options: ImageModelV3CallOptions): Promise<{
+  async doGenerate(options: ImageModelV4CallOptions): Promise<{
     images: Array<string>;
-    warnings: Array<SharedV3Warning>;
+    warnings: Array<SharedV4Warning>;
     response: {
       timestamp: Date;
       modelId: string;
       headers: Record<string, string> | undefined;
     };
-    usage?: ImageModelV3Usage;
-    providerMetadata?: ImageModelV3ProviderMetadata;
+    usage?: ImageModelV4Usage;
+    providerMetadata?: ImageModelV4ProviderMetadata;
   }> {
     const {
       prompt,

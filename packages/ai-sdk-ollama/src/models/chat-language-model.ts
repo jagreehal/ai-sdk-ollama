@@ -1,17 +1,17 @@
 import {
-  LanguageModelV3,
-  LanguageModelV3CallOptions,
-  LanguageModelV3FinishReason,
-  LanguageModelV3StreamPart,
-  LanguageModelV3Usage,
-  LanguageModelV3Content,
+  LanguageModelV4,
+  LanguageModelV4CallOptions,
+  LanguageModelV4FinishReason,
+  LanguageModelV4StreamPart,
+  LanguageModelV4Usage,
+  LanguageModelV4Content,
   JSONValue,
-  LanguageModelV3FunctionTool,
-  LanguageModelV3Prompt,
-  LanguageModelV3TextPart,
+  LanguageModelV4FunctionTool,
+  LanguageModelV4Prompt,
+  LanguageModelV4TextPart,
   JSONSchema7,
   SharedV2ProviderMetadata,
-  SharedV3Warning,
+  SharedV4Warning,
 } from '@ai-sdk/provider';
 import {
   Ollama,
@@ -43,14 +43,20 @@ import {
   type ObjectGenerationOptions,
 } from '../utils/object-generation-reliability';
 
+/**
+ * The effective Ollama `think` value for a request, derived from the canonical
+ * Ollama `ChatRequest['think']` contract (`boolean | 'high' | 'medium' | 'low'`).
+ */
+type OllamaThink = OllamaChatSettings['think'];
+
 type GenerateResult = {
-  content: LanguageModelV3Content[];
-  finishReason: LanguageModelV3FinishReason;
-  usage: LanguageModelV3Usage;
+  content: LanguageModelV4Content[];
+  finishReason: LanguageModelV4FinishReason;
+  usage: LanguageModelV4Usage;
   providerMetadata?: SharedV2ProviderMetadata;
   request?: { body?: unknown };
   response?: { id?: string; timestamp?: Date; modelId?: string };
-  warnings: SharedV3Warning[];
+  warnings: SharedV4Warning[];
 };
 
 interface ParsedToolCall {
@@ -96,8 +102,8 @@ function buildContent(
   includeReasoning: boolean,
   text: string | undefined,
   toolCalls: ParsedToolCall[],
-): LanguageModelV3Content[] {
-  const content: LanguageModelV3Content[] = [];
+): LanguageModelV4Content[] {
+  const content: LanguageModelV4Content[] = [];
 
   if (reasoning && includeReasoning) {
     content.push({ type: 'reasoning', text: reasoning });
@@ -120,13 +126,13 @@ function buildContent(
 }
 
 /**
- * Create a LanguageModelV3Usage object from token counts.
+ * Create a LanguageModelV4Usage object from token counts.
  * V3 uses structured objects for inputTokens and outputTokens.
  */
 function createUsage(
   inputTokenCount?: number,
   outputTokenCount?: number,
-): LanguageModelV3Usage {
+): LanguageModelV4Usage {
   return {
     inputTokens: {
       total: inputTokenCount,
@@ -142,7 +148,7 @@ function createUsage(
   };
 }
 
-function aggregateUsage(...responses: ChatResponse[]): LanguageModelV3Usage {
+function aggregateUsage(...responses: ChatResponse[]): LanguageModelV4Usage {
   let inputTokens: number | undefined;
   let outputTokens: number | undefined;
 
@@ -174,7 +180,7 @@ function getLatestUserMessage(messages: OllamaMessage[]): string {
 }
 
 function getLatestUserPromptText(
-  prompt: LanguageModelV3Prompt | undefined,
+  prompt: LanguageModelV4Prompt | undefined,
 ): string {
   if (!prompt) {
     return '';
@@ -192,7 +198,7 @@ function getLatestUserPromptText(
       return message.content;
     } else if (Array.isArray(message.content)) {
       const textParts = message.content.filter(
-        (part): part is LanguageModelV3TextPart => part.type === 'text',
+        (part): part is LanguageModelV4TextPart => part.type === 'text',
       );
 
       if (textParts.length > 0) {
@@ -209,8 +215,8 @@ export interface OllamaChatConfig {
   provider: string;
 }
 
-export class OllamaChatLanguageModel implements LanguageModelV3 {
-  readonly specificationVersion = 'v3' as const;
+export class OllamaChatLanguageModel implements LanguageModelV4 {
+  readonly specificationVersion = 'v4' as const;
 
   // V3 uses supportedUrls with media type patterns as keys
   // Ollama supports images via URLs, files, and base64
@@ -242,7 +248,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
    * This is used internally to auto-detect when structured outputs are needed
    */
   private shouldEnableStructuredOutputs(
-    options: LanguageModelV3CallOptions,
+    options: LanguageModelV4CallOptions,
   ): boolean {
     // Auto-detect: if we have a JSON schema, we need structured outputs
     // This overrides explicit settings to ensure object generation works
@@ -269,12 +275,12 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
     return false;
   }
 
-  private getCallOptions(options: LanguageModelV3CallOptions): {
+  private getCallOptions(options: LanguageModelV4CallOptions): {
     messages: OllamaMessage[];
     options: Record<string, unknown>;
     format?: string | Record<string, unknown>;
     tools?: Tool[];
-    warnings: SharedV3Warning[];
+    warnings: SharedV4Warning[];
     keep_alive?: string | number;
   } {
     const {
@@ -291,7 +297,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       tools,
     } = options;
 
-    const warnings: SharedV3Warning[] = [];
+    const warnings: SharedV4Warning[] = [];
 
     // Auto-detect structured outputs when JSON schema is provided
     const needsStructuredOutputs = this.shouldEnableStructuredOutputs(options);
@@ -426,6 +432,71 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
   }
 
   /**
+   * Resolve the effective Ollama `think` value for a request.
+   *
+   * AI SDK v7 adds a per-call `reasoning` effort option to
+   * `LanguageModelV4CallOptions`. We map it onto Ollama's `think` parameter
+   * (`boolean | 'high' | 'medium' | 'low'`):
+   *
+   * - `'none'`                     -> `false`
+   * - `'minimal'` / `'low'`        -> `'low'`
+   * - `'medium'`                   -> `'medium'`
+   * - `'high'` / `'xhigh'`         -> `'high'`
+   * - `'provider-default'` / unset -> fall back to the `think` provider setting
+   *
+   * The per-call `reasoning` option takes precedence over the model-level
+   * `think` setting, so reasoning effort can vary per request.
+   */
+  private resolveThink(options: LanguageModelV4CallOptions): OllamaThink {
+    switch (options.reasoning) {
+      case 'none': {
+        return false;
+      }
+      case 'minimal':
+      case 'low': {
+        return 'low';
+      }
+      case 'medium': {
+        return 'medium';
+      }
+      case 'high':
+      case 'xhigh': {
+        return 'high';
+      }
+      // 'provider-default', undefined, or any future value: use the model setting.
+      default: {
+        return this.settings.think;
+      }
+    }
+  }
+
+  /**
+   * Assemble the common Ollama chat request envelope shared by every
+   * `client.chat()` call (generate, streaming, tool/object reliability,
+   * forced completion). Callers add the `stream: true | false` literal at the
+   * call site so the Ollama client's streaming overload still resolves.
+   */
+  private buildChatRequest(params: {
+    messages: OllamaMessage[];
+    options: Record<string, unknown>;
+    format?: string | Record<string, unknown>;
+    tools?: Tool[];
+    keep_alive?: string | number;
+    think?: OllamaThink;
+  }) {
+    const { messages, options, format, tools, keep_alive, think } = params;
+    return {
+      model: this.modelId,
+      messages,
+      options,
+      format,
+      ...(tools !== undefined && { tools }),
+      ...(keep_alive !== undefined && { keep_alive }),
+      ...(think !== undefined && { think }),
+    };
+  }
+
+  /**
    * Clean JSON schema for Ollama compatibility by removing complex patterns
    * that cause "fetch failed" errors while preserving basic validation constraints
    */
@@ -490,7 +561,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
   }
 
   async doGenerate(
-    options: LanguageModelV3CallOptions,
+    options: LanguageModelV4CallOptions,
   ): Promise<GenerateResult> {
     const {
       messages,
@@ -501,8 +572,10 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       keep_alive,
     } = this.getCallOptions(options);
 
+    const think = this.resolveThink(options);
+
     const functionTools = (options.tools ?? []).filter(
-      (tool): tool is LanguageModelV3FunctionTool => tool.type === 'function',
+      (tool): tool is LanguageModelV4FunctionTool => tool.type === 'function',
     );
 
     // Use reliability features for tool calling when explicitly enabled
@@ -581,16 +654,15 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
     // Regular tool calling (original implementation)
     try {
       const response = (await this.config.client.chat({
-        model: this.modelId,
-        messages,
-        options: ollamaOptions,
-        format,
-        tools,
-        stream: false,
-        ...(keep_alive !== undefined && { keep_alive }),
-        ...(this.settings.think !== undefined && {
-          think: this.settings.think,
+        ...this.buildChatRequest({
+          messages,
+          options: ollamaOptions,
+          format,
+          tools,
+          keep_alive,
+          think,
         }),
+        stream: false,
       })) as ChatResponse;
 
       const text = response.message.content;
@@ -598,10 +670,10 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       const thinking = response.message.thinking;
 
       // Convert content based on whether we have tool calls, reasoning, or text
-      const content: LanguageModelV3Content[] = [];
+      const content: LanguageModelV4Content[] = [];
 
       // Add reasoning content if present and enabled
-      if (thinking && this.settings.think) {
+      if (thinking && think) {
         content.push({ type: 'reasoning', text: thinking });
       }
 
@@ -674,7 +746,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
     messages: OllamaMessage[];
     ollamaOptions: Record<string, unknown>;
     toolResults: Awaited<ReturnType<typeof executeReliableToolCalls>>;
-    originalOptions: LanguageModelV3CallOptions;
+    originalOptions: LanguageModelV4CallOptions;
     format?: string | Record<string, unknown>;
     keep_alive?: string | number;
   }): Promise<{ text: string; response: ChatResponse } | undefined> {
@@ -687,10 +759,12 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       keep_alive,
     } = params;
 
+    const think = this.resolveThink(originalOptions);
+
     let followUpResponse: ChatResponse | undefined;
 
     const followUpModel = {
-      doGenerate: async (callOptions: LanguageModelV3CallOptions) => {
+      doGenerate: async (callOptions: LanguageModelV4CallOptions) => {
         const prompt = callOptions.prompt;
         const followUpPrompt =
           typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
@@ -704,15 +778,14 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
         ];
 
         followUpResponse = (await this.config.client.chat({
-          model: this.modelId,
-          messages: followUpMessages,
-          options: ollamaOptions,
-          format,
-          stream: false,
-          ...(keep_alive !== undefined && { keep_alive }),
-          ...(this.settings.think !== undefined && {
-            think: this.settings.think,
+          ...this.buildChatRequest({
+            messages: followUpMessages,
+            options: ollamaOptions,
+            format,
+            keep_alive,
+            think,
           }),
+          stream: false,
         })) as ChatResponse;
 
         const followUpText = followUpResponse.message.content ?? '';
@@ -723,7 +796,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
                 {
                   type: 'text',
                   text: followUpText,
-                } satisfies LanguageModelV3Content,
+                } satisfies LanguageModelV4Content,
               ]
             : [],
         };
@@ -762,7 +835,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
     ollamaOptions: Record<string, unknown>;
     format?: string | Record<string, unknown>;
     ollamaTools?: Tool[];
-    warnings: SharedV3Warning[];
+    warnings: SharedV4Warning[];
     response: ChatResponse;
     followUpResponse?: ChatResponse;
     parsedToolCalls: ParsedToolCall[];
@@ -773,6 +846,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
     reliable: boolean;
     finalTextOverride?: string;
     keep_alive?: string | number;
+    think?: OllamaThink;
   }): GenerateResult {
     const {
       messages,
@@ -789,6 +863,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       toolResults,
       reliable,
       finalTextOverride,
+      think,
     } = params;
 
     const finalText = finalTextOverride ?? response.message.content ?? '';
@@ -796,7 +871,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
 
     const content = buildContent(
       thinking,
-      Boolean(this.settings.think),
+      Boolean(think),
       finalText,
       parsedToolCalls,
     );
@@ -807,7 +882,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       ? aggregateUsage(response, followUpResponse)
       : aggregateUsage(response);
 
-    const finishReason: LanguageModelV3FinishReason =
+    const finishReason: LanguageModelV4FinishReason =
       mapOllamaFinishReason(finishSource.done_reason) ??
       mapOllamaFinishReason('stop');
 
@@ -886,8 +961,8 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
     ollamaOptions: Record<string, unknown>;
     format?: string | Record<string, unknown>;
     ollamaTools?: Tool[];
-    warnings: SharedV3Warning[];
-    originalOptions: LanguageModelV3CallOptions;
+    warnings: SharedV4Warning[];
+    originalOptions: LanguageModelV4CallOptions;
     toolDefinitions: Record<string, ToolDefinition>;
     reliabilityOptions: ResolvedToolCallingOptions;
     keep_alive?: string | number;
@@ -904,6 +979,8 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       keep_alive,
     } = params;
 
+    const think = this.resolveThink(originalOptions);
+
     const errors: string[] = [];
     let lastResponse: ChatResponse | undefined;
 
@@ -913,16 +990,15 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       attempt++
     ) {
       const response = (await this.config.client.chat({
-        model: this.modelId,
-        messages,
-        options: ollamaOptions,
-        format,
-        tools: ollamaTools,
-        stream: false,
-        ...(keep_alive !== undefined && { keep_alive }),
-        ...(this.settings.think !== undefined && {
-          think: this.settings.think,
+        ...this.buildChatRequest({
+          messages,
+          options: ollamaOptions,
+          format,
+          tools: ollamaTools,
+          keep_alive,
+          think,
         }),
+        stream: false,
       })) as ChatResponse;
 
       lastResponse = response;
@@ -945,6 +1021,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
           errors,
           reliable: true,
           keep_alive,
+          think,
         });
       }
 
@@ -1025,6 +1102,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
               reliable: true,
               finalTextOverride: followUpData.text,
               keep_alive,
+              think,
             });
           }
 
@@ -1064,6 +1142,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
         errors,
         reliable: true,
         keep_alive,
+        think,
       });
     }
 
@@ -1077,8 +1156,8 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
     ollamaOptions: Record<string, unknown>;
     format?: string | Record<string, unknown>;
     tools?: Tool[];
-    warnings: SharedV3Warning[];
-    originalOptions: LanguageModelV3CallOptions;
+    warnings: SharedV4Warning[];
+    originalOptions: LanguageModelV4CallOptions;
     schema: JSONSchema7;
     objectOptions: ObjectGenerationOptions &
       Required<
@@ -1099,10 +1178,13 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       format,
       tools,
       warnings,
+      originalOptions,
       schema,
       objectOptions,
       keep_alive,
     } = params;
+
+    const think = this.resolveThink(originalOptions);
 
     const errors: string[] = [];
     let lastResponse: ChatResponse | undefined;
@@ -1110,16 +1192,15 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
     for (let attempt = 1; attempt <= objectOptions.maxRetries; attempt++) {
       try {
         const response = (await this.config.client.chat({
-          model: this.modelId,
-          messages,
-          options: ollamaOptions,
-          format,
-          tools,
-          stream: false,
-          ...(keep_alive !== undefined && { keep_alive }),
-          ...(this.settings.think !== undefined && {
-            think: this.settings.think,
+          ...this.buildChatRequest({
+            messages,
+            options: ollamaOptions,
+            format,
+            tools,
+            keep_alive,
+            think,
           }),
+          stream: false,
         })) as ChatResponse;
 
         lastResponse = response;
@@ -1219,7 +1300,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
     ollamaOptions: Record<string, unknown>;
     format?: string | Record<string, unknown>;
     tools?: Tool[];
-    warnings: SharedV3Warning[];
+    warnings: SharedV4Warning[];
     response: ChatResponse;
     text: string;
     validatedObject: unknown;
@@ -1237,9 +1318,9 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       params;
 
     // For object generation, we return the validated text as content
-    const content: LanguageModelV3Content[] = [{ type: 'text', text }];
+    const content: LanguageModelV4Content[] = [{ type: 'text', text }];
 
-    const usage: LanguageModelV3Usage = createUsage(
+    const usage: LanguageModelV4Usage = createUsage(
       response.prompt_eval_count ?? undefined,
       response.eval_count ?? undefined,
     );
@@ -1247,7 +1328,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
     const finishReason =
       (mapOllamaFinishReason(
         response.done_reason,
-      ) as LanguageModelV3FinishReason) ?? 'stop';
+      ) as LanguageModelV4FinishReason) ?? 'stop';
 
     const providerDetails: Record<string, JSONValue> = {
       model: response.model,
@@ -1300,8 +1381,8 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
     };
   }
 
-  async doStream(options: LanguageModelV3CallOptions): Promise<{
-    stream: ReadableStream<LanguageModelV3StreamPart>;
+  async doStream(options: LanguageModelV4CallOptions): Promise<{
+    stream: ReadableStream<LanguageModelV4StreamPart>;
     request?: { body?: unknown };
     response?: { headers?: Record<string, string> };
   }> {
@@ -1314,29 +1395,30 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
       keep_alive,
     } = this.getCallOptions(options);
 
+    const think = this.resolveThink(options);
+
     try {
       const stream = await this.config.client.chat({
-        model: this.modelId,
-        messages,
-        options: ollamaOptions,
-        format,
-        tools,
-        stream: true,
-        ...(keep_alive !== undefined && { keep_alive }),
-        ...(this.settings.think !== undefined && {
-          think: this.settings.think,
+        ...this.buildChatRequest({
+          messages,
+          options: ollamaOptions,
+          format,
+          tools,
+          keep_alive,
+          think,
         }),
+        stream: true,
       });
 
-      let usage: LanguageModelV3Usage = createUsage();
-      let finishReason: LanguageModelV3FinishReason =
+      let usage: LanguageModelV4Usage = createUsage();
+      let finishReason: LanguageModelV4FinishReason =
         mapOllamaFinishReason(null);
 
       // Track if we've emitted stream-start
       let streamStartEmitted = false;
 
       // Capture settings for use in transform function
-      const reasoningEnabled = this.settings.think;
+      const reasoningEnabled = think;
 
       // Track text streaming state for UI message compatibility
       let textStreamStarted = false;
@@ -1351,7 +1433,7 @@ export class OllamaChatLanguageModel implements LanguageModelV3 {
 
       const transformStream = new TransformStream<
         ChatResponse,
-        LanguageModelV3StreamPart
+        LanguageModelV4StreamPart
       >({
         async transform(chunk: ChatResponse, controller) {
           // Emit stream-start with warnings on first chunk

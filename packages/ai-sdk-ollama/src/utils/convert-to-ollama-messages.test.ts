@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { convertToOllamaChatMessages } from './convert-to-ollama-messages';
-import { LanguageModelV3Prompt } from '@ai-sdk/provider';
+import { LanguageModelV4Prompt } from '@ai-sdk/provider';
 
 describe('convertToOllamaChatMessages', () => {
   describe('system messages', () => {
     it('should convert system message', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'system',
           content: 'You are a helpful assistant.',
@@ -25,7 +25,7 @@ describe('convertToOllamaChatMessages', () => {
 
   describe('user messages', () => {
     it('should convert simple user message', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'user',
           content: [{ type: 'text', text: 'Hello, how are you?' }],
@@ -43,7 +43,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should convert user message with text parts', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'user',
           content: [
@@ -64,14 +64,14 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should convert user message with image URL', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'user',
           content: [
             { type: 'text', text: 'What is in this image?' },
             {
               type: 'file',
-              data: new URL('https://example.com/image.jpg'),
+              data: { type: 'url', url: new URL('https://example.com/image.jpg') },
               mediaType: 'image/jpeg',
             },
           ],
@@ -90,14 +90,14 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should convert user message with base64 image string', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'user',
           content: [
             { type: 'text', text: 'Describe this image' },
             {
               type: 'file',
-              data: 'data:image/jpeg;base64,/9j/4AAQ...',
+              data: { type: 'data', data: 'data:image/jpeg;base64,/9j/4AAQ...' },
               mediaType: 'image/jpeg',
             },
           ],
@@ -117,12 +117,16 @@ describe('convertToOllamaChatMessages', () => {
 
     it('should convert user message with Uint8Array image', () => {
       const imageData = new Uint8Array([255, 216, 255, 224]); // JPEG header
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'user',
           content: [
             { type: 'text', text: 'Analyze this image' },
-            { type: 'file', data: imageData, mediaType: 'image/jpeg' },
+            {
+              type: 'file',
+              data: { type: 'data', data: imageData },
+              mediaType: 'image/jpeg',
+            },
           ],
         },
       ];
@@ -139,19 +143,22 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should convert user message with multiple images', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'user',
           content: [
             { type: 'text', text: 'Compare these images' },
             {
               type: 'file',
-              data: new URL('https://example.com/image1.jpg'),
+              data: {
+                type: 'url',
+                url: new URL('https://example.com/image1.jpg'),
+              },
               mediaType: 'image/jpeg',
             },
             {
               type: 'file',
-              data: 'data:image/png;base64,iVBOR...',
+              data: { type: 'data', data: 'data:image/png;base64,iVBOR...' },
               mediaType: 'image/png',
             },
           ],
@@ -170,13 +177,13 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should handle user message with only images', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'user',
           content: [
             {
               type: 'file',
-              data: new URL('https://example.com/image.jpg'),
+              data: { type: 'url', url: new URL('https://example.com/image.jpg') },
               mediaType: 'image/jpeg',
             },
           ],
@@ -197,7 +204,7 @@ describe('convertToOllamaChatMessages', () => {
 
   describe('assistant messages', () => {
     it('should convert simple assistant message', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'assistant',
           content: [{ type: 'text', text: 'I am doing well, thank you!' }],
@@ -215,7 +222,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should convert assistant message with text parts', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'assistant',
           content: [
@@ -236,7 +243,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should convert assistant message with tool calls', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'assistant',
           content: [
@@ -272,7 +279,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should convert assistant message with multiple tool calls', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'assistant',
           content: [
@@ -321,7 +328,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should repair malformed tool-call JSON via parseToolArguments', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'assistant',
           content: [
@@ -356,7 +363,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should handle empty assistant message', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'assistant',
           content: [],
@@ -376,7 +383,7 @@ describe('convertToOllamaChatMessages', () => {
 
   describe('tool messages', () => {
     it('should convert tool message to user message', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'tool',
           content: [
@@ -405,7 +412,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should handle tool message with string result', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'tool',
           content: [
@@ -431,7 +438,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should handle tool result with output type content (text only)', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'tool',
           content: [
@@ -465,7 +472,7 @@ describe('convertToOllamaChatMessages', () => {
     it('should handle tool result with output type content (image-data)', () => {
       const base64Png =
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'tool',
           content: [
@@ -477,8 +484,8 @@ describe('convertToOllamaChatMessages', () => {
                 type: 'content',
                 value: [
                   {
-                    type: 'image-data',
-                    data: base64Png,
+                    type: 'file',
+                    data: { type: 'data', data: base64Png },
                     mediaType: 'image/png',
                   },
                 ],
@@ -502,7 +509,7 @@ describe('convertToOllamaChatMessages', () => {
 
     it('should handle tool result with output type content (text + image-data)', () => {
       const base64Png = '/9j/4AAQ';
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'tool',
           content: [
@@ -515,8 +522,8 @@ describe('convertToOllamaChatMessages', () => {
                 value: [
                   { type: 'text', text: 'Caption: A red pixel.' },
                   {
-                    type: 'image-data',
-                    data: base64Png,
+                    type: 'file',
+                    data: { type: 'data', data: base64Png },
                     mediaType: 'image/jpeg',
                   },
                 ],
@@ -539,7 +546,7 @@ describe('convertToOllamaChatMessages', () => {
     });
 
     it('should handle tool result with output type content (image-url)', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'tool',
           content: [
@@ -551,8 +558,12 @@ describe('convertToOllamaChatMessages', () => {
                 type: 'content',
                 value: [
                   {
-                    type: 'image-url',
-                    url: 'https://example.com/image.png',
+                    type: 'file',
+                    data: {
+                      type: 'url',
+                      url: new URL('https://example.com/image.png'),
+                    },
+                    mediaType: 'image/png',
                   },
                 ],
               },
@@ -576,7 +587,7 @@ describe('convertToOllamaChatMessages', () => {
     it('should handle tool result with output type content (file-data image)', () => {
       const base64Png =
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==';
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'tool',
           content: [
@@ -588,8 +599,8 @@ describe('convertToOllamaChatMessages', () => {
                 type: 'content',
                 value: [
                   {
-                    type: 'file-data',
-                    data: base64Png,
+                    type: 'file',
+                    data: { type: 'data', data: base64Png },
                     mediaType: 'image/png',
                   },
                 ],
@@ -614,7 +625,7 @@ describe('convertToOllamaChatMessages', () => {
 
   describe('complex conversations', () => {
     it('should convert complete conversation', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'system',
           content: 'You are a helpful assistant.',
@@ -714,20 +725,20 @@ describe('convertToOllamaChatMessages', () => {
 
   describe('edge cases', () => {
     it('should handle empty prompt', () => {
-      const prompt: LanguageModelV3Prompt = [];
+      const prompt: LanguageModelV4Prompt = [];
       const result = convertToOllamaChatMessages(prompt);
       expect(result).toEqual([]);
     });
 
     it('should handle mixed content types properly', () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: 'user',
           content: [
             { type: 'text', text: 'Hello' },
             {
               type: 'file',
-              data: 'data:image/jpeg;base64,abc123',
+              data: { type: 'data', data: 'data:image/jpeg;base64,abc123' },
               mediaType: 'image/jpeg',
             },
             { type: 'text', text: 'World' },
@@ -755,7 +766,11 @@ describe('convertToOllamaChatMessages', () => {
         role: 'user',
         content: [
           { type: 'text', text: 'Analyze this Uint8Array image' },
-          { type: 'file', data: imageData, mediaType: 'image/jpeg' },
+          {
+            type: 'file',
+            data: { type: 'data', data: imageData },
+            mediaType: 'image/jpeg',
+          },
         ],
       },
     ]);
@@ -776,7 +791,11 @@ describe('convertToOllamaChatMessages', () => {
         role: 'user',
         content: [
           { type: 'text', text: 'Analyze this Buffer image' },
-          { type: 'file', data: imageData, mediaType: 'image/jpeg' },
+          {
+            type: 'file',
+            data: { type: 'data', data: imageData },
+            mediaType: 'image/jpeg',
+          },
         ],
       },
     ]);
@@ -797,17 +816,20 @@ describe('convertToOllamaChatMessages', () => {
           { type: 'text', text: 'Compare these different image formats' },
           {
             type: 'file',
-            data: new URL('https://example.com/image1.jpg'),
+            data: {
+              type: 'url',
+              url: new URL('https://example.com/image1.jpg'),
+            },
             mediaType: 'image/jpeg',
           },
           {
             type: 'file',
-            data: 'data:image/png;base64,iVBOR...',
+            data: { type: 'data', data: 'data:image/png;base64,iVBOR...' },
             mediaType: 'image/png',
           },
           {
             type: 'file',
-            data: new Uint8Array([255, 216, 255, 224]),
+            data: { type: 'data', data: new Uint8Array([255, 216, 255, 224]) },
             mediaType: 'image/jpeg',
           },
         ],
@@ -900,7 +922,7 @@ describe('convertToOllamaChatMessages', () => {
         content: [
           {
             type: 'file',
-            data: new URL('https://example.com/image.jpg'),
+            data: { type: 'url', url: new URL('https://example.com/image.jpg') },
             mediaType: 'image/jpeg',
           },
         ],

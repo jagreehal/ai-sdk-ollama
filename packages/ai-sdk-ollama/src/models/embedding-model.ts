@@ -1,9 +1,9 @@
 import {
-  EmbeddingModelV3,
-  EmbeddingModelV3Embedding,
-  SharedV3ProviderMetadata,
-  SharedV3ProviderOptions,
-  SharedV3Warning,
+  EmbeddingModelV4,
+  EmbeddingModelV4Embedding,
+  SharedV4ProviderMetadata,
+  SharedV4ProviderOptions,
+  SharedV4Warning,
 } from '@ai-sdk/provider';
 import { Ollama, type EmbedResponse } from 'ollama';
 import { OllamaEmbeddingSettings } from '../provider';
@@ -14,8 +14,8 @@ export interface OllamaEmbeddingConfig {
   provider: string;
 }
 
-export class OllamaEmbeddingModel implements EmbeddingModelV3 {
-  readonly specificationVersion = 'v3' as const;
+export class OllamaEmbeddingModel implements EmbeddingModelV4 {
+  readonly specificationVersion = 'v4' as const;
   readonly modelId: string;
   readonly maxEmbeddingsPerCall = 2048;
   readonly supportsParallelCalls = true;
@@ -35,14 +35,14 @@ export class OllamaEmbeddingModel implements EmbeddingModelV3 {
   async doEmbed(params: {
     values: string[];
     abortSignal?: AbortSignal;
-    providerOptions?: SharedV3ProviderOptions;
+    providerOptions?: SharedV4ProviderOptions;
     headers?: Record<string, string | undefined>;
   }): Promise<{
-    embeddings: EmbeddingModelV3Embedding[];
+    embeddings: EmbeddingModelV4Embedding[];
     usage?: { tokens: number };
-    providerMetadata?: SharedV3ProviderMetadata;
+    providerMetadata?: SharedV4ProviderMetadata;
     response?: { headers?: Record<string, string>; body?: unknown };
-    warnings: SharedV3Warning[];
+    warnings: SharedV4Warning[];
   }> {
     const { values, abortSignal } = params;
     if (values.length > this.maxEmbeddingsPerCall) {
@@ -57,7 +57,7 @@ export class OllamaEmbeddingModel implements EmbeddingModelV3 {
     }
 
     try {
-      const embeddings: EmbeddingModelV3Embedding[] = [];
+      const embeddings: EmbeddingModelV4Embedding[] = [];
       let totalTokens = 0;
 
       // Ollama's embed API currently only supports single prompts

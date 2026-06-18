@@ -1,8 +1,8 @@
 import {
-  LanguageModelV3,
-  EmbeddingModelV3,
-  RerankingModelV3,
-  ProviderV3,
+  LanguageModelV4,
+  EmbeddingModelV4,
+  RerankingModelV4,
+  ProviderV4,
 } from '@ai-sdk/provider';
 import {
   Ollama,
@@ -77,16 +77,16 @@ export interface OllamaProviderSettings extends Pick<
   client?: Ollama;
 }
 
-export interface OllamaProvider extends ProviderV3 {
+export interface OllamaProvider extends ProviderV4 {
   /**
    * Create a language model instance
    */
-  (modelId: string, settings?: OllamaChatSettings): LanguageModelV3;
+  (modelId: string, settings?: OllamaChatSettings): LanguageModelV4;
 
   /**
    * Create a language model instance with the `chat` method
    */
-  chat(modelId: string, settings?: OllamaChatSettings): LanguageModelV3;
+  chat(modelId: string, settings?: OllamaChatSettings): LanguageModelV4;
 
   /**
    * Create a language model instance with the `languageModel` method
@@ -94,7 +94,7 @@ export interface OllamaProvider extends ProviderV3 {
   languageModel(
     modelId: string,
     settings?: OllamaChatSettings,
-  ): LanguageModelV3;
+  ): LanguageModelV4;
 
   /**
    * Create an embedding model instance
@@ -102,7 +102,7 @@ export interface OllamaProvider extends ProviderV3 {
   embedding(
     modelId: string,
     settings?: OllamaEmbeddingSettings,
-  ): EmbeddingModelV3;
+  ): EmbeddingModelV4;
 
   /**
    * Create an embedding model instance with the `textEmbedding` method
@@ -110,7 +110,7 @@ export interface OllamaProvider extends ProviderV3 {
   textEmbedding(
     modelId: string,
     settings?: OllamaEmbeddingSettings,
-  ): EmbeddingModelV3;
+  ): EmbeddingModelV4;
 
   /**
    * Create an embedding model instance with the `textEmbeddingModel` method
@@ -118,7 +118,7 @@ export interface OllamaProvider extends ProviderV3 {
   textEmbeddingModel(
     modelId: string,
     settings?: OllamaEmbeddingSettings,
-  ): EmbeddingModelV3;
+  ): EmbeddingModelV4;
 
   /**
    * Create a reranking model instance
@@ -126,7 +126,7 @@ export interface OllamaProvider extends ProviderV3 {
   reranking(
     modelId: string,
     settings?: OllamaRerankingSettings,
-  ): RerankingModelV3;
+  ): RerankingModelV4;
 
   /**
    * Create a reranking model instance with the `rerankingModel` method
@@ -138,7 +138,7 @@ export interface OllamaProvider extends ProviderV3 {
   rerankingModel(
     modelId: string,
     settings?: OllamaRerankingSettings,
-  ): RerankingModelV3;
+  ): RerankingModelV4;
 
   /**
    * Create an embedding-based reranking model (RECOMMENDED - working now)
@@ -162,7 +162,7 @@ export interface OllamaProvider extends ProviderV3 {
   embeddingReranking(
     modelId: string,
     settings?: OllamaEmbeddingRerankingSettings,
-  ): RerankingModelV3;
+  ): RerankingModelV4;
 
   /**
    * Ollama-specific tools that leverage web search capabilities
@@ -469,7 +469,7 @@ export function createOllama(
   };
 
   provider.tools = toolsWithClient;
-  provider.specificationVersion = 'v3' as const;
+  provider.specificationVersion = 'v4' as const;
   provider.embeddingModel = createEmbeddingModel;
 
   return provider;

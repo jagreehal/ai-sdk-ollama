@@ -8,6 +8,7 @@ export const MODELS = {
   QWEN_2_5_CODER: 'qwen2.5-coder:latest',
   NOMIC_EMBED_TEXT: 'nomic-embed-text',
   DEEPSEEK_R1_7B: 'deepseek-r1:7b',
+  QWEN_3_5: 'qwen3.5:latest',
   GRANITE_4: 'granite4',
 
   // Cloud models (recommended for web search)

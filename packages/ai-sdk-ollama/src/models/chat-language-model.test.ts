@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { OllamaChatLanguageModel } from './chat-language-model';
 import { OllamaChatSettings } from '../provider';
 import {
-  LanguageModelV3CallOptions,
-  LanguageModelV3StreamPart,
-  LanguageModelV3FunctionTool,
+  LanguageModelV4CallOptions,
+  LanguageModelV4StreamPart,
+  LanguageModelV4FunctionTool,
 } from '@ai-sdk/provider';
 import { Ollama, AbortableAsyncIterator, ChatResponse } from 'ollama';
 import { convertArrayToAsyncIterable } from '@ai-sdk/provider-utils/test';
@@ -54,7 +54,7 @@ describe('OllamaChatLanguageModel', () => {
 
   describe('initialization', () => {
     it('should initialize with correct properties', () => {
-      expect(model.specificationVersion).toBe('v3');
+      expect(model.specificationVersion).toBe('v4');
       expect(model.modelId).toBe('llama3.2');
       expect(model.provider).toBe('ollama');
     });
@@ -101,7 +101,7 @@ describe('OllamaChatLanguageModel', () => {
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
       };
 
@@ -140,7 +140,7 @@ describe('OllamaChatLanguageModel', () => {
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
         temperature: 0.7,
         maxOutputTokens: 100,
@@ -190,7 +190,7 @@ describe('OllamaChatLanguageModel', () => {
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [
           { role: 'user', content: [{ type: 'text', text: 'Generate JSON' }] },
         ],
@@ -231,7 +231,7 @@ describe('OllamaChatLanguageModel', () => {
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
         tools: [
           {
@@ -296,7 +296,7 @@ describe('OllamaChatLanguageModel', () => {
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [
           {
             role: 'user',
@@ -393,7 +393,7 @@ describe('OllamaChatLanguageModel', () => {
         .mockResolvedValueOnce(initialResponse)
         .mockResolvedValueOnce(forcedResponse);
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [
           {
             role: 'user',
@@ -414,7 +414,7 @@ describe('OllamaChatLanguageModel', () => {
               },
             },
             execute: toolExecute,
-          } as LanguageModelV3FunctionTool & { execute: typeof toolExecute },
+          } as LanguageModelV4FunctionTool & { execute: typeof toolExecute },
         ],
       };
 
@@ -437,7 +437,7 @@ describe('OllamaChatLanguageModel', () => {
       const error = new Error('Connection failed');
       vi.mocked(mockOllamaClient.chat).mockRejectedValueOnce(error);
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
       };
 
@@ -466,7 +466,7 @@ describe('OllamaChatLanguageModel', () => {
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [
           {
             role: 'user',
@@ -527,7 +527,7 @@ describe('OllamaChatLanguageModel', () => {
 
       mockChatStream(mockStreamData);
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
       };
 
@@ -625,7 +625,7 @@ describe('OllamaChatLanguageModel', () => {
 
       mockChatStream(mockStreamData);
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [
           {
             role: 'user',
@@ -680,7 +680,7 @@ describe('OllamaChatLanguageModel', () => {
       const error = new Error('Stream error');
       vi.mocked(mockOllamaClient.chat).mockRejectedValueOnce(error);
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
       };
 
@@ -704,7 +704,7 @@ describe('OllamaChatLanguageModel', () => {
         mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
       );
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
         abortSignal: abortController.signal,
       };
@@ -758,7 +758,7 @@ describe('OllamaChatLanguageModel', () => {
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
       };
 
@@ -812,7 +812,7 @@ describe('OllamaChatLanguageModel', () => {
 
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(mockResponse);
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
         temperature: 0.9, // Will be overridden by Ollama setting
         topK: 60, // Will be overridden by Ollama setting
@@ -861,7 +861,7 @@ describe('OllamaChatLanguageModel', () => {
         { client: mockOllamaClient, provider: 'ollama' },
       );
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [
           {
             role: 'user',
@@ -910,7 +910,7 @@ describe('OllamaChatLanguageModel', () => {
         { client: mockOllamaClient, provider: 'ollama' },
       );
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [
           {
             role: 'user',
@@ -975,7 +975,7 @@ describe('OllamaChatLanguageModel', () => {
         { client: mockOllamaClient, provider: 'ollama' },
       );
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [
           {
             role: 'user',
@@ -985,7 +985,7 @@ describe('OllamaChatLanguageModel', () => {
       };
 
       const { stream } = await modelWithReasoning.doStream(options);
-      const chunks: LanguageModelV3StreamPart[] = [];
+      const chunks: LanguageModelV4StreamPart[] = [];
 
       for await (const chunk of stream) {
         chunks.push(chunk);
@@ -1060,7 +1060,7 @@ describe('OllamaChatLanguageModel', () => {
         { client: mockOllamaClient, provider: 'ollama' },
       );
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [
           {
             role: 'user',
@@ -1070,7 +1070,7 @@ describe('OllamaChatLanguageModel', () => {
       };
 
       const { stream } = await modelWithoutReasoning.doStream(options);
-      const chunks: LanguageModelV3StreamPart[] = [];
+      const chunks: LanguageModelV4StreamPart[] = [];
 
       for await (const chunk of stream) {
         chunks.push(chunk);
@@ -1184,7 +1184,7 @@ describe('OllamaChatLanguageModel', () => {
         { client: mockOllamaClient, provider: 'ollama' },
       );
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [
           {
             role: 'user',
@@ -1194,7 +1194,7 @@ describe('OllamaChatLanguageModel', () => {
       };
 
       const { stream } = await modelWithReasoning.doStream(options);
-      const chunks: LanguageModelV3StreamPart[] = [];
+      const chunks: LanguageModelV4StreamPart[] = [];
 
       for await (const chunk of stream) {
         chunks.push(chunk);
@@ -1291,12 +1291,12 @@ describe('OllamaChatLanguageModel', () => {
 
       mockChatStream(mockStreamData);
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
       };
 
       const { stream } = await model.doStream(options);
-      const chunks: LanguageModelV3StreamPart[] = [];
+      const chunks: LanguageModelV4StreamPart[] = [];
 
       for await (const chunk of stream) {
         chunks.push(chunk);
@@ -1368,12 +1368,12 @@ describe('OllamaChatLanguageModel', () => {
 
       mockChatStream(mockStreamData);
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
       };
 
       const { stream } = await model.doStream(options);
-      const chunks: LanguageModelV3StreamPart[] = [];
+      const chunks: LanguageModelV4StreamPart[] = [];
 
       for await (const chunk of stream) {
         chunks.push(chunk);
@@ -1424,12 +1424,12 @@ describe('OllamaChatLanguageModel', () => {
 
       mockChatStream(mockStreamData);
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
       };
 
       const { stream } = await model.doStream(options);
-      const chunks: LanguageModelV3StreamPart[] = [];
+      const chunks: LanguageModelV4StreamPart[] = [];
 
       for await (const chunk of stream) {
         chunks.push(chunk);
@@ -1514,12 +1514,12 @@ describe('OllamaChatLanguageModel', () => {
 
       mockChatStream(mockStreamData);
 
-      const options: LanguageModelV3CallOptions = {
+      const options: LanguageModelV4CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Test' }] }],
       };
 
       const { stream } = await model.doStream(options);
-      const chunks: LanguageModelV3StreamPart[] = [];
+      const chunks: LanguageModelV4StreamPart[] = [];
 
       for await (const chunk of stream) {
         chunks.push(chunk);

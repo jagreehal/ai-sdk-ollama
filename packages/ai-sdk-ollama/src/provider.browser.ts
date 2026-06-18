@@ -191,7 +191,7 @@ export function createOllama(
   };
 
   provider.tools = toolsWithClient;
-  provider.specificationVersion = 'v3' as const;
+  provider.specificationVersion = 'v4' as const;
   provider.embeddingModel = createEmbeddingModel;
 
   return provider;
