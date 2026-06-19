@@ -199,8 +199,8 @@ importers:
   packages/ai-sdk-ollama:
     dependencies:
       '@ai-sdk/provider':
-        specifier: 4.0.0-beta.19
-        version: 4.0.0-beta.19
+        specifier: 4.0.0-canary.18
+        version: 4.0.0-canary.18
       '@ai-sdk/provider-utils':
         specifier: 5.0.0-beta.49
         version: 5.0.0-beta.49(zod@4.4.3)
@@ -291,6 +291,10 @@ packages:
 
   '@ai-sdk/provider@4.0.0-beta.19':
     resolution: {integrity: sha512-Aca/KiGeRtMM7rOJ38Qio+Dc2V45PpiGoWgdrdtIkgM9zkhYpS043t0ggKoNOWgm/csv99XWGrfSF63PSkVeHw==}
+    engines: {node: '>=22'}
+
+  '@ai-sdk/provider@4.0.0-canary.18':
+    resolution: {integrity: sha512-+XBwXEPkN+l/90bb7TaSK15jAq9ScsGrauJ/NLSGip0KX5Mf1pfEfqBWDuJMIYVRYHNdV1dDBy7JCoKUCQe/tA==}
     engines: {node: '>=22'}
 
   '@ai-sdk/react@4.0.0-beta.183':
@@ -4046,6 +4050,10 @@ snapshots:
       zod: 4.4.3
 
   '@ai-sdk/provider@4.0.0-beta.19':
+    dependencies:
+      json-schema: 0.4.0
+
+  '@ai-sdk/provider@4.0.0-canary.18':
     dependencies:
       json-schema: 0.4.0
 
