@@ -53,8 +53,8 @@ importers:
   examples/browser:
     dependencies:
       '@ai-sdk/react':
-        specifier: 4.0.0-beta.183
-        version: 4.0.0-beta.183(react@19.2.7)(zod@4.4.3)
+        specifier: 4.0.0-canary.180
+        version: 4.0.0-canary.180(react@19.2.7)(zod@4.4.3)
       '@radix-ui/react-avatar':
         specifier: ^1.2.0
         version: 1.2.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -289,6 +289,12 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
+  '@ai-sdk/mcp@2.0.0-canary.65':
+    resolution: {integrity: sha512-giyTeWVykKbgE/VDOlzoq6igW0MbIp60KfFTaxW/NYdmK1sb221Ozb1PaSYEn362tmDv1cnvyBSsXhXahrYzkA==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   '@ai-sdk/provider-utils@5.0.0-beta.49':
     resolution: {integrity: sha512-7xnpAQLpW0KGIsh0CQERcIZuXEGqv7FtFW2BdFk14iuMxRMVpXhTVvEQyqkm6tWAbQ7OsGQJhO6M0Me9gHQ52g==}
     engines: {node: '>=22'}
@@ -309,8 +315,8 @@ packages:
     resolution: {integrity: sha512-+XBwXEPkN+l/90bb7TaSK15jAq9ScsGrauJ/NLSGip0KX5Mf1pfEfqBWDuJMIYVRYHNdV1dDBy7JCoKUCQe/tA==}
     engines: {node: '>=22'}
 
-  '@ai-sdk/react@4.0.0-beta.183':
-    resolution: {integrity: sha512-7Czxzr1sYCLa64ua/x2/qnBiqN7EKW+hHOp64H8OwF3yXvqgHS442yURuxn4zb8zqRzaaPQFgPU/C/mQy1tnsg==}
+  '@ai-sdk/react@4.0.0-canary.180':
+    resolution: {integrity: sha512-K/HXLEUoDsBH9autqvajtceximk4/w4X4mzmfDdnr2epECedDekZw087MMXaZL3oquiDR0854PRljjzwQUSseQ==}
     engines: {node: '>=22'}
     peerDependencies:
       react: ^18 || ~19.0.1 || ~19.1.2 || ^19.2.1
@@ -4066,6 +4072,13 @@ snapshots:
       pkce-challenge: 5.0.1
       zod: 4.4.3
 
+  '@ai-sdk/mcp@2.0.0-canary.65(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.0-canary.18
+      '@ai-sdk/provider-utils': 5.0.0-canary.48(zod@4.4.3)
+      pkce-challenge: 5.0.1
+      zod: 4.4.3
+
   '@ai-sdk/provider-utils@5.0.0-beta.49(zod@4.4.3)':
     dependencies:
       '@ai-sdk/provider': 4.0.0-beta.19
@@ -4090,12 +4103,12 @@ snapshots:
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/react@4.0.0-beta.183(react@19.2.7)(zod@4.4.3)':
+  '@ai-sdk/react@4.0.0-canary.180(react@19.2.7)(zod@4.4.3)':
     dependencies:
-      '@ai-sdk/mcp': 2.0.0-beta.66(zod@4.4.3)
-      '@ai-sdk/provider': 4.0.0-beta.19
-      '@ai-sdk/provider-utils': 5.0.0-beta.49(zod@4.4.3)
-      ai: 7.0.0-beta.179(zod@4.4.3)
+      '@ai-sdk/mcp': 2.0.0-canary.65(zod@4.4.3)
+      '@ai-sdk/provider': 4.0.0-canary.18
+      '@ai-sdk/provider-utils': 5.0.0-canary.48(zod@4.4.3)
+      ai: 7.0.0-canary.176(zod@4.4.3)
       react: 19.2.7
       swr: 2.4.1(react@19.2.7)
       throttleit: 2.1.0
