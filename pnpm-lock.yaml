@@ -202,8 +202,8 @@ importers:
         specifier: 4.0.0-canary.18
         version: 4.0.0-canary.18
       '@ai-sdk/provider-utils':
-        specifier: 5.0.0-beta.49
-        version: 5.0.0-beta.49(zod@4.4.3)
+        specifier: 5.0.0-canary.48
+        version: 5.0.0-canary.48(zod@4.4.3)
       ai:
         specifier: '>=7.0.0-beta.179 <8.0.0'
         version: 7.0.0-beta.179(zod@4.4.3)
