@@ -165,8 +165,8 @@ importers:
   examples/node:
     dependencies:
       '@ai-sdk/mcp':
-        specifier: 2.0.0-beta.66
-        version: 2.0.0-beta.66(zod@4.4.3)
+        specifier: 2.0.0-canary.65
+        version: 2.0.0-canary.65(zod@4.4.3)
       ai:
         specifier: 7.0.0-canary.176
         version: 7.0.0-canary.176(zod@4.4.3)
@@ -279,12 +279,6 @@ packages:
 
   '@ai-sdk/gateway@4.0.0-canary.107':
     resolution: {integrity: sha512-BPmARy2rc0ChkmoMhrmHa+L5lg7HWO8BZ1bMEWx3m3wH6lSy7a2CFu4T28PC2qaCPuWgpu5+PnSWC9eMpZh9rQ==}
-    engines: {node: '>=22'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
-  '@ai-sdk/mcp@2.0.0-beta.66':
-    resolution: {integrity: sha512-Jodv9W0aHKRWBLfyGZ3pcc3bXLoEldgEqC4k+E1ozaL5XjYuZfqnjfsGpx6BkX3GCr3mVctPwRGG09QCYP5lJA==}
     engines: {node: '>=22'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -4063,13 +4057,6 @@ snapshots:
       '@ai-sdk/provider': 4.0.0-canary.18
       '@ai-sdk/provider-utils': 5.0.0-canary.48(zod@4.4.3)
       '@vercel/oidc': 3.2.0
-      zod: 4.4.3
-
-  '@ai-sdk/mcp@2.0.0-beta.66(zod@4.4.3)':
-    dependencies:
-      '@ai-sdk/provider': 4.0.0-beta.19
-      '@ai-sdk/provider-utils': 5.0.0-beta.49(zod@4.4.3)
-      pkce-challenge: 5.0.1
       zod: 4.4.3
 
   '@ai-sdk/mcp@2.0.0-canary.65(zod@4.4.3)':
