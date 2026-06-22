@@ -103,7 +103,7 @@
     "@typescript-eslint/eslint-plugin": "^8.61.1",
     "@typescript-eslint/parser": "^8.61.1",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-unicorn": "^67.0.0",
+    "eslint-plugin-unicorn": "^68.0.0",
     "prettier": "^3.8.3",
     "rimraf": "^6.1.3",
     "tsup": "^8.5.1",
