@@ -85,7 +85,7 @@
   ],
   "dependencies": {
     "@ai-sdk/provider": "4.0.0-canary.18",
-    "@ai-sdk/provider-utils": "5.0.0-beta.49",
+    "@ai-sdk/provider-utils": "5.0.0-canary.48",
     "jsonrepair": "^3.14.0",
     "ollama": "^0.6.3"
   },
