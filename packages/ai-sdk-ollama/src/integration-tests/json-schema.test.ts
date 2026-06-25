@@ -51,10 +51,9 @@ describe('JSON Schema Integration Tests', { timeout: 120_000 }, () => {
       temperature: 0,
     });
 
-    const chunks: Record<string, unknown>[] = [];
-    for await (const chunk of result.partialOutputStream) {
-      chunks.push(chunk);
-    }
+    const chunks: Record<string, unknown>[] = await Array.fromAsync(
+      result.partialOutputStream,
+    );
 
     expect(chunks.length).toBeGreaterThan(0);
     const finalObject = chunks.at(-1);

@@ -11,11 +11,11 @@ A Vercel AI SDK provider for Ollama, built on the official `ollama` package. Typ
 >
 > Each `ai-sdk-ollama` major targets one AI SDK major. Every line stays published on npm, so pick the one that matches your `ai` version:
 >
-> | `ai-sdk-ollama` | `ai` (peer) | Status |
-> | --- | --- | --- |
-> | `4.x` (`@latest`) | `ai@^7` | Active. New features land here. |
-> | `3.x` | `ai@^6` | Maintenance. Critical fixes only. |
-> | `2.x` | `ai@^5` | Unmaintained. |
+> | `ai-sdk-ollama`   | `ai` (peer) | Status                            |
+> | ----------------- | ----------- | --------------------------------- |
+> | `4.x` (`@latest`) | `ai@^7`     | Active. New features land here.   |
+> | `3.x`             | `ai@^6`     | Maintenance. Critical fixes only. |
+> | `2.x`             | `ai@^5`     | Unmaintained.                     |
 >
 > AI SDK v7 is stable, so v4 installs from `latest`. The v3 line still works for AI SDK v6.
 
@@ -413,12 +413,12 @@ const result = await generateText({
 
 **Standard vs Enhanced Comparison:**
 
-| Function                   | Standard `generateText`   | Enhanced `generateText`              |
-| -------------------------- | ------------------------- | ------------------------------------ |
-| **Simple prompts**         | ✅ Perfect                | ✅ Works (slight overhead)           |
-| **Tool calling**           | ⚠️ May return empty text  | ✅ **Returns complete responses**    |
-| **Complete responses**     | ❌ Manual handling needed | ✅ **Automatic completion**          |
-| **Production reliability** | ⚠️ Unpredictable          | ✅ **Reliable**                      |
+| Function                   | Standard `generateText`   | Enhanced `generateText`           |
+| -------------------------- | ------------------------- | --------------------------------- |
+| **Simple prompts**         | ✅ Perfect                | ✅ Works (slight overhead)        |
+| **Tool calling**           | ⚠️ May return empty text  | ✅ **Returns complete responses** |
+| **Complete responses**     | ❌ Manual handling needed | ✅ **Automatic completion**       |
+| **Production reliability** | ⚠️ Unpredictable          | ✅ **Reliable**                   |
 
 ### Simple and Predictable
 

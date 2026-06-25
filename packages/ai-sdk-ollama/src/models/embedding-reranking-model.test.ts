@@ -94,7 +94,7 @@ describe('OllamaEmbeddingRerankingModel', () => {
       expect(ranking[0]?.relevanceScore).toBeCloseTo(1, 5);
       // Document 2 (similar) should be second
       expect(ranking[1]?.index).toBe(2);
-      expect(ranking[1]?.relevanceScore).toBeCloseTo(0.7071, 3);
+      expect(ranking[1]?.relevanceScore).toBeCloseTo(Math.SQRT1_2, 3);
       // Document 1 (orthogonal) should be last
       expect(ranking[2]?.index).toBe(1);
       expect(ranking[2]?.relevanceScore).toBeCloseTo(0, 5);

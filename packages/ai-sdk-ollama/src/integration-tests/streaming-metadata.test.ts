@@ -58,11 +58,7 @@ describe('Streaming Metadata Integration Tests', { timeout: 120_000 }, () => {
       temperature: 0.2,
     });
 
-    const chunks: string[] = [];
-
-    for await (const chunk of result.textStream) {
-      chunks.push(chunk);
-    }
+    const chunks: string[] = await Array.fromAsync(result.textStream);
 
     const fullText = chunks.join('');
 
@@ -124,7 +120,7 @@ describe('Streaming Metadata Integration Tests', { timeout: 120_000 }, () => {
     expect(eventLog.length).toBeGreaterThan(0);
 
     // Check for different event types
-    const eventTypes = eventLog.map((e) => e.type);
+    const eventTypes = eventLog.map((event) => event.type);
     expect(eventTypes).toContain('finish');
 
     // Should have at least some text or tool events
@@ -165,8 +161,10 @@ describe('Streaming Metadata Integration Tests', { timeout: 120_000 }, () => {
 
     // Analyze timing patterns
     const delays = [];
-    for (let i = 1; i < chunkTimings.length; i++) {
-      delays.push(chunkTimings[i]!.timestamp - chunkTimings[i - 1]!.timestamp);
+    for (let index = 1; index < chunkTimings.length; index++) {
+      delays.push(
+        chunkTimings[index]!.timestamp - chunkTimings[index - 1]!.timestamp,
+      );
     }
 
     // Calculate statistics

@@ -39,10 +39,9 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)(
         }),
       });
 
-      const partialObjects: Record<string, unknown>[] = [];
-      for await (const partialObject of result.partialOutputStream) {
-        partialObjects.push(partialObject);
-      }
+      const partialObjects: Record<string, unknown>[] = await Array.fromAsync(
+        result.partialOutputStream,
+      );
 
       expect(partialObjects.length).toBeGreaterThan(0);
 

@@ -95,7 +95,12 @@ describe('webSearch', () => {
     await expect(
       tool.execute!(
         { query: 'test query' },
-        { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
+        {
+          toolCallId: 'test',
+          messages: [],
+          abortSignal: undefined,
+          context: {},
+        },
       ),
     ).rejects.toThrow(OllamaError);
   });
@@ -108,7 +113,12 @@ describe('webSearch', () => {
     await expect(
       tool.execute!(
         { query: 'test query' },
-        { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
+        {
+          toolCallId: 'test',
+          messages: [],
+          abortSignal: undefined,
+          context: {},
+        },
       ),
     ).rejects.toThrow(OllamaError);
   });
@@ -121,7 +131,12 @@ describe('webSearch', () => {
     await expect(
       tool.execute!(
         { query: 'test query' },
-        { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
+        {
+          toolCallId: 'test',
+          messages: [],
+          abortSignal: undefined,
+          context: {},
+        },
       ),
     ).rejects.toThrow(OllamaError);
   });
@@ -134,7 +149,12 @@ describe('webSearch', () => {
     await expect(
       tool.execute!(
         { query: 'test query' },
-        { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
+        {
+          toolCallId: 'test',
+          messages: [],
+          abortSignal: undefined,
+          context: {},
+        },
       ),
     ).rejects.toThrow(OllamaError);
   });

@@ -80,7 +80,7 @@ describe('Error Handling Integration Tests', () => {
 
   it('should handle extreme temperature values', async () => {
     // Very low temperature (deterministic)
-    const lowTempResult = await generateText({
+    const lowTemporaryResult = await generateText({
       model: ollama('llama3.2'),
       prompt: 'Complete: The sky is',
       maxOutputTokens: 10,
@@ -88,15 +88,15 @@ describe('Error Handling Integration Tests', () => {
     });
 
     // Very high temperature (random)
-    const highTempResult = await generateText({
+    const highTemporaryResult = await generateText({
       model: ollama('llama3.2'),
       prompt: 'Complete: The sky is',
       maxOutputTokens: 10,
       temperature: 2,
     });
 
-    expect(lowTempResult.text).toBeTruthy();
-    expect(highTempResult.text).toBeTruthy();
+    expect(lowTemporaryResult.text).toBeTruthy();
+    expect(highTemporaryResult.text).toBeTruthy();
   });
 
   it('should handle special characters in prompts', async () => {
@@ -128,10 +128,10 @@ describe('Error Handling Integration Tests', () => {
   });
 
   it('should handle concurrent requests', async () => {
-    const requests = Array.from({ length: 5 }, (_, i) =>
+    const requests = Array.from({ length: 5 }, (_, index) =>
       generateText({
         model: ollama('llama3.2'),
-        prompt: `Request ${i}: Say hello`,
+        prompt: `Request ${index}: Say hello`,
         maxOutputTokens: 20,
         temperature: 0,
       }),

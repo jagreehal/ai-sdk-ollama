@@ -110,7 +110,7 @@ export interface ReliableToolCallResult {
 export interface ToolDefinition {
   description: string;
   inputSchema: Record<string, unknown>;
-  execute: (params: Record<string, unknown>) => Promise<unknown>;
+  execute: (parameters: Record<string, unknown>) => Promise<unknown>;
 }
 
 function ensureRecord(value: unknown): Record<string, unknown> {
@@ -182,7 +182,7 @@ export function createToolDefinitionMap(
           : { type: 'object', properties: {} },
       execute: (
         tool as LanguageModelV4FunctionTool & {
-          execute: (params: Record<string, unknown>) => Promise<unknown>;
+          execute: (parameters: Record<string, unknown>) => Promise<unknown>;
         }
       ).execute,
     };
@@ -310,24 +310,28 @@ export function extractToolResultsFromMessages(
     if (Array.isArray(message.content)) {
       for (const part of message.content) {
         if (
-          part &&
-          typeof part === 'object' &&
-          'type' in part &&
-          part.type === 'tool-result' &&
-          'toolName' in part &&
-          'output' in part
+          !(
+            part &&
+            typeof part === 'object' &&
+            'type' in part &&
+            part.type === 'tool-result' &&
+            'toolName' in part &&
+            'output' in part
+          )
         ) {
-          const toolResult = part as {
-            toolName: string;
-            output: unknown;
-            toolCallId?: string;
-          };
-          results.push({
-            toolName: toolResult.toolName,
-            result: toolResult.output,
-            toolCallId: toolResult.toolCallId,
-          });
+          continue;
         }
+
+        const toolResult = part as {
+          toolName: string;
+          output: unknown;
+          toolCallId?: string;
+        };
+        results.push({
+          toolName: toolResult.toolName,
+          result: toolResult.output,
+          toolCallId: toolResult.toolCallId,
+        });
       }
     } else if (message.content && typeof message.content === 'object') {
       // Handle single tool result object
@@ -407,12 +411,16 @@ export function normalizeToolParameters(
   for (const [standardName, variations] of Object.entries(mappings)) {
     for (const variation of variations) {
       if (
-        recordInput[variation] !== undefined &&
-        recordInput[variation] !== null
+        !(
+          recordInput[variation] !== undefined &&
+          recordInput[variation] !== null
+        )
       ) {
-        normalized[standardName] = recordInput[variation];
-        break;
+        continue;
       }
+
+      normalized[standardName] = recordInput[variation];
+      break;
     }
   }
 
@@ -433,7 +441,7 @@ export async function validateToolResult(
   _toolName: string,
   input: Record<string, unknown>,
   result: unknown,
-  executeFunction: (params: Record<string, unknown>) => Promise<unknown>,
+  executeFunction: (parameters: Record<string, unknown>) => Promise<unknown>,
   options: ToolCallingOptions = {},
 ): Promise<ToolCallResult> {
   const { normalizeParameters = true, parameterMappings } = options;

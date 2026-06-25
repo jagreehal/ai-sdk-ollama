@@ -71,7 +71,10 @@ describe('convertToOllamaChatMessages', () => {
             { type: 'text', text: 'What is in this image?' },
             {
               type: 'file',
-              data: { type: 'url', url: new URL('https://example.com/image.jpg') },
+              data: {
+                type: 'url',
+                url: new URL('https://example.com/image.jpg'),
+              },
               mediaType: 'image/jpeg',
             },
           ],
@@ -97,7 +100,10 @@ describe('convertToOllamaChatMessages', () => {
             { type: 'text', text: 'Describe this image' },
             {
               type: 'file',
-              data: { type: 'data', data: 'data:image/jpeg;base64,/9j/4AAQ...' },
+              data: {
+                type: 'data',
+                data: 'data:image/jpeg;base64,/9j/4AAQ...',
+              },
               mediaType: 'image/jpeg',
             },
           ],
@@ -183,7 +189,10 @@ describe('convertToOllamaChatMessages', () => {
           content: [
             {
               type: 'file',
-              data: { type: 'url', url: new URL('https://example.com/image.jpg') },
+              data: {
+                type: 'url',
+                url: new URL('https://example.com/image.jpg'),
+              },
               mediaType: 'image/jpeg',
             },
           ],
@@ -922,7 +931,10 @@ describe('convertToOllamaChatMessages', () => {
         content: [
           {
             type: 'file',
-            data: { type: 'url', url: new URL('https://example.com/image.jpg') },
+            data: {
+              type: 'url',
+              url: new URL('https://example.com/image.jpg'),
+            },
             mediaType: 'image/jpeg',
           },
         ],

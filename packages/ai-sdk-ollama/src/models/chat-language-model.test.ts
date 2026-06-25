@@ -532,11 +532,7 @@ describe('OllamaChatLanguageModel', () => {
       };
 
       const { stream } = await model.doStream(options);
-      const chunks = [];
-
-      for await (const chunk of stream) {
-        chunks.push(chunk);
-      }
+      const chunks = await Array.fromAsync(stream);
 
       expect(chunks).toHaveLength(7); // stream-start + text-start + 3 text-delta + text-end + finish
       // V3 adds stream-start at the beginning
@@ -648,11 +644,7 @@ describe('OllamaChatLanguageModel', () => {
       };
 
       const { stream } = await model.doStream(options);
-      const chunks = [];
-
-      for await (const chunk of stream) {
-        chunks.push(chunk);
-      }
+      const chunks = await Array.fromAsync(stream);
 
       expect(chunks).toEqual([
         {
@@ -985,11 +977,7 @@ describe('OllamaChatLanguageModel', () => {
       };
 
       const { stream } = await modelWithReasoning.doStream(options);
-      const chunks: LanguageModelV4StreamPart[] = [];
-
-      for await (const chunk of stream) {
-        chunks.push(chunk);
-      }
+      const chunks: LanguageModelV4StreamPart[] = await Array.fromAsync(stream);
 
       // Check that reasoning stream parts are emitted
       const reasoningStart = chunks.find(
@@ -1070,11 +1058,7 @@ describe('OllamaChatLanguageModel', () => {
       };
 
       const { stream } = await modelWithoutReasoning.doStream(options);
-      const chunks: LanguageModelV4StreamPart[] = [];
-
-      for await (const chunk of stream) {
-        chunks.push(chunk);
-      }
+      const chunks: LanguageModelV4StreamPart[] = await Array.fromAsync(stream);
 
       // Check that reasoning stream parts are NOT emitted
       const reasoningStart = chunks.find(
@@ -1194,11 +1178,7 @@ describe('OllamaChatLanguageModel', () => {
       };
 
       const { stream } = await modelWithReasoning.doStream(options);
-      const chunks: LanguageModelV4StreamPart[] = [];
-
-      for await (const chunk of stream) {
-        chunks.push(chunk);
-      }
+      const chunks: LanguageModelV4StreamPart[] = await Array.fromAsync(stream);
 
       // There should be exactly ONE reasoning-start and ONE reasoning-end
       const reasoningStarts = chunks.filter(
@@ -1296,11 +1276,7 @@ describe('OllamaChatLanguageModel', () => {
       };
 
       const { stream } = await model.doStream(options);
-      const chunks: LanguageModelV4StreamPart[] = [];
-
-      for await (const chunk of stream) {
-        chunks.push(chunk);
-      }
+      const chunks: LanguageModelV4StreamPart[] = await Array.fromAsync(stream);
 
       // Should have: stream-start, text-start, text-delta, text-delta, text-delta, text-end, finish
       expect(chunks).toHaveLength(7);
@@ -1373,11 +1349,7 @@ describe('OllamaChatLanguageModel', () => {
       };
 
       const { stream } = await model.doStream(options);
-      const chunks: LanguageModelV4StreamPart[] = [];
-
-      for await (const chunk of stream) {
-        chunks.push(chunk);
-      }
+      const chunks: LanguageModelV4StreamPart[] = await Array.fromAsync(stream);
 
       // Should have stream-start + finish (no text parts since content is empty)
       expect(chunks).toHaveLength(2);
@@ -1429,11 +1401,7 @@ describe('OllamaChatLanguageModel', () => {
       };
 
       const { stream } = await model.doStream(options);
-      const chunks: LanguageModelV4StreamPart[] = [];
-
-      for await (const chunk of stream) {
-        chunks.push(chunk);
-      }
+      const chunks: LanguageModelV4StreamPart[] = await Array.fromAsync(stream);
 
       // Should have: stream-start, text-start, text-delta, text-end, finish
       expect(chunks).toHaveLength(5);
@@ -1519,11 +1487,7 @@ describe('OllamaChatLanguageModel', () => {
       };
 
       const { stream } = await model.doStream(options);
-      const chunks: LanguageModelV4StreamPart[] = [];
-
-      for await (const chunk of stream) {
-        chunks.push(chunk);
-      }
+      const chunks: LanguageModelV4StreamPart[] = await Array.fromAsync(stream);
 
       // Extract text-related chunks
       const textStart = chunks.find((chunk) => chunk.type === 'text-start') as {

@@ -24,10 +24,9 @@ describe('Stream Object Integration Tests', () => {
       }),
     });
 
-    const partialObjects: Record<string, unknown>[] = [];
-    for await (const partialObject of result.partialObjectStream) {
-      partialObjects.push(partialObject);
-    }
+    const partialObjects: Record<string, unknown>[] = await Array.fromAsync(
+      result.partialObjectStream,
+    );
 
     expect(partialObjects.length).toBeGreaterThan(0);
 
@@ -60,10 +59,9 @@ describe('Stream Object Integration Tests', () => {
       }),
     });
 
-    const partialObjects: Record<string, unknown>[] = [];
-    for await (const partialObject of result.partialObjectStream) {
-      partialObjects.push(partialObject);
-    }
+    const partialObjects: Record<string, unknown>[] = await Array.fromAsync(
+      result.partialObjectStream,
+    );
 
     expect(partialObjects.length).toBeGreaterThan(0);
 
@@ -94,10 +92,9 @@ describe('Stream Object Integration Tests', () => {
       }),
     });
 
-    const partialObjects: Record<string, unknown>[] = [];
-    for await (const partialObject of result.partialObjectStream) {
-      partialObjects.push(partialObject);
-    }
+    const partialObjects: Record<string, unknown>[] = await Array.fromAsync(
+      result.partialObjectStream,
+    );
 
     expect(partialObjects.length).toBeGreaterThan(0);
 
@@ -157,10 +154,9 @@ describe('Stream Object Integration Tests', () => {
       }),
     });
 
-    const partialObjects: Record<string, unknown>[] = [];
-    for await (const partialObject of result.partialObjectStream) {
-      partialObjects.push(partialObject);
-    }
+    const partialObjects: Record<string, unknown>[] = await Array.fromAsync(
+      result.partialObjectStream,
+    );
 
     expect(partialObjects.length).toBeGreaterThan(0);
 

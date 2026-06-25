@@ -130,8 +130,8 @@ export async function generateText(
       // Build context with tool results
       const toolContext = toolResult.toolResults
         ?.map(
-          (tr, i) =>
-            `${toolResult.toolCalls?.[i]?.toolName}: ${JSON.stringify(tr.output ?? tr)}`,
+          (tr, index) =>
+            `${toolResult.toolCalls?.[index]?.toolName}: ${JSON.stringify(tr.output ?? tr)}`,
         )
         .join('\n');
 
@@ -221,9 +221,9 @@ export async function generateText(
       if (result.steps) {
         for (const step of result.steps) {
           if (step.toolCalls && step.toolResults) {
-            for (let i = 0; i < step.toolCalls.length; i++) {
-              const toolCall = step.toolCalls[i];
-              const toolResult = step.toolResults[i];
+            for (let index = 0; index < step.toolCalls.length; index++) {
+              const toolCall = step.toolCalls[index];
+              const toolResult = step.toolResults[index];
               if (toolCall && toolResult) {
                 allToolCalls.push({
                   toolName: toolCall.toolName,
