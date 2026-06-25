@@ -5,27 +5,27 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Vercel AI SDK provider for Ollama built on the official `ollama` package. Type safe, future proof, with cross provider compatibility and native Ollama features.
+A Vercel AI SDK provider for Ollama, built on the official `ollama` package. Type-safe, cross-provider compatible, with access to native Ollama features.
 
-> **📌 Version compatibility**
+> **Version compatibility**
 >
 > Each `ai-sdk-ollama` major targets one AI SDK major. Every line stays published on npm, so pick the one that matches your `ai` version:
 >
 > | `ai-sdk-ollama` | `ai` (peer) | Status |
 > | --- | --- | --- |
-> | `4.x` (`@beta`) | `ai@^7` (beta) | Active. New features land here. |
+> | `4.x` (`@latest`) | `ai@^7` | Active. New features land here. |
 > | `3.x` | `ai@^6` | Maintenance. Critical fixes only. |
 > | `2.x` | `ai@^5` | Unmaintained. |
 >
-> While AI SDK v7 is in beta, install v4 from the `beta` tag. The v3 line keeps working for AI SDK v6 the whole time. Once AI SDK v7 ships stable, v4 moves to the `latest` tag.
+> AI SDK v7 is stable, so v4 installs from `latest`. The v3 line still works for AI SDK v6.
 
 ## Quick Start
 
 ```bash
-# AI SDK v7 (beta)
-npm install ai-sdk-ollama@beta ai@beta
+# AI SDK v7 (stable)
+npm install ai-sdk-ollama ai
 
-# AI SDK v6 (stable)
+# AI SDK v6
 npm install ai-sdk-ollama@^3 ai@^6
 ```
 
@@ -45,24 +45,24 @@ console.log(text);
 
 ## Why Choose AI SDK Ollama?
 
-- ✅ **Solves tool calling problems** - Response synthesis for reliable tool execution
-- ✅ **Enhanced wrapper functions** - `generateText` and `streamText` guarantees complete responses
-- ✅ **Built-in reliability** - Default reliability features enabled automatically
-- ✅ **Automatic JSON repair** - Cascade repair: [jsonrepair](https://github.com/josdejong/jsonrepair) first, then Ollama-specific fallback (trailing commas, comments, URLs, Python constants, etc.)
-- ✅ **Web search and fetch tools** - Built-in web search and fetch tools powered by [Ollama's web search API](https://ollama.com/blog/web-search). Perfect for getting current information and reducing hallucinations.
-- ✅ **Type-safe** - Full TypeScript support with strict typing
-- ✅ **Cross-environment** - Works in Node.js and browsers automatically
-- ✅ **Native Ollama power** - Access advanced features like `mirostat`, `repeat_penalty`, `num_ctx`
-- ✅ **Production ready** - Handles the core Ollama limitations other providers struggle with
+- **Reliable tool calling** - Response synthesis adds text after tool execution, so you don't get empty replies
+- **Wrapper functions** - `generateText` and `streamText` return complete responses
+- **Built-in reliability** - Reliability features run by default
+- **Automatic JSON repair** - Cascade repair runs [jsonrepair](https://github.com/josdejong/jsonrepair) first, then an Ollama-specific fallback for trailing commas, comments, URLs, and Python constants
+- **Web search and fetch** - Built-in tools powered by [Ollama's web search API](https://ollama.com/blog/web-search) for current information
+- **Type-safe** - Full TypeScript support with strict typing
+- **Cross-environment** - Runs in Node.js and browsers automatically
+- **Native Ollama options** - Use `mirostat`, `repeat_penalty`, `num_ctx`, and more
+- **Production-ready** - Handles the tool-call and JSON edge cases that otherwise need manual workarounds
 
 ## Enhanced Tool Calling
 
-> **🚀 The Problem We Solve**: Standard Ollama providers often execute tools but return empty responses. Our enhanced functions guarantee complete, useful responses every time.
+> **The problem this solves**: Standard Ollama providers can execute a tool and then return empty text. These wrapper functions synthesize a response so you get complete output.
 
 ```typescript
 import { ollama, generateText, streamText } from 'ai-sdk-ollama';
 
-// ✅ Enhanced generateText - guaranteed complete responses
+// Enhanced generateText - returns complete responses after tool calls
 const { text } = await generateText({
   model: ollama('llama3.2'),
   tools: {
@@ -71,7 +71,7 @@ const { text } = await generateText({
   prompt: 'Use the tools and explain the results',
 });
 
-// ✅ Enhanced streaming - tool-aware streaming
+// Enhanced streaming - tool-aware streaming
 const { textStream } = await streamText({
   model: ollama('llama3.2'),
   tools: {
@@ -83,7 +83,7 @@ const { textStream } = await streamText({
 
 ## Web Search Tools
 
-> **🌐 New in v0.9.0**: Built-in web search and fetch tools powered by [Ollama's web search API](https://ollama.com/blog/web-search). Perfect for getting current information and reducing hallucinations.
+> **Web search and fetch**: Built-in tools powered by [Ollama's web search API](https://ollama.com/blog/web-search) for current information.
 
 ```typescript
 import { generateText } from 'ai';
@@ -205,7 +205,7 @@ const { text: advancedText } = await generateText({
 
 - Node.js 22+
 - [Ollama](https://ollama.com) installed locally or running on a remote server
-- AI SDK v6 (`ai` package)
+- AI SDK v7 (`ai` package)
 - TypeScript 5.9+ (for TypeScript users)
 
 ```bash
@@ -333,7 +333,7 @@ const { text } = await generateText({
 
 ### Enhanced Tool Calling Wrappers
 
-For maximum tool calling reliability, use our enhanced wrapper functions that guarantee complete responses:
+For reliable tool calling, use the enhanced wrapper functions that return complete responses:
 
 ```typescript
 import { ollama, generateText, streamText } from 'ai-sdk-ollama';
@@ -388,9 +388,7 @@ const weatherTool = tool({
   }),
 });
 
-// AI SDK v6: tools and structured output work together by default
-import { ollama } from 'ai-sdk-ollama';
-
+// AI SDK v7: tools and structured output work together by default
 const result = await generateText({
   model: ollama('llama3.2'),
   prompt: 'Get weather for San Francisco and provide a structured summary',
@@ -409,7 +407,7 @@ const result = await generateText({
 
 **When to Use Enhanced Wrappers:**
 
-- **Critical tool calling scenarios** where you need guaranteed text responses
+- **Critical tool calling scenarios** where you need a text response after the tool runs
 - **Production applications** that can't handle empty responses after tool execution
 - **Complex multi-step tool interactions** requiring reliable synthesis
 
@@ -418,7 +416,7 @@ const result = await generateText({
 | Function                   | Standard `generateText`   | Enhanced `generateText`              |
 | -------------------------- | ------------------------- | ------------------------------------ |
 | **Simple prompts**         | ✅ Perfect                | ✅ Works (slight overhead)           |
-| **Tool calling**           | ⚠️ May return empty text  | ✅ **Guarantees complete responses** |
+| **Tool calling**           | ⚠️ May return empty text  | ✅ **Returns complete responses**    |
 | **Complete responses**     | ❌ Manual handling needed | ✅ **Automatic completion**          |
 | **Production reliability** | ⚠️ Unpredictable          | ✅ **Reliable**                      |
 
@@ -444,7 +442,7 @@ const { text } = await generateText({
 
 ## Reranking
 
-> **AI SDK v6 Feature**: Rerank documents by semantic relevance to improve search results and RAG pipelines.
+> **Reranking**: Rank documents by semantic relevance for search results and RAG pipelines.
 
 Since Ollama doesn't have native reranking yet, we provide embedding-based reranking using cosine similarity:
 
@@ -832,7 +830,7 @@ const { text } = await generateText({
 
 ### Automatic JSON Repair
 
-> **🔧 Enhanced Reliability**: Built-in cascade repair automatically fixes malformed LLM outputs for object generation.
+> **Cascade JSON repair**: Built-in repair fixes malformed model output during object generation.
 
 Repair uses a **cascade**: the [jsonrepair](https://github.com/josdejong/jsonrepair) library runs first (standard JSON issues), then the built-in Ollama-specific repair runs if needed (e.g. Python `True`/`None`, URLs with `//`, smart quotes). You can use the default, disable repair with `enableTextRepair: false`, or pass a custom `repairText` function. Exported helpers: `cascadeRepairText`, `enhancedRepairText` (see [test-cascade-repair example](../../examples/node/src/test-cascade-repair.ts)).
 
@@ -970,7 +968,7 @@ Install with: `ollama pull deepseek-r1:7b`
 - **Model compatibility errors** - The provider will throw errors if you try to use unsupported features (e.g., tools with non-compatible models)
 - **Network issues** - Verify Ollama is accessible at the configured URL
 - **TypeScript support** - Full type safety with TypeScript 5.9+
-- **AI SDK v6 compatibility** - Built for the latest AI SDK specification
+- **AI SDK v7 compatibility** - Built for the AI SDK v7 specification
 
 ## Supported Models
 

@@ -8,8 +8,8 @@
     "quality": "pnpm build"
   },
   "dependencies": {
-    "@ai-sdk/mcp": "2.0.0-canary.65",
-    "ai": "7.0.0-canary.176",
+    "@ai-sdk/mcp": "^2.0.0",
+    "ai": "^7.0.0",
     "ai-sdk-ollama": "workspace:*",
     "dotenv": "^17.4.2",
     "ollama": "^0.6.3",
