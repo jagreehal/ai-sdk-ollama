@@ -73,23 +73,23 @@ describe('Generate Text Integration Tests', () => {
   });
 
   it('should handle temperature settings', async () => {
-    const lowTempResult = await generateText({
+    const lowTemporaryResult = await generateText({
       model: ollama('llama3.2'),
       prompt: 'Complete this sentence: The weather is',
       maxOutputTokens: 10,
       temperature: 0,
     });
 
-    const highTempResult = await generateText({
+    const highTemporaryResult = await generateText({
       model: ollama('llama3.2'),
       prompt: 'Complete this sentence: The weather is',
       maxOutputTokens: 10,
       temperature: 0.9,
     });
 
-    expect(lowTempResult.text).toBeTruthy();
-    expect(highTempResult.text).toBeTruthy();
+    expect(lowTemporaryResult.text).toBeTruthy();
+    expect(highTemporaryResult.text).toBeTruthy();
     // High temperature should produce more varied results
-    expect(lowTempResult.text).not.toEqual(highTempResult.text);
+    expect(lowTemporaryResult.text).not.toEqual(highTemporaryResult.text);
   });
 });

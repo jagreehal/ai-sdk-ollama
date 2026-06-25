@@ -276,8 +276,8 @@ function generateBasicFallbackFromZod(schema: ZodSchema): unknown {
   }
 
   // Default fallback - try empty object for complex types
-  const objResult = schema.safeParse({});
-  if (objResult.success) {
+  const objectResult = schema.safeParse({});
+  if (objectResult.success) {
     return {};
   }
 
@@ -435,26 +435,26 @@ export function fixTypeMismatches(
  */
 function removeBlockCommentsOutsideStrings(text: string): string {
   let result = '';
-  let i = 0;
+  let index = 0;
   let inSingleQuote = false;
   let inDoubleQuote = false;
   let escaped = false;
 
-  while (i < text.length) {
-    const char = text[i];
-    const nextChar = text[i + 1];
+  while (index < text.length) {
+    const char = text[index];
+    const nextChar = text[index + 1];
 
     if (escaped) {
       result += char;
       escaped = false;
-      i++;
+      index++;
       continue;
     }
 
     if (char === '\\') {
       result += char;
       escaped = true;
-      i++;
+      index++;
       continue;
     }
 
@@ -462,31 +462,31 @@ function removeBlockCommentsOutsideStrings(text: string): string {
     if (char === "'" && !inDoubleQuote) {
       inSingleQuote = !inSingleQuote;
       result += char;
-      i++;
+      index++;
       continue;
     } else if (char === '"' && !inSingleQuote) {
       inDoubleQuote = !inDoubleQuote;
       result += char;
-      i++;
+      index++;
       continue;
     }
 
     // Check for block comment start /* when NOT inside a string
     if (char === '/' && nextChar === '*' && !inSingleQuote && !inDoubleQuote) {
       // Skip until we find */
-      i += 2; // Skip /*
-      while (i < text.length - 1) {
-        if (text[i] === '*' && text[i + 1] === '/') {
-          i += 2; // Skip */
+      index += 2; // Skip /*
+      while (index < text.length - 1) {
+        if (text[index] === '*' && text[index + 1] === '/') {
+          index += 2; // Skip */
           break;
         }
-        i++;
+        index++;
       }
       continue;
     }
 
     result += char;
-    i++;
+    index++;
   }
 
   return result;
@@ -497,25 +497,25 @@ function removeBlockCommentsOutsideStrings(text: string): string {
  */
 function replacePythonConstantsOutsideStrings(text: string): string {
   let result = '';
-  let i = 0;
+  let index = 0;
   let inSingleQuote = false;
   let inDoubleQuote = false;
   let escaped = false;
 
-  while (i < text.length) {
-    const char = text[i];
+  while (index < text.length) {
+    const char = text[index];
 
     if (escaped) {
       result += char;
       escaped = false;
-      i++;
+      index++;
       continue;
     }
 
     if (char === '\\') {
       result += char;
       escaped = true;
-      i++;
+      index++;
       continue;
     }
 
@@ -523,40 +523,40 @@ function replacePythonConstantsOutsideStrings(text: string): string {
     if (char === "'" && !inDoubleQuote) {
       inSingleQuote = !inSingleQuote;
       result += char;
-      i++;
+      index++;
       continue;
     } else if (char === '"' && !inSingleQuote) {
       inDoubleQuote = !inDoubleQuote;
       result += char;
-      i++;
+      index++;
       continue;
     }
 
     // Only process replacements when NOT inside a string
     if (!inSingleQuote && !inDoubleQuote) {
       // Check for Python constants with word boundaries
-      const remaining = text.slice(i);
+      const remaining = text.slice(index);
       const noneRegex = /^\bNone\b/;
       const trueRegex = /^\bTrue\b/;
       const falseRegex = /^\bFalse\b/;
 
       if (noneRegex.test(remaining)) {
         result += 'null';
-        i += 4; // Skip "None"
+        index += 4; // Skip "None"
         continue;
       } else if (trueRegex.test(remaining)) {
         result += 'true';
-        i += 4; // Skip "True"
+        index += 4; // Skip "True"
         continue;
       } else if (falseRegex.test(remaining)) {
         result += 'false';
-        i += 5; // Skip "False"
+        index += 5; // Skip "False"
         continue;
       }
     }
 
     result += char;
-    i++;
+    index++;
   }
 
   return result;
@@ -572,26 +572,26 @@ function replacePythonConstantsOutsideStrings(text: string): string {
  */
 function replaceSmartQuotesOutsideStrings(text: string): string {
   let result = '';
-  let i = 0;
+  let index = 0;
   let inSingleQuote = false;
   let inDoubleQuote = false;
   let inSmartDoubleQuote = false; // Track smart double quotes (\u201C and \u201D)
   let escaped = false;
 
-  while (i < text.length) {
-    const char = text[i];
+  while (index < text.length) {
+    const char = text[index];
 
     if (escaped) {
       result += char;
       escaped = false;
-      i++;
+      index++;
       continue;
     }
 
     if (char === '\\') {
       result += char;
       escaped = true;
-      i++;
+      index++;
       continue;
     }
 
@@ -599,12 +599,12 @@ function replaceSmartQuotesOutsideStrings(text: string): string {
     if (char === "'" && !inDoubleQuote && !inSmartDoubleQuote) {
       inSingleQuote = !inSingleQuote;
       result += char;
-      i++;
+      index++;
       continue;
     } else if (char === '"' && !inSingleQuote && !inSmartDoubleQuote) {
       inDoubleQuote = !inDoubleQuote;
       result += char;
-      i++;
+      index++;
       continue;
     } else if (
       char === '\u201C' &&
@@ -615,7 +615,7 @@ function replaceSmartQuotesOutsideStrings(text: string): string {
       // Opening smart double quote (\u201C) - start of smart-quoted string
       inSmartDoubleQuote = true;
       result += '"'; // Convert to regular quote
-      i++;
+      index++;
       continue;
     } else if (char === '\u201D' && inSmartDoubleQuote) {
       // Check if this is the closing quote by looking ahead
@@ -624,16 +624,16 @@ function replaceSmartQuotesOutsideStrings(text: string): string {
       // We'll use a heuristic: if we're at end-of-text OR the next non-whitespace
       // character is a structural character that cannot be inside a string value.
       let isClosing = false;
-      let j = i + 1;
+      let index_ = index + 1;
 
       // Skip whitespace
-      while (j < text.length) {
-        const nextChar = text[j];
+      while (index_ < text.length) {
+        const nextChar = text[index_];
         if (!nextChar) {
           break;
         }
         if (WHITESPACE_CHARS.has(nextChar)) {
-          j++;
+          index_++;
           continue;
         }
 
@@ -646,7 +646,7 @@ function replaceSmartQuotesOutsideStrings(text: string): string {
         // Check for , - this can be inside strings OR a field separator
         // If , is followed by whitespace and then a new key (starts with " or smart quote), it's likely closing a value
         if (nextChar === ',') {
-          let k = j + 1;
+          let k = index_ + 1;
           // Skip whitespace after comma
           while (k < text.length) {
             const afterComma = text[k];
@@ -702,7 +702,7 @@ function replaceSmartQuotesOutsideStrings(text: string): string {
         // Check for : - this is tricky because it can be inside strings OR a key-value separator
         // If : is followed by whitespace and then a value-starting character, it's likely closing a key
         if (nextChar === ':') {
-          let k = j + 1;
+          let k = index_ + 1;
           // Skip whitespace after colon
           while (k < text.length) {
             const afterColon = text[k];
@@ -730,7 +730,7 @@ function replaceSmartQuotesOutsideStrings(text: string): string {
       }
 
       // If we reached end-of-text (no more characters), it's closing
-      if (j >= text.length) {
+      if (index_ >= text.length) {
         isClosing = true;
       }
 
@@ -738,7 +738,7 @@ function replaceSmartQuotesOutsideStrings(text: string): string {
         // Closing smart double quote (\u201D) - end of smart-quoted string
         inSmartDoubleQuote = false;
         result += '"'; // Convert to regular quote
-        i++;
+        index++;
         continue;
       }
       // Otherwise, it's an inner smart quote - preserve it
@@ -749,20 +749,20 @@ function replaceSmartQuotesOutsideStrings(text: string): string {
       // Replace smart single quotes
       if (char !== undefined && SMART_SINGLE_QUOTE_CHARS.has(char)) {
         result += "'";
-        i++;
+        index++;
         continue;
       }
       // Replace smart double quotes when not used as delimiters
       if (char === '\u201C' || char === '\u201D') {
         result += '"';
-        i++;
+        index++;
         continue;
       }
     }
 
     // Inside strings (including smart-quoted strings), preserve all characters
     result += char;
-    i++;
+    index++;
   }
 
   return result;
@@ -851,9 +851,9 @@ export async function enhancedRepairText(options: {
         let escaped = false;
         let commentStart = -1;
 
-        for (let i = 0; i < line.length - 1; i++) {
-          const char = line[i];
-          const nextChar = line[i + 1];
+        for (let index = 0; index < line.length - 1; index++) {
+          const char = line[index];
+          const nextChar = line[index + 1];
 
           if (escaped) {
             // Skip this character, it's escaped
@@ -881,7 +881,7 @@ export async function enhancedRepairText(options: {
             !inSingleQuote &&
             !inDoubleQuote
           ) {
-            commentStart = i;
+            commentStart = index;
             break;
           }
         }
@@ -902,24 +902,24 @@ export async function enhancedRepairText(options: {
     // Walk through and convert single-quoted strings to double-quoted
     // This properly handles escaped quotes and doesn't touch single quotes inside double-quoted strings
     let result = '';
-    let i = 0;
+    let index = 0;
     let inDoubleQuote = false;
     let escaped = false;
 
-    while (i < repaired.length) {
-      const char = repaired[i];
+    while (index < repaired.length) {
+      const char = repaired[index];
 
       // Handle escape sequences
       if (escaped) {
         result += '\\' + char;
         escaped = false;
-        i++;
+        index++;
         continue;
       }
 
       if (char === '\\') {
         escaped = true;
-        i++;
+        index++;
         continue;
       }
 
@@ -927,7 +927,7 @@ export async function enhancedRepairText(options: {
       if (char === '"' && !escaped) {
         inDoubleQuote = !inDoubleQuote;
         result += char;
-        i++;
+        index++;
         continue;
       }
 
@@ -935,10 +935,10 @@ export async function enhancedRepairText(options: {
       if (char === "'" && !inDoubleQuote) {
         // Start of single-quoted string - convert to double quotes
         result += '"';
-        i++;
+        index++;
         let singleQuoteEscaped = false;
-        while (i < repaired.length) {
-          const innerChar = repaired[i];
+        while (index < repaired.length) {
+          const innerChar = repaired[index];
 
           if (singleQuoteEscaped) {
             // Keep escaped characters, but change \' to just '
@@ -947,33 +947,33 @@ export async function enhancedRepairText(options: {
                 ? "'" // Don't need to escape single quote in double-quoted string
                 : '\\' + innerChar;
             singleQuoteEscaped = false;
-            i++;
+            index++;
             continue;
           }
 
           if (innerChar === '\\') {
             singleQuoteEscaped = true;
-            i++;
+            index++;
             continue;
           }
 
           if (innerChar === "'") {
             // End of single-quoted string
             result += '"';
-            i++;
+            index++;
             break;
           }
 
           // Need to escape double quotes when converting from single to double quotes
           result += innerChar === '"' ? String.raw`\"` : innerChar;
-          i++;
+          index++;
         }
         continue;
       }
 
       // Regular character
       result += char;
-      i++;
+      index++;
     }
     repaired = result;
 
@@ -1308,40 +1308,40 @@ function coerceToSchemaType(
     parsedObject !== null &&
     !Array.isArray(parsedObject)
   ) {
-    const obj = parsedObject as Record<string, unknown>;
+    const object = parsedObject as Record<string, unknown>;
 
     // If object has an "elements" property that's an array, extract it
-    if (Array.isArray(obj.elements)) {
+    if (Array.isArray(object.elements)) {
       return {
-        coerced: obj.elements,
+        coerced: object.elements,
         wasCoerced: true,
       };
     }
 
     // If object has a "data" or "items" property that's an array, extract it
-    if (Array.isArray(obj.data)) {
+    if (Array.isArray(object.data)) {
       return {
-        coerced: obj.data,
+        coerced: object.data,
         wasCoerced: true,
       };
     }
-    if (Array.isArray(obj.items)) {
+    if (Array.isArray(object.items)) {
       return {
-        coerced: obj.items,
+        coerced: object.items,
         wasCoerced: true,
       };
     }
 
     // If the object has numeric keys (0, 1, 2...), convert to array
-    const keys = Object.keys(obj);
+    const keys = Object.keys(object);
     if (keys.every((k) => /^\d+$/.test(k))) {
       const maxIndex = Math.max(...keys.map(Number));
-      const arr: unknown[] = [];
-      for (let i = 0; i <= maxIndex; i++) {
-        arr.push(obj[String(i)]);
+      const array: unknown[] = [];
+      for (let index = 0; index <= maxIndex; index++) {
+        array.push(object[String(index)]);
       }
       return {
-        coerced: arr,
+        coerced: array,
         wasCoerced: true,
       };
     }
@@ -1618,7 +1618,7 @@ export async function attemptSchemaRecovery(
  * Create a reliable object generation wrapper
  */
 export function createReliableObjectGeneration<T>(
-  generateObjectFn: (
+  generateObjectFunction: (
     options: Record<string, unknown>,
   ) => Promise<{ object: T }>,
   schema: JSONSchema7 | unknown,
@@ -1633,7 +1633,7 @@ export function createReliableObjectGeneration<T>(
 
     for (let attempt = 1; attempt <= resolvedOptions.maxRetries; attempt++) {
       try {
-        const result = await generateObjectFn(generationOptions);
+        const result = await generateObjectFunction(generationOptions);
 
         // Try to validate the result
         const validation = await attemptSchemaRecovery(
@@ -1698,7 +1698,7 @@ export function createReliableObjectGeneration<T>(
  * Enhanced object generation with reliability features
  */
 export async function reliableGenerateObject<T>(
-  generateObjectFn: (
+  generateObjectFunction: (
     options: Record<string, unknown>,
   ) => Promise<{ object: T }>,
   options: Record<string, unknown>,
@@ -1706,7 +1706,7 @@ export async function reliableGenerateObject<T>(
   reliabilityOptions: ObjectGenerationOptions = {},
 ): Promise<ReliableObjectGenerationResult<T>> {
   const reliableGenerator = createReliableObjectGeneration(
-    generateObjectFn,
+    generateObjectFunction,
     schema,
     reliabilityOptions,
   );

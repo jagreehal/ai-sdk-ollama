@@ -365,8 +365,8 @@ describe('Enhanced JSON Repair', () => {
 
     it('should use repair function when JSON parsing fails', async () => {
       const input = '{"name": "John",}'; // trailing comma
-      const repairFn = getRepairFunction({});
-      const result = await parseJSONWithRepair(input, repairFn);
+      const repairFunction = getRepairFunction({});
+      const result = await parseJSONWithRepair(input, repairFunction);
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ name: 'John' });
       expect(result.repaired).toBe(true);

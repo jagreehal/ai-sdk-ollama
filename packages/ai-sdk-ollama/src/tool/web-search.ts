@@ -102,7 +102,7 @@ export type WebSearchOutput = {
  */
 
 function hasWebSearch(client: unknown): client is {
-  webSearch: (args: Record<string, unknown>) => Promise<unknown>;
+  webSearch: (arguments_: Record<string, unknown>) => Promise<unknown>;
 } {
   if (!client || typeof client !== 'object') {
     return false;

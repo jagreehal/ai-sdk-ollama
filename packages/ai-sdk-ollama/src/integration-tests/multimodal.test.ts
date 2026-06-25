@@ -77,10 +77,7 @@ describe('Multimodal Integration Tests', { timeout: 120_000 }, () => {
       temperature: 0,
     });
 
-    const chunks: string[] = [];
-    for await (const chunk of result.textStream) {
-      chunks.push(chunk);
-    }
+    const chunks: string[] = await Array.fromAsync(result.textStream);
 
     const fullText = chunks.join('');
     expect(fullText).toBeTruthy();

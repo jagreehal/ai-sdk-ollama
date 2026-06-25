@@ -29,11 +29,11 @@ export function cosineSimilarity(a: number[], b: number[]): number {
   let magnitudeA = 0;
   let magnitudeB = 0;
 
-  for (const [i, aVal] of a.entries()) {
-    const bVal = b[i]!;
-    dotProduct += aVal * bVal;
-    magnitudeA += aVal * aVal;
-    magnitudeB += bVal * bVal;
+  for (const [index, aValue] of a.entries()) {
+    const bValue = b[index]!;
+    dotProduct += aValue * bValue;
+    magnitudeA += aValue * aValue;
+    magnitudeB += bValue * bValue;
   }
 
   magnitudeA = Math.sqrt(magnitudeA);

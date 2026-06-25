@@ -194,10 +194,7 @@ describe('Advanced Features Integration Tests', () => {
       maxOutputTokens: 200,
     });
 
-    const chunks: string[] = [];
-    for await (const textPart of result.textStream) {
-      chunks.push(textPart);
-    }
+    const chunks: string[] = await Array.fromAsync(result.textStream);
 
     const fullText = chunks.join('');
     expect(fullText).toBeTruthy();

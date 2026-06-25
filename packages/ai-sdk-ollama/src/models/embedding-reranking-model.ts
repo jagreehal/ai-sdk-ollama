@@ -121,8 +121,8 @@ export class OllamaEmbeddingRerankingModel implements RerankingModelV4 {
     const batchSize = this.embeddingBatchSize;
     const embeddings: number[][] = [];
 
-    for (let i = 0; i < texts.length; i += batchSize) {
-      const batch = texts.slice(i, i + batchSize);
+    for (let index = 0; index < texts.length; index += batchSize) {
+      const batch = texts.slice(index, index + batchSize);
       const response = await this.config.client.embed({
         model,
         input: batch,
@@ -180,7 +180,7 @@ export class OllamaEmbeddingRerankingModel implements RerankingModelV4 {
       };
     }
 
-    const [queryEmbedding, ...docEmbeddings] = await this.embedBatch([
+    const [queryEmbedding, ...documentEmbeddings] = await this.embedBatch([
       query,
       ...documentValues,
     ]);
@@ -190,9 +190,9 @@ export class OllamaEmbeddingRerankingModel implements RerankingModelV4 {
     }
 
     // Calculate similarity scores
-    const scores = docEmbeddings.map((docEmb, index) => ({
+    const scores = documentEmbeddings.map((documentEmb, index) => ({
       index,
-      relevanceScore: cosineSimilarity(queryEmbedding, docEmb),
+      relevanceScore: cosineSimilarity(queryEmbedding, documentEmb),
     }));
 
     // Sort by score (descending) and limit to topN

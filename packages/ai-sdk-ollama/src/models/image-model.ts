@@ -96,10 +96,10 @@ export class OllamaImageModel implements ImageModelV4 {
       }
     }
     if (seed != null) {
-      const opts = (
+      const options_ = (
         typeof body.options === 'object' && body.options ? body.options : {}
       ) as Record<string, unknown>;
-      body.options = { ...opts, seed };
+      body.options = { ...options_, seed };
     }
     const po = await parseProviderOptions({
       provider: 'ollama',
@@ -115,24 +115,25 @@ export class OllamaImageModel implements ImageModelV4 {
       ...optHeaders,
     };
 
-    const res = await (this.config.fetch ?? fetch)(url, {
+    const result = await (this.config.fetch ?? fetch)(url, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
       signal: abortSignal,
     });
 
-    if (!res.ok) {
-      const errBody = (await res.json().catch(() => ({}))) as {
+    if (!result.ok) {
+      const errorBody = (await result.json().catch(() => ({}))) as {
         error?: string;
       };
       throw new OllamaError({
         message:
-          errBody.error ?? `Ollama API error: ${res.status} ${res.statusText}`,
+          errorBody.error ??
+          `Ollama API error: ${result.status} ${result.statusText}`,
       });
     }
 
-    const data = (await res.json()) as {
+    const data = (await result.json()) as {
       model?: string;
       response?: string;
       images?: string[];
@@ -157,7 +158,7 @@ export class OllamaImageModel implements ImageModelV4 {
     }
 
     const responseHeaders: Record<string, string> = {};
-    for (const [key, value] of res.headers.entries()) {
+    for (const [key, value] of result.headers.entries()) {
       responseHeaders[key] = value;
     }
 

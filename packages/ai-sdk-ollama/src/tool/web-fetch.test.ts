@@ -79,7 +79,12 @@ describe('webFetch', () => {
     await expect(
       tool.execute!(
         { url: 'https://example.com' },
-        { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
+        {
+          toolCallId: 'test',
+          messages: [],
+          abortSignal: undefined,
+          context: {},
+        },
       ),
     ).rejects.toThrow(OllamaError);
   });
@@ -136,7 +141,12 @@ describe('webFetch', () => {
       const tool = webFetch({ client: mockClient });
       const result = await tool.execute!(
         { url: 'https://example.com' },
-        { toolCallId: 'test', messages: [], abortSignal: undefined, context: {} },
+        {
+          toolCallId: 'test',
+          messages: [],
+          abortSignal: undefined,
+          context: {},
+        },
       );
 
       expect((result as any).error).toBe(testCase.expectedMessage);

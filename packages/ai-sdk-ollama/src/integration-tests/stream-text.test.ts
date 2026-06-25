@@ -13,10 +13,7 @@ describe('Stream Text Integration Tests', () => {
       temperature: 0.3,
     });
 
-    const chunks: string[] = [];
-    for await (const textPart of result.textStream) {
-      chunks.push(textPart);
-    }
+    const chunks: string[] = await Array.fromAsync(result.textStream);
 
     const fullText = chunks.join('');
     expect(fullText).toBeTruthy();
@@ -40,10 +37,7 @@ describe('Stream Text Integration Tests', () => {
         temperature: 0,
       });
 
-      const chunks: string[] = [];
-      for await (const textPart of result.textStream) {
-        chunks.push(textPart);
-      }
+      const chunks: string[] = await Array.fromAsync(result.textStream);
 
       const fullText = chunks.join('');
       expect(fullText).toBeTruthy();
@@ -60,10 +54,7 @@ describe('Stream Text Integration Tests', () => {
       temperature: 0,
     });
 
-    const chunks: string[] = [];
-    for await (const textPart of result.textStream) {
-      chunks.push(textPart);
-    }
+    const chunks: string[] = await Array.fromAsync(result.textStream);
 
     const fullText = chunks.join('');
     expect(fullText).toBeTruthy();
@@ -96,38 +87,38 @@ describe('Stream Text Integration Tests', () => {
   });
 
   it('should handle streaming with temperature variations', async () => {
-    const lowTempResult = await streamText({
+    const lowTemporaryResult = await streamText({
       model: ollama('llama3.2'),
       prompt: 'Complete this sentence: The weather is',
       maxOutputTokens: 20,
       temperature: 0,
     });
 
-    const highTempResult = await streamText({
+    const highTemporaryResult = await streamText({
       model: ollama('llama3.2'),
       prompt: 'Complete this sentence: The weather is',
       maxOutputTokens: 20,
       temperature: 0.9,
     });
 
-    const lowTempChunks: string[] = [];
-    const highTempChunks: string[] = [];
+    const lowTemporaryChunks: string[] = [];
+    const highTemporaryChunks: string[] = [];
 
-    for await (const textPart of lowTempResult.textStream) {
-      lowTempChunks.push(textPart);
+    for await (const textPart of lowTemporaryResult.textStream) {
+      lowTemporaryChunks.push(textPart);
     }
 
-    for await (const textPart of highTempResult.textStream) {
-      highTempChunks.push(textPart);
+    for await (const textPart of highTemporaryResult.textStream) {
+      highTemporaryChunks.push(textPart);
     }
 
-    const lowTempText = lowTempChunks.join('');
-    const highTempText = highTempChunks.join('');
+    const lowTemporaryText = lowTemporaryChunks.join('');
+    const highTemporaryText = highTemporaryChunks.join('');
 
-    expect(lowTempText).toBeTruthy();
-    expect(highTempText).toBeTruthy();
-    expect(lowTempChunks.length).toBeGreaterThan(0);
-    expect(highTempChunks.length).toBeGreaterThan(0);
+    expect(lowTemporaryText).toBeTruthy();
+    expect(highTemporaryText).toBeTruthy();
+    expect(lowTemporaryChunks.length).toBeGreaterThan(0);
+    expect(highTemporaryChunks.length).toBeGreaterThan(0);
   });
 
   it('should handle streaming with structured outputs', async () => {
@@ -138,10 +129,7 @@ describe('Stream Text Integration Tests', () => {
       temperature: 0,
     });
 
-    const chunks: string[] = [];
-    for await (const textPart of result.textStream) {
-      chunks.push(textPart);
-    }
+    const chunks: string[] = await Array.fromAsync(result.textStream);
 
     const fullText = chunks.join('');
     expect(fullText).toBeTruthy();

@@ -8,17 +8,16 @@ describe('GPT-OSS:20B Model Integration Tests', () => {
   const modelName = 'gpt-oss:20b';
 
   async function getNonEmptyText(
-    params: Parameters<typeof generateText>[0],
+    parameters: Parameters<typeof generateText>[0],
   ): Promise<string> {
     // 1) Try normal generation
-    const res = await generateText(params);
-    if (res.text && res.text.trim().length > 0) return res.text;
+    const result = await generateText(parameters);
+    if (result.text && result.text.trim().length > 0) return result.text;
 
     // 2) Try streaming fallback
     try {
-      const streamRes = await streamText(params);
-      const chunks: string[] = [];
-      for await (const c of streamRes.textStream) chunks.push(c);
+      const streamResult = await streamText(parameters);
+      const chunks: string[] = await Array.fromAsync(streamResult.textStream);
       const text = chunks.join('');
       if (text.trim().length > 0) return text;
     } catch {
@@ -27,19 +26,22 @@ describe('GPT-OSS:20B Model Integration Tests', () => {
 
     // 3) Retry with slightly different params
     const retry = await generateText({
-      ...params,
+      ...parameters,
       maxOutputTokens: Math.max(
         128,
-        typeof (params as { maxOutputTokens?: number }).maxOutputTokens ===
+        typeof (parameters as { maxOutputTokens?: number }).maxOutputTokens ===
           'number'
-          ? params.maxOutputTokens!
+          ? parameters.maxOutputTokens!
           : 0,
       ),
       temperature:
-        typeof (params as { temperature?: number }).temperature === 'number'
+        typeof (parameters as { temperature?: number }).temperature === 'number'
           ? Math.min(
               0.7,
-              Math.max(0.2, (params as { temperature?: number }).temperature!),
+              Math.max(
+                0.2,
+                (parameters as { temperature?: number }).temperature!,
+              ),
             )
           : 0.2,
       maxRetries: 2,
@@ -71,10 +73,7 @@ describe('GPT-OSS:20B Model Integration Tests', () => {
       temperature: 0,
     });
 
-    const chunks: string[] = [];
-    for await (const chunk of result.textStream) {
-      chunks.push(chunk);
-    }
+    const chunks: string[] = await Array.fromAsync(result.textStream);
 
     let fullText = chunks.join('');
     // Fallback: some models may not stream tokens; fetch a non-streamed result
@@ -167,14 +166,14 @@ describe('GPT-OSS:20B Model Integration Tests', () => {
       'pink',
       'brown',
     ];
-    const lowTempHasColor = colors.some((color) =>
+    const lowTemporaryHasColor = colors.some((color) =>
       lowText.toLowerCase().includes(color),
     );
-    const highTempHasColor = colors.some((color) =>
+    const highTemporaryHasColor = colors.some((color) =>
       highText.toLowerCase().includes(color),
     );
 
-    expect(lowTempHasColor || highTempHasColor).toBe(true);
+    expect(lowTemporaryHasColor || highTemporaryHasColor).toBe(true);
   });
 
   it('should handle token limits with gpt-oss:20b', async () => {

@@ -24,7 +24,7 @@ describe('cosineSimilarity', () => {
     const a = [1 / Math.sqrt(2), 1 / Math.sqrt(2)];
     const b = [1, 0];
     // Angle is 45 degrees, cos(45) ≈ 0.707
-    expect(cosineSimilarity(a, b)).toBeCloseTo(0.7071, 3);
+    expect(cosineSimilarity(a, b)).toBeCloseTo(Math.SQRT1_2, 3);
   });
 
   it('should throw error for vectors of different dimensions', () => {
@@ -47,8 +47,8 @@ describe('cosineSimilarity', () => {
 
   it('should handle high-dimensional vectors', () => {
     const dim = 768; // Common embedding dimension
-    const a = Array.from({ length: dim }, (_, i) => Math.sin(i));
-    const b = Array.from({ length: dim }, (_, i) => Math.sin(i + 0.1));
+    const a = Array.from({ length: dim }, (_, index) => Math.sin(index));
+    const b = Array.from({ length: dim }, (_, index) => Math.sin(index + 0.1));
     // Should be very similar but not identical
     const similarity = cosineSimilarity(a, b);
     expect(similarity).toBeGreaterThan(0.99);

@@ -248,8 +248,14 @@ Based on the tool results above, please provide a comprehensive response to the 
               );
               if (synthesisText && !controllerClosed) {
                 const chunkSize = 20;
-                for (let i = 0; i < synthesisText.length; i += chunkSize) {
-                  if (!safeEnqueue(synthesisText.slice(i, i + chunkSize)))
+                for (
+                  let index = 0;
+                  index < synthesisText.length;
+                  index += chunkSize
+                ) {
+                  if (
+                    !safeEnqueue(synthesisText.slice(index, index + chunkSize))
+                  )
                     break;
                 }
               }
@@ -380,8 +386,12 @@ Based on the tool results above, please provide a comprehensive response to the 
                   safeEnqueue({ type: 'text-start', id: currentTextId });
 
                   const chunkSize = 10;
-                  for (let i = 0; i < synthesisText.length; i += chunkSize) {
-                    const chunk = synthesisText.slice(i, i + chunkSize);
+                  for (
+                    let index = 0;
+                    index < synthesisText.length;
+                    index += chunkSize
+                  ) {
+                    const chunk = synthesisText.slice(index, index + chunkSize);
                     safeEnqueue({
                       type: 'text-delta',
                       id: currentTextId,

@@ -131,18 +131,20 @@ export function convertToOllamaChatMessages(
 
           // Handle tool calls properly - Ollama DOES support native tool calls
           for (const part of message.content) {
-            if (part.type === 'tool-call') {
-              const args = parseToolArguments(part.input);
-
-              toolCalls.push({
-                id: part.toolCallId,
-                type: 'function',
-                function: {
-                  name: part.toolName,
-                  arguments: args,
-                },
-              });
+            if (part.type !== 'tool-call') {
+              continue;
             }
+
+            const arguments_ = parseToolArguments(part.input);
+
+            toolCalls.push({
+              id: part.toolCallId,
+              type: 'function',
+              function: {
+                name: part.toolName,
+                arguments: arguments_,
+              },
+            });
           }
         }
 

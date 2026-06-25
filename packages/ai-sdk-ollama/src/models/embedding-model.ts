@@ -32,7 +32,7 @@ export class OllamaEmbeddingModel implements EmbeddingModelV4 {
     return this.config.provider;
   }
 
-  async doEmbed(params: {
+  async doEmbed(parameters: {
     values: string[];
     abortSignal?: AbortSignal;
     providerOptions?: SharedV4ProviderOptions;
@@ -44,7 +44,7 @@ export class OllamaEmbeddingModel implements EmbeddingModelV4 {
     response?: { headers?: Record<string, string>; body?: unknown };
     warnings: SharedV4Warning[];
   }> {
-    const { values, abortSignal } = params;
+    const { values, abortSignal } = parameters;
     if (values.length > this.maxEmbeddingsPerCall) {
       throw new OllamaError({
         message: `Too many values to embed. Maximum: ${this.maxEmbeddingsPerCall}, Received: ${values.length}`,

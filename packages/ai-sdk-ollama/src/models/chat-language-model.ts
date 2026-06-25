@@ -476,7 +476,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
    * forced completion). Callers add the `stream: true | false` literal at the
    * call site so the Ollama client's streaming overload still resolves.
    */
-  private buildChatRequest(params: {
+  private buildChatRequest(parameters: {
     messages: OllamaMessage[];
     options: Record<string, unknown>;
     format?: string | Record<string, unknown>;
@@ -484,7 +484,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
     keep_alive?: string | number;
     think?: OllamaThink;
   }) {
-    const { messages, options, format, tools, keep_alive, think } = params;
+    const { messages, options, format, tools, keep_alive, think } = parameters;
     return {
       model: this.modelId,
       messages,
@@ -513,30 +513,30 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
     if (cleaned.properties && typeof cleaned.properties === 'object') {
       const cleanedProperties: Record<string, unknown> = {};
 
-      for (const [key, prop] of Object.entries(
+      for (const [key, property] of Object.entries(
         cleaned.properties as Record<string, unknown>,
       )) {
-        if (typeof prop === 'object' && prop !== null) {
-          const cleanedProp = { ...(prop as Record<string, unknown>) };
+        if (typeof property === 'object' && property !== null) {
+          const cleanedProperty = { ...(property as Record<string, unknown>) };
 
           // Remove complex regex patterns that Ollama can't handle
           // Keep format but remove pattern for email validation
-          if (cleanedProp.format === 'email' && cleanedProp.pattern) {
-            delete cleanedProp.pattern;
+          if (cleanedProperty.format === 'email' && cleanedProperty.pattern) {
+            delete cleanedProperty.pattern;
           }
 
           // Remove other complex patterns that might cause issues
           if (
-            typeof cleanedProp.pattern === 'string' &&
-            cleanedProp.pattern.length > 50
+            typeof cleanedProperty.pattern === 'string' &&
+            cleanedProperty.pattern.length > 50
           ) {
-            delete cleanedProp.pattern;
+            delete cleanedProperty.pattern;
           }
 
           // Recursively clean nested objects
-          cleanedProperties[key] = this.cleanSchemaForOllama(cleanedProp);
+          cleanedProperties[key] = this.cleanSchemaForOllama(cleanedProperty);
         } else {
-          cleanedProperties[key] = prop;
+          cleanedProperties[key] = property;
         }
       }
 
@@ -742,7 +742,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
     }
   }
 
-  private async performForceCompletion(params: {
+  private async performForceCompletion(parameters: {
     messages: OllamaMessage[];
     ollamaOptions: Record<string, unknown>;
     toolResults: Awaited<ReturnType<typeof executeReliableToolCalls>>;
@@ -757,7 +757,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
       originalOptions,
       format,
       keep_alive,
-    } = params;
+    } = parameters;
 
     const think = this.resolveThink(originalOptions);
 
@@ -830,7 +830,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
     };
   }
 
-  private buildGenerationResult(params: {
+  private buildGenerationResult(parameters: {
     messages: OllamaMessage[];
     ollamaOptions: Record<string, unknown>;
     format?: string | Record<string, unknown>;
@@ -864,7 +864,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
       reliable,
       finalTextOverride,
       think,
-    } = params;
+    } = parameters;
 
     const finalText = finalTextOverride ?? response.message.content ?? '';
     const thinking = response.message.thinking;
@@ -931,7 +931,9 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
       options: ollamaOptions,
       format,
       tools: ollamaTools,
-      ...(params.keep_alive !== undefined && { keep_alive: params.keep_alive }),
+      ...(parameters.keep_alive !== undefined && {
+        keep_alive: parameters.keep_alive,
+      }),
     };
 
     if (reliable) {
@@ -956,7 +958,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
     };
   }
 
-  private async callWithReliableToolHandling(params: {
+  private async callWithReliableToolHandling(parameters: {
     messages: OllamaMessage[];
     ollamaOptions: Record<string, unknown>;
     format?: string | Record<string, unknown>;
@@ -977,7 +979,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
       toolDefinitions,
       reliabilityOptions,
       keep_alive,
-    } = params;
+    } = parameters;
 
     const think = this.resolveThink(originalOptions);
 
@@ -1151,7 +1153,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
     );
   }
 
-  private async callWithReliableObjectGeneration(params: {
+  private async callWithReliableObjectGeneration(parameters: {
     messages: OllamaMessage[];
     ollamaOptions: Record<string, unknown>;
     format?: string | Record<string, unknown>;
@@ -1182,7 +1184,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
       schema,
       objectOptions,
       keep_alive,
-    } = params;
+    } = parameters;
 
     const think = this.resolveThink(originalOptions);
 
@@ -1295,7 +1297,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
     );
   }
 
-  private buildObjectGenerationResult(params: {
+  private buildObjectGenerationResult(parameters: {
     messages: OllamaMessage[];
     ollamaOptions: Record<string, unknown>;
     format?: string | Record<string, unknown>;
@@ -1315,7 +1317,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
     keep_alive?: string | number;
   }): GenerateResult {
     const { response, text, warnings, recoveryMethod, retryCount, errors } =
-      params;
+      parameters;
 
     // For object generation, we return the validated text as content
     const content: LanguageModelV4Content[] = [{ type: 'text', text }];
@@ -1363,13 +1365,13 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
       request: {
         body: {
           model: this.modelId,
-          messages: params.messages,
-          options: params.ollamaOptions,
-          format: params.format,
-          tools: params.tools,
+          messages: parameters.messages,
+          options: parameters.ollamaOptions,
+          format: parameters.format,
+          tools: parameters.tools,
           reliable_object_generation: true,
-          ...(params.keep_alive !== undefined && {
-            keep_alive: params.keep_alive,
+          ...(parameters.keep_alive !== undefined && {
+            keep_alive: parameters.keep_alive,
           }),
         },
       },
