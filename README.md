@@ -5,27 +5,27 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Vercel AI SDK provider for Ollama built on the official `ollama` package. Type safe, future proof, with cross provider compatibility and native Ollama features.
+A Vercel AI SDK provider for Ollama, built on the official `ollama` package. Type-safe, cross-provider compatible, with access to native Ollama features.
 
-> **📌 Version compatibility**
+> **Version compatibility**
 >
 > Each `ai-sdk-ollama` major targets one AI SDK major. Every line stays published on npm, so pick the one that matches your `ai` version:
 >
 > | `ai-sdk-ollama` | `ai` (peer) | Status |
 > | --- | --- | --- |
-> | `4.x` (`@beta`) | `ai@^7` (beta) | Active. New features land here. |
+> | `4.x` (`@latest`) | `ai@^7` | Active. New features land here. |
 > | `3.x` | `ai@^6` | Maintenance. Critical fixes only. |
 > | `2.x` | `ai@^5` | Unmaintained. |
 >
-> While AI SDK v7 is in beta, install v4 from the `beta` tag. The v3 line keeps working for AI SDK v6 the whole time. Once AI SDK v7 ships stable, v4 moves to the `latest` tag.
+> AI SDK v7 is stable, so v4 installs from `latest`. The v3 line still works for AI SDK v6.
 
 ## Quick Start
 
 ```bash
-# AI SDK v7 (beta)
-npm install ai-sdk-ollama@beta ai@beta
+# AI SDK v7 (stable)
+npm install ai-sdk-ollama ai
 
-# AI SDK v6 (stable)
+# AI SDK v6
 npm install ai-sdk-ollama@^3 ai@^6
 ```
 
@@ -53,15 +53,15 @@ console.log(text);
 - **Reranking** - Document relevance ranking using embedding-based similarity
 - **Middleware system** - Wrap models with `defaultSettingsMiddleware` and `extractReasoningMiddleware`
 - **ToolLoopAgent** - Autonomous agents that run tool loops with configurable stop conditions
-- **Streaming utilities** - `smoothStream`, `createStitchableStream`, `parsePartialJson` for stream manipulation
+- **Streaming utilities** - `smoothStream` and `parsePartialJson` for stream handling
 - **Type-safe** - Full TypeScript support with strict typing
-- **Cross-environment** - Works in Node.js and browsers automatically
-- **Native Ollama features** - Access to advanced options like `mirostat`, `repeat_penalty`, `num_ctx`
-- **Production ready** - Addresses common Ollama integration challenges
+- **Cross-environment** - Runs in Node.js and browsers automatically
+- **Native Ollama features** - Use advanced options like `mirostat`, `repeat_penalty`, `num_ctx`
+- **Production-ready** - Handles the tool-call and JSON edge cases that otherwise need manual workarounds
 
 ## Enhanced Tool Calling
 
-> **Tool Calling Enhancement**: Standard Ollama providers may execute tools but return incomplete responses. Our enhanced functions provide more reliable response synthesis.
+> **The problem this solves**: Standard Ollama providers can execute a tool and then return empty text. These wrapper functions synthesize a response so you get complete output.
 
 ```typescript
 import { generateText, streamText } from 'ai-sdk-ollama';
@@ -87,7 +87,7 @@ const { textStream } = await streamText({
 
 ### Combining Tools with Structured Output
 
-> **Advanced Feature**: The `enableToolsWithStructuredOutput` option allows you to use both tool calling and structured output together, which is typically not possible with standard AI SDK implementations.
+> **Tools + structured output**: The `enableToolsWithStructuredOutput` option lets you use tool calling and structured output in the same call.
 
 ```typescript
 import { generateText } from 'ai-sdk-ollama';
@@ -107,7 +107,7 @@ const weatherTool = tool({
   }),
 });
 
-// AI SDK v6: tools and structured output work together by default
+// AI SDK v7: tools and structured output work together by default
 const result = await generateText({
   model: ollama('llama3.2'),
   prompt: 'Get weather for San Francisco and provide a structured summary',
@@ -126,7 +126,7 @@ const result = await generateText({
 
 ## Web Search Tools
 
-> **Web Search Integration**: Built-in web search and fetch tools powered by [Ollama's web search API](https://ollama.com/blog/web-search). Useful for accessing current information.
+> **Web search and fetch**: Built-in tools powered by [Ollama's web search API](https://ollama.com/blog/web-search) for current information.
 
 ```typescript
 import { generateText } from 'ai';
@@ -309,13 +309,13 @@ const { output } = await generateText({
   prompt: 'Generate a random person profile',
 });
 
-console.log(object);
+console.log(output);
 // { name: "Alice", age: 28, interests: ["reading", "hiking"] }
 ```
 
 ### MCP (Model Context Protocol) Integration
 
-> **AI SDK v6 Feature**: Full MCP support including OAuth authentication, resources, prompts, and elicitation.
+> **MCP support**: OAuth authentication, resources, prompts, and elicitation.
 
 ```typescript
 import { generateText } from 'ai';
@@ -398,7 +398,7 @@ const results = await Promise.all(
 
 ### Reranking
 
-> **AI SDK v6 Feature**: Native reranking support for improving search results and RAG pipelines.
+> **Reranking**: Rank documents to improve search results and RAG pipelines.
 
 ```typescript
 import { rerank } from 'ai';
@@ -469,16 +469,16 @@ import { z } from 'zod';
 
 const agent = new ToolLoopAgent({
   model: ollama('llama3.2'),
-  system: 'You are a helpful assistant.',
+  instructions: 'You are a helpful assistant.',
   tools: {
     weather: tool({
       description: 'Get weather for a location',
-      parameters: z.object({ location: z.string() }),
+      inputSchema: z.object({ location: z.string() }),
       execute: async ({ location }) => ({ temp: 72, condition: 'sunny' }),
     }),
     done: tool({
       description: 'Signal task completion',
-      parameters: z.object({ summary: z.string() }),
+      inputSchema: z.object({ summary: z.string() }),
       execute: async ({ summary }) => ({ completed: true, summary }),
     }),
   },
@@ -524,7 +524,7 @@ const result = streamText({
 
 - [Ollama](https://ollama.com) installed and running locally
 - Node.js 22+ for development
-- AI SDK v6 (`ai` package)
+- AI SDK v7 (`ai` package)
 
 ```bash
 # Start Ollama

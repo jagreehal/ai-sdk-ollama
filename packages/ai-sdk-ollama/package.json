@@ -84,13 +84,13 @@
     "tool-calling"
   ],
   "dependencies": {
-    "@ai-sdk/provider": "4.0.0-canary.18",
-    "@ai-sdk/provider-utils": "5.0.0-canary.48",
+    "@ai-sdk/provider": "^4.0.0",
+    "@ai-sdk/provider-utils": "^5.0.0",
     "jsonrepair": "^3.14.0",
     "ollama": "^0.6.3"
   },
   "peerDependencies": {
-    "ai": ">=7.0.0-beta.179 <8.0.0"
+    "ai": "^7.0.0"
   },
   "devDependencies": {
     "@ai-sdk/test-server": "^1.0.5",
