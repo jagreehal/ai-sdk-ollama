@@ -31,7 +31,7 @@
     "eslint-plugin-unicorn": "^69.0.0",
     "prettier": "^3.9.1",
     "turbo": "^2.9.18",
-    "typescript-eslint": "^8.61.1"
+    "typescript-eslint": "^8.62.0"
   },
   "engines": {
     "node": ">=22",
