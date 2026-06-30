@@ -94,7 +94,7 @@
   },
   "devDependencies": {
     "@ai-sdk/test-server": "^2.0.0",
-    "@arethetypeswrong/cli": "^0.18.3",
+    "@arethetypeswrong/cli": "^0.18.4",
     "@edge-runtime/vm": "^5.0.0",
     "@total-typescript/ts-reset": "^0.6.1",
     "@total-typescript/tsconfig": "^1.0.4",
