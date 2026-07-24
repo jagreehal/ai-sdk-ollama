@@ -79,6 +79,11 @@ This directory contains comprehensive examples demonstrating the enhanced Ollama
     - Shows how string values are preserved during JSON repair
     - Run: `npx tsx src/quoted-json-example.ts`
 
+18. **`raw-chunks-and-usage-example.ts`** - Raw Chunks and Raw Usage (v7)
+    - `include: { rawChunks: true }` surfaces the unmodified Ollama stream chunks
+    - `usage.raw` exposes Ollama's token counts and nanosecond timings
+    - Run: `npx tsx src/raw-chunks-and-usage-example.ts`
+
 ## Key Features Demonstrated
 
 ### Enhanced Ollama Provider Features

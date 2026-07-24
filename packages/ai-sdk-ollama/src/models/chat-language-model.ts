@@ -1,28 +1,14 @@
 import {
   LanguageModelV4,
   LanguageModelV4CallOptions,
-  LanguageModelV4FinishReason,
-  LanguageModelV4StreamPart,
-  LanguageModelV4Usage,
   LanguageModelV4Content,
-  JSONValue,
   LanguageModelV4FunctionTool,
-  LanguageModelV4Prompt,
-  LanguageModelV4TextPart,
+  LanguageModelV4StreamPart,
   JSONSchema7,
-  SharedV2ProviderMetadata,
   SharedV4Warning,
 } from '@ai-sdk/provider';
-import {
-  Ollama,
-  Message as OllamaMessage,
-  ChatResponse,
-  Tool,
-  ToolCall,
-} from 'ollama';
+import { Ollama, Message as OllamaMessage, ChatResponse, Tool } from 'ollama';
 import { OllamaChatSettings } from '../provider';
-import { convertToOllamaChatMessages } from '../utils/convert-to-ollama-messages';
-import { mapOllamaFinishReason } from '../utils/map-ollama-finish-reason';
 import { OllamaError } from '../utils/ollama-error';
 import {
   createToolDefinitionMap,
@@ -30,185 +16,30 @@ import {
   extractToolResultsFromPrompt,
   extractToolResultsFromMessages,
   forceCompletion,
-  parseToolArguments,
   resolveToolCallingOptions,
   type ToolDefinition,
   type ResolvedToolCallingOptions,
-  type ReliableToolCallResult,
 } from '../utils/tool-calling-reliability';
 import {
   attemptSchemaRecovery,
-  generateFallbackValues,
   resolveObjectGenerationOptions,
   type ObjectGenerationOptions,
 } from '../utils/object-generation-reliability';
-
-/**
- * The effective Ollama `think` value for a request, derived from the canonical
- * Ollama `ChatRequest['think']` contract (`boolean | 'high' | 'medium' | 'low'`).
- */
-type OllamaThink = OllamaChatSettings['think'];
-
-type GenerateResult = {
-  content: LanguageModelV4Content[];
-  finishReason: LanguageModelV4FinishReason;
-  usage: LanguageModelV4Usage;
-  providerMetadata?: SharedV2ProviderMetadata;
-  request?: { body?: unknown };
-  response?: { id?: string; timestamp?: Date; modelId?: string };
-  warnings: SharedV4Warning[];
-};
-
-interface ParsedToolCall {
-  toolName: string;
-  input: Record<string, unknown>;
-  rawInput: unknown;
-}
-
-/**
- * Parse Ollama tool calls into a normalized format.
- * Uses the ToolCall type from the Ollama library for type safety.
- */
-function parseOllamaToolCalls(
-  toolCalls: ToolCall[] | undefined,
-): ParsedToolCall[] {
-  if (!toolCalls || toolCalls.length === 0) {
-    return [];
-  }
-
-  const parsed: ParsedToolCall[] = [];
-
-  for (const call of toolCalls) {
-    const toolName = call?.function?.name;
-    if (!toolName) {
-      continue;
-    }
-
-    const rawInput = call.function?.arguments ?? {};
-    const input = parseToolArguments(rawInput);
-
-    parsed.push({
-      toolName,
-      input,
-      rawInput,
-    });
-  }
-
-  return parsed;
-}
-
-function buildContent(
-  reasoning: string | undefined,
-  includeReasoning: boolean,
-  text: string | undefined,
-  toolCalls: ParsedToolCall[],
-): LanguageModelV4Content[] {
-  const content: LanguageModelV4Content[] = [];
-
-  if (reasoning && includeReasoning) {
-    content.push({ type: 'reasoning', text: reasoning });
-  }
-
-  if (text && text.length > 0) {
-    content.push({ type: 'text', text });
-  }
-
-  for (const toolCall of toolCalls) {
-    content.push({
-      type: 'tool-call',
-      toolCallId: crypto.randomUUID(),
-      toolName: toolCall.toolName,
-      input: JSON.stringify(toolCall.input ?? {}),
-    });
-  }
-
-  return content;
-}
-
-/**
- * Create a LanguageModelV4Usage object from token counts.
- * V3 uses structured objects for inputTokens and outputTokens.
- */
-function createUsage(
-  inputTokenCount?: number,
-  outputTokenCount?: number,
-): LanguageModelV4Usage {
-  return {
-    inputTokens: {
-      total: inputTokenCount,
-      noCache: inputTokenCount,
-      cacheRead: undefined,
-      cacheWrite: undefined,
-    },
-    outputTokens: {
-      total: outputTokenCount,
-      text: outputTokenCount,
-      reasoning: undefined,
-    },
-  };
-}
-
-function aggregateUsage(...responses: ChatResponse[]): LanguageModelV4Usage {
-  let inputTokens: number | undefined;
-  let outputTokens: number | undefined;
-
-  for (const response of responses) {
-    if (response?.prompt_eval_count !== undefined) {
-      inputTokens = (inputTokens ?? 0) + response.prompt_eval_count;
-    }
-    if (response?.eval_count !== undefined) {
-      outputTokens = (outputTokens ?? 0) + response.eval_count;
-    }
-  }
-
-  return createUsage(inputTokens, outputTokens);
-}
-
-function getLatestUserMessage(messages: OllamaMessage[]): string {
-  for (let index = messages.length - 1; index >= 0; index--) {
-    const message = messages[index];
-    if (
-      message &&
-      message.role === 'user' &&
-      typeof message.content === 'string'
-    ) {
-      return message.content;
-    }
-  }
-
-  return '';
-}
-
-function getLatestUserPromptText(
-  prompt: LanguageModelV4Prompt | undefined,
-): string {
-  if (!prompt) {
-    return '';
-  }
-
-  for (let index = prompt.length - 1; index >= 0; index--) {
-    const message = prompt[index];
-
-    if (!message || message.role !== 'user') {
-      continue;
-    }
-
-    // Handle both string and array content types
-    if (typeof message.content === 'string') {
-      return message.content;
-    } else if (Array.isArray(message.content)) {
-      const textParts = message.content.filter(
-        (part): part is LanguageModelV4TextPart => part.type === 'text',
-      );
-
-      if (textParts.length > 0) {
-        return textParts.map((part) => part.text).join('\n');
-      }
-    }
-  }
-
-  return '';
-}
+import { generateFallbackValues } from '../utils/json-schema-coercion';
+import {
+  buildChatRequest,
+  getCallOptions,
+  getLatestUserMessage,
+  getLatestUserPromptText,
+  resolveThink,
+} from './chat-request';
+import {
+  buildGenerationResult,
+  buildObjectGenerationResult,
+  parseOllamaToolCalls,
+  type GenerateResult,
+} from './chat-result';
+import { createChunkTransformer } from './chat-stream';
 
 export interface OllamaChatConfig {
   client: Ollama;
@@ -238,326 +69,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
   }
 
   get supportsStructuredOutputs(): boolean {
-    // Auto-detect structured outputs when JSON schema is provided
-    // This allows generateText with Output.object() and streamText with Output.object() to work without explicit structuredOutputs: true
     return this.settings.structuredOutputs ?? false;
-  }
-
-  /**
-   * Check if structured outputs should be enabled based on the call options
-   * This is used internally to auto-detect when structured outputs are needed
-   */
-  private shouldEnableStructuredOutputs(
-    options: LanguageModelV4CallOptions,
-  ): boolean {
-    // Auto-detect: if we have a JSON schema, we need structured outputs
-    // This overrides explicit settings to ensure object generation works
-    if (
-      options.responseFormat?.type === 'json' &&
-      options.responseFormat.schema
-    ) {
-      // Warn if structuredOutputs was explicitly set to false but we're auto-enabling it
-      if (this.settings.structuredOutputs === false) {
-        console.warn(
-          'Ollama: structuredOutputs was set to false but auto-enabled for object generation. ' +
-            'This ensures generateText with Output.object() and streamText with Output.object() work correctly.',
-        );
-      }
-      return true;
-    }
-
-    // If explicitly set, use that value (for text generation)
-    if (this.settings.structuredOutputs !== undefined) {
-      return this.settings.structuredOutputs;
-    }
-
-    // Default to false for regular text generation
-    return false;
-  }
-
-  private getCallOptions(options: LanguageModelV4CallOptions): {
-    messages: OllamaMessage[];
-    options: Record<string, unknown>;
-    format?: string | Record<string, unknown>;
-    tools?: Tool[];
-    warnings: SharedV4Warning[];
-    keep_alive?: string | number;
-  } {
-    const {
-      prompt,
-      temperature,
-      maxOutputTokens,
-      topP,
-      topK,
-      frequencyPenalty,
-      presencePenalty,
-      stopSequences,
-      seed,
-      responseFormat,
-      tools,
-    } = options;
-
-    const warnings: SharedV4Warning[] = [];
-
-    // Auto-detect structured outputs when JSON schema is provided
-    const needsStructuredOutputs = this.shouldEnableStructuredOutputs(options);
-
-    // Check for unsupported features and throw errors
-    if (
-      responseFormat?.type === 'json' &&
-      responseFormat.schema &&
-      !needsStructuredOutputs
-    ) {
-      throw new Error(
-        'JSON schema is only supported when structuredOutputs is enabled',
-      );
-    }
-
-    // Convert AI SDK tools to Ollama format (error already thrown if unsupported)
-    const ollamaTools: Tool[] | undefined = tools
-      ? tools.map((tool): Tool => {
-          if (tool.type === 'function') {
-            // The inputSchema from AI SDK should already be a JSON schema
-            // when tools are passed to providers
-            let jsonSchema: Record<string, unknown>;
-
-            // Check if we have a Zod schema (has parse method) or a JSON schema
-            if (tool.inputSchema && typeof tool.inputSchema === 'object') {
-              if (
-                'parse' in tool.inputSchema &&
-                typeof tool.inputSchema.parse === 'function'
-              ) {
-                // It's a Zod schema - we need to convert it
-                // For now, we'll use a basic fallback since zod-to-json-schema has version issues
-                console.warn(
-                  `Tool ${tool.name} is using a Zod schema directly. Schema conversion may not work properly due to Zod version mismatch.`,
-                );
-                jsonSchema = {
-                  type: 'object',
-                  properties: {},
-                  additionalProperties: false,
-                };
-              } else if (
-                'properties' in tool.inputSchema ||
-                'type' in tool.inputSchema
-              ) {
-                // It looks like a JSON schema already
-                jsonSchema = tool.inputSchema as Record<string, unknown>;
-              } else {
-                // Unknown schema format
-                jsonSchema = {
-                  type: 'object',
-                  properties: {},
-                  additionalProperties: false,
-                };
-              }
-            } else {
-              // No schema provided
-              jsonSchema = {
-                type: 'object',
-                properties: {},
-                additionalProperties: false,
-              };
-            }
-
-            return {
-              type: 'function',
-              function: {
-                name: tool.name,
-                description: tool.description,
-                parameters: jsonSchema,
-              },
-            };
-          }
-          // Provider-defined tools not supported by Ollama
-          throw new Error(
-            `Provider-defined tools are not supported by Ollama. Use function tools instead.`,
-          );
-        })
-      : undefined;
-
-    // Build options with correct precedence:
-    // 1. AI SDK call parameters (mapped to Ollama equivalents)
-    // 2. Model settings (Ollama options) override AI SDK parameters when both are specified
-    const ollamaOptions: Record<string, unknown> = {
-      // Start with AI SDK parameters mapped to Ollama names
-      ...(temperature !== undefined && { temperature }),
-      ...(maxOutputTokens !== undefined && { num_predict: maxOutputTokens }),
-      ...(topP !== undefined && { top_p: topP }),
-      ...(topK !== undefined && { top_k: topK }),
-      ...(frequencyPenalty !== undefined && {
-        frequency_penalty: frequencyPenalty,
-      }),
-      ...(presencePenalty !== undefined && {
-        presence_penalty: presencePenalty,
-      }),
-      ...(stopSequences !== undefined && { stop: stopSequences }),
-      ...(seed !== undefined && { seed }),
-      // Ollama model options override AI SDK parameters
-      ...this.settings.options,
-    };
-
-    // Remove undefined values
-    for (const key of Object.keys(ollamaOptions)) {
-      if (ollamaOptions[key] === undefined) {
-        delete ollamaOptions[key];
-      }
-    }
-
-    let format: string | Record<string, unknown> | undefined;
-    if (responseFormat?.type === 'json') {
-      if (responseFormat.schema && needsStructuredOutputs) {
-        // Remove $schema property and clean complex patterns for Ollama compatibility
-        const schema = responseFormat.schema as Record<string, unknown>;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { $schema, ...cleanedSchema } = schema;
-
-        // Clean complex regex patterns that Ollama can't handle
-        format = this.cleanSchemaForOllama(cleanedSchema);
-      } else {
-        format = 'json';
-      }
-    }
-
-    const messages = convertToOllamaChatMessages(prompt);
-
-    return {
-      messages,
-      options: ollamaOptions,
-      format,
-      tools: ollamaTools,
-      warnings,
-      keep_alive: this.settings.keep_alive,
-    };
-  }
-
-  /**
-   * Resolve the effective Ollama `think` value for a request.
-   *
-   * AI SDK v7 adds a per-call `reasoning` effort option to
-   * `LanguageModelV4CallOptions`. We map it onto Ollama's `think` parameter
-   * (`boolean | 'high' | 'medium' | 'low'`):
-   *
-   * - `'none'`                     -> `false`
-   * - `'minimal'` / `'low'`        -> `'low'`
-   * - `'medium'`                   -> `'medium'`
-   * - `'high'` / `'xhigh'`         -> `'high'`
-   * - `'provider-default'` / unset -> fall back to the `think` provider setting
-   *
-   * The per-call `reasoning` option takes precedence over the model-level
-   * `think` setting, so reasoning effort can vary per request.
-   */
-  private resolveThink(options: LanguageModelV4CallOptions): OllamaThink {
-    switch (options.reasoning) {
-      case 'none': {
-        return false;
-      }
-      case 'minimal':
-      case 'low': {
-        return 'low';
-      }
-      case 'medium': {
-        return 'medium';
-      }
-      case 'high':
-      case 'xhigh': {
-        return 'high';
-      }
-      // 'provider-default', undefined, or any future value: use the model setting.
-      default: {
-        return this.settings.think;
-      }
-    }
-  }
-
-  /**
-   * Assemble the common Ollama chat request envelope shared by every
-   * `client.chat()` call (generate, streaming, tool/object reliability,
-   * forced completion). Callers add the `stream: true | false` literal at the
-   * call site so the Ollama client's streaming overload still resolves.
-   */
-  private buildChatRequest(parameters: {
-    messages: OllamaMessage[];
-    options: Record<string, unknown>;
-    format?: string | Record<string, unknown>;
-    tools?: Tool[];
-    keep_alive?: string | number;
-    think?: OllamaThink;
-  }) {
-    const { messages, options, format, tools, keep_alive, think } = parameters;
-    return {
-      model: this.modelId,
-      messages,
-      options,
-      format,
-      ...(tools !== undefined && { tools }),
-      ...(keep_alive !== undefined && { keep_alive }),
-      ...(think !== undefined && { think }),
-    };
-  }
-
-  /**
-   * Clean JSON schema for Ollama compatibility by removing complex patterns
-   * that cause "fetch failed" errors while preserving basic validation constraints
-   */
-  private cleanSchemaForOllama(
-    schema: Record<string, unknown>,
-  ): Record<string, unknown> {
-    if (typeof schema !== 'object' || schema === null) {
-      return schema;
-    }
-
-    const cleaned = { ...schema };
-
-    // Clean properties recursively
-    if (cleaned.properties && typeof cleaned.properties === 'object') {
-      const cleanedProperties: Record<string, unknown> = {};
-
-      for (const [key, property] of Object.entries(
-        cleaned.properties as Record<string, unknown>,
-      )) {
-        if (typeof property === 'object' && property !== null) {
-          const cleanedProperty = { ...(property as Record<string, unknown>) };
-
-          // Remove complex regex patterns that Ollama can't handle
-          // Keep format but remove pattern for email validation
-          if (cleanedProperty.format === 'email' && cleanedProperty.pattern) {
-            delete cleanedProperty.pattern;
-          }
-
-          // Remove other complex patterns that might cause issues
-          if (
-            typeof cleanedProperty.pattern === 'string' &&
-            cleanedProperty.pattern.length > 50
-          ) {
-            delete cleanedProperty.pattern;
-          }
-
-          // Recursively clean nested objects
-          cleanedProperties[key] = this.cleanSchemaForOllama(cleanedProperty);
-        } else {
-          cleanedProperties[key] = property;
-        }
-      }
-
-      cleaned.properties = cleanedProperties;
-    }
-
-    // Clean other schema properties recursively
-    for (const [key, value] of Object.entries(cleaned)) {
-      if (
-        key !== 'properties' &&
-        typeof value === 'object' &&
-        value !== null &&
-        !Array.isArray(value)
-      ) {
-        cleaned[key] = this.cleanSchemaForOllama(
-          value as Record<string, unknown>,
-        );
-      }
-    }
-
-    return cleaned;
   }
 
   async doGenerate(
@@ -570,9 +82,9 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
       tools,
       warnings,
       keep_alive,
-    } = this.getCallOptions(options);
+    } = getCallOptions(this.settings, options);
 
-    const think = this.resolveThink(options);
+    const think = resolveThink(this.settings, options);
 
     const functionTools = (options.tools ?? []).filter(
       (tool): tool is LanguageModelV4FunctionTool => tool.type === 'function',
@@ -654,7 +166,8 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
     // Regular tool calling (original implementation)
     try {
       const response = (await this.config.client.chat({
-        ...this.buildChatRequest({
+        ...buildChatRequest({
+          modelId: this.modelId,
           messages,
           options: ollamaOptions,
           format,
@@ -665,75 +178,22 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
         stream: false,
       })) as ChatResponse;
 
-      const text = response.message.content;
-      const parsedToolCalls = parseOllamaToolCalls(response.message.tool_calls);
-      const thinking = response.message.thinking;
-
-      // Convert content based on whether we have tool calls, reasoning, or text
-      const content: LanguageModelV4Content[] = [];
-
-      // Add reasoning content if present and enabled
-      if (thinking && think) {
-        content.push({ type: 'reasoning', text: thinking });
-      }
-
-      // Add text content if present
-      if (text) {
-        content.push({ type: 'text', text });
-      }
-
-      // Add tool calls if present
-      if (parsedToolCalls.length > 0) {
-        for (const toolCall of parsedToolCalls) {
-          content.push({
-            type: 'tool-call',
-            toolCallId: crypto.randomUUID(), // Ollama doesn't provide IDs
-            toolName: toolCall.toolName,
-            input: JSON.stringify(toolCall.input ?? {}),
-          });
-        }
-      }
-
-      const finishReason = mapOllamaFinishReason(
-        response.done_reason,
-        parsedToolCalls.length > 0,
-      );
-
-      return {
-        content,
-        finishReason,
-        usage: createUsage(
-          response.prompt_eval_count ?? undefined,
-          response.eval_count ?? undefined,
-        ),
-        providerMetadata: {
-          ollama: {
-            model: response.model,
-            created_at: response.created_at
-              ? new Date(response.created_at).toISOString()
-              : undefined,
-            total_duration: response.total_duration,
-            load_duration: response.load_duration,
-            eval_duration: response.eval_duration,
-            reliable_tool_calling: false,
-          } as Record<string, JSONValue>,
-        },
-        request: {
-          body: {
-            model: this.modelId,
-            messages,
-            options: ollamaOptions,
-            format,
-            tools,
-            ...(keep_alive !== undefined && { keep_alive }),
-          },
-        },
-        response: {
-          timestamp: new Date(),
-          modelId: this.modelId,
-        },
+      return buildGenerationResult({
+        modelId: this.modelId,
+        messages,
+        ollamaOptions,
+        format,
+        ollamaTools: tools,
         warnings,
-      };
+        response,
+        parsedToolCalls: parseOllamaToolCalls(response.message.tool_calls),
+        completionMethod: 'natural',
+        retryCount: 0,
+        errors: [],
+        reliable: false,
+        keep_alive,
+        think,
+      });
     } catch (error) {
       throw new OllamaError({
         message: error instanceof Error ? error.message : String(error),
@@ -759,7 +219,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
       keep_alive,
     } = parameters;
 
-    const think = this.resolveThink(originalOptions);
+    const think = resolveThink(this.settings, originalOptions);
 
     let followUpResponse: ChatResponse | undefined;
 
@@ -778,7 +238,8 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
         ];
 
         followUpResponse = (await this.config.client.chat({
-          ...this.buildChatRequest({
+          ...buildChatRequest({
+            modelId: this.modelId,
             messages: followUpMessages,
             options: ollamaOptions,
             format,
@@ -830,134 +291,6 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
     };
   }
 
-  private buildGenerationResult(parameters: {
-    messages: OllamaMessage[];
-    ollamaOptions: Record<string, unknown>;
-    format?: string | Record<string, unknown>;
-    ollamaTools?: Tool[];
-    warnings: SharedV4Warning[];
-    response: ChatResponse;
-    followUpResponse?: ChatResponse;
-    parsedToolCalls: ParsedToolCall[];
-    completionMethod: ReliableToolCallResult['completionMethod'];
-    retryCount: number;
-    errors: string[];
-    toolResults?: Awaited<ReturnType<typeof executeReliableToolCalls>>;
-    reliable: boolean;
-    finalTextOverride?: string;
-    keep_alive?: string | number;
-    think?: OllamaThink;
-  }): GenerateResult {
-    const {
-      messages,
-      ollamaOptions,
-      format,
-      ollamaTools,
-      warnings,
-      response,
-      followUpResponse,
-      parsedToolCalls,
-      completionMethod,
-      retryCount,
-      errors,
-      toolResults,
-      reliable,
-      finalTextOverride,
-      think,
-    } = parameters;
-
-    const finalText = finalTextOverride ?? response.message.content ?? '';
-    const thinking = response.message.thinking;
-
-    const content = buildContent(
-      thinking,
-      Boolean(think),
-      finalText,
-      parsedToolCalls,
-    );
-
-    const finishSource = followUpResponse ?? response;
-
-    const usage = followUpResponse
-      ? aggregateUsage(response, followUpResponse)
-      : aggregateUsage(response);
-
-    const finishReason: LanguageModelV4FinishReason =
-      mapOllamaFinishReason(finishSource.done_reason) ??
-      mapOllamaFinishReason('stop');
-
-    const providerDetails: Record<string, JSONValue> = {};
-
-    providerDetails.model = finishSource.model;
-    if (finishSource.created_at) {
-      providerDetails.created_at = new Date(
-        finishSource.created_at,
-      ).toISOString();
-    }
-    if (finishSource.total_duration !== undefined) {
-      providerDetails.total_duration = finishSource.total_duration;
-    }
-    if (finishSource.load_duration !== undefined) {
-      providerDetails.load_duration = finishSource.load_duration;
-    }
-    if (finishSource.eval_duration !== undefined) {
-      providerDetails.eval_duration = finishSource.eval_duration;
-    }
-
-    providerDetails.reliable_tool_calling = reliable;
-    if (reliable) {
-      providerDetails.completion_method = completionMethod;
-      providerDetails.retry_count = retryCount;
-      if (errors.length > 0) {
-        providerDetails.reliability_errors = errors;
-      }
-      if (toolResults && toolResults.length > 0) {
-        providerDetails.tool_results = toolResults.map((result) => {
-          const toolResult: Record<string, unknown> = {
-            toolName: result.toolName,
-            success: result.success,
-          };
-          if (result.error !== undefined) {
-            toolResult.error = result.error;
-          }
-          return toolResult as JSONValue;
-        });
-      }
-    }
-
-    const requestPayload: Record<string, unknown> = {
-      model: this.modelId,
-      messages,
-      options: ollamaOptions,
-      format,
-      tools: ollamaTools,
-      ...(parameters.keep_alive !== undefined && {
-        keep_alive: parameters.keep_alive,
-      }),
-    };
-
-    if (reliable) {
-      requestPayload.reliable_tool_calling = true;
-    }
-
-    return {
-      content,
-      finishReason,
-      usage,
-      providerMetadata: {
-        ollama: providerDetails,
-      },
-      request: {
-        body: requestPayload,
-      },
-      response: {
-        timestamp: new Date(),
-        modelId: this.modelId,
-      },
-      warnings,
-    };
-  }
-
   private async callWithReliableToolHandling(parameters: {
     messages: OllamaMessage[];
     ollamaOptions: Record<string, unknown>;
@@ -981,7 +314,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
       keep_alive,
     } = parameters;
 
-    const think = this.resolveThink(originalOptions);
+    const think = resolveThink(this.settings, originalOptions);
 
     const errors: string[] = [];
     let lastResponse: ChatResponse | undefined;
@@ -992,7 +325,8 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
       attempt++
     ) {
       const response = (await this.config.client.chat({
-        ...this.buildChatRequest({
+        ...buildChatRequest({
+          modelId: this.modelId,
           messages,
           options: ollamaOptions,
           format,
@@ -1010,7 +344,8 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
       const hasText = text.trim().length > 0;
 
       if (hasText) {
-        return this.buildGenerationResult({
+        return buildGenerationResult({
+          modelId: this.modelId,
           messages,
           ollamaOptions,
           format,
@@ -1088,7 +423,8 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
           });
 
           if (followUpData && followUpData.text.trim().length > 0) {
-            return this.buildGenerationResult({
+            return buildGenerationResult({
+              modelId: this.modelId,
               messages,
               ollamaOptions,
               format,
@@ -1131,7 +467,8 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
       const parsedToolCalls = parseOllamaToolCalls(
         lastResponse.message.tool_calls,
       );
-      return this.buildGenerationResult({
+      return buildGenerationResult({
+        modelId: this.modelId,
         messages,
         ollamaOptions,
         format,
@@ -1186,7 +523,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
       keep_alive,
     } = parameters;
 
-    const think = this.resolveThink(originalOptions);
+    const think = resolveThink(this.settings, originalOptions);
 
     const errors: string[] = [];
     let lastResponse: ChatResponse | undefined;
@@ -1194,7 +531,8 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
     for (let attempt = 1; attempt <= objectOptions.maxRetries; attempt++) {
       try {
         const response = (await this.config.client.chat({
-          ...this.buildChatRequest({
+          ...buildChatRequest({
+            modelId: this.modelId,
             messages,
             options: ollamaOptions,
             format,
@@ -1228,7 +566,8 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
               : attempt > 1
                 ? 'retry'
                 : 'natural';
-            return this.buildObjectGenerationResult({
+            return buildObjectGenerationResult({
+              modelId: this.modelId,
               messages,
               ollamaOptions,
               format,
@@ -1236,7 +575,6 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
               warnings,
               response,
               text,
-              validatedObject: recovery.object,
               recoveryMethod,
               retryCount: attempt,
               errors: errors.length > 0 ? errors : undefined,
@@ -1270,7 +608,8 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
         );
 
         if (recovery.success && recovery.object && lastResponse) {
-          return this.buildObjectGenerationResult({
+          return buildObjectGenerationResult({
+            modelId: this.modelId,
             messages,
             ollamaOptions,
             format,
@@ -1278,7 +617,6 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
             warnings,
             response: lastResponse,
             text: JSON.stringify(recovery.object),
-            validatedObject: recovery.object,
             recoveryMethod: 'fallback',
             retryCount: objectOptions.maxRetries,
             errors,
@@ -1297,92 +635,6 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
     );
   }
 
-  private buildObjectGenerationResult(parameters: {
-    messages: OllamaMessage[];
-    ollamaOptions: Record<string, unknown>;
-    format?: string | Record<string, unknown>;
-    tools?: Tool[];
-    warnings: SharedV4Warning[];
-    response: ChatResponse;
-    text: string;
-    validatedObject: unknown;
-    recoveryMethod:
-      | 'natural'
-      | 'retry'
-      | 'fallback'
-      | 'type_fix'
-      | 'text_repair';
-    retryCount: number;
-    errors?: string[];
-    keep_alive?: string | number;
-  }): GenerateResult {
-    const { response, text, warnings, recoveryMethod, retryCount, errors } =
-      parameters;
-
-    // For object generation, we return the validated text as content
-    const content: LanguageModelV4Content[] = [{ type: 'text', text }];
-
-    const usage: LanguageModelV4Usage = createUsage(
-      response.prompt_eval_count ?? undefined,
-      response.eval_count ?? undefined,
-    );
-
-    const finishReason =
-      (mapOllamaFinishReason(
-        response.done_reason,
-      ) as LanguageModelV4FinishReason) ?? 'stop';
-
-    const providerDetails: Record<string, JSONValue> = {
-      model: response.model,
-      reliable_object_generation: true,
-      recovery_method: recoveryMethod,
-      retry_count: retryCount,
-    };
-
-    if (response.created_at) {
-      providerDetails.created_at = new Date(response.created_at).toISOString();
-    }
-    if (response.total_duration !== undefined) {
-      providerDetails.total_duration = response.total_duration;
-    }
-    if (response.load_duration !== undefined) {
-      providerDetails.load_duration = response.load_duration;
-    }
-    if (response.eval_duration !== undefined) {
-      providerDetails.eval_duration = response.eval_duration;
-    }
-    if (errors && errors.length > 0) {
-      providerDetails.reliability_errors = errors;
-    }
-
-    return {
-      content,
-      finishReason,
-      usage,
-      providerMetadata: {
-        ollama: providerDetails,
-      },
-      request: {
-        body: {
-          model: this.modelId,
-          messages: parameters.messages,
-          options: parameters.ollamaOptions,
-          format: parameters.format,
-          tools: parameters.tools,
-          reliable_object_generation: true,
-          ...(parameters.keep_alive !== undefined && {
-            keep_alive: parameters.keep_alive,
-          }),
-        },
-      },
-      response: {
-        timestamp: new Date(),
-        modelId: this.modelId,
-      },
-      warnings,
-    };
-  }
-
   async doStream(options: LanguageModelV4CallOptions): Promise<{
     stream: ReadableStream<LanguageModelV4StreamPart>;
     request?: { body?: unknown };
@@ -1395,13 +647,14 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
       tools,
       warnings,
       keep_alive,
-    } = this.getCallOptions(options);
+    } = getCallOptions(this.settings, options);
 
-    const think = this.resolveThink(options);
+    const think = resolveThink(this.settings, options);
 
     try {
       const stream = await this.config.client.chat({
-        ...this.buildChatRequest({
+        ...buildChatRequest({
+          modelId: this.modelId,
           messages,
           options: ollamaOptions,
           format,
@@ -1412,190 +665,10 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
         stream: true,
       });
 
-      let usage: LanguageModelV4Usage = createUsage();
-      let finishReason: LanguageModelV4FinishReason =
-        mapOllamaFinishReason(null);
-
-      // Track if we've emitted stream-start
-      let streamStartEmitted = false;
-
-      // Capture settings for use in transform function
-      const reasoningEnabled = think;
-
-      // Track text streaming state for UI message compatibility
-      let textStreamStarted = false;
-      let currentTextId: string | null = null;
-
-      // Track reasoning streaming state
-      let reasoningStreamStarted = false;
-      let currentReasoningId: string | null = null;
-
-      // Track if we've seen tool calls to set correct finish reason
-      let hasToolCalls = false;
-
-      const transformStream = new TransformStream<
-        ChatResponse,
-        LanguageModelV4StreamPart
-      >({
-        async transform(chunk: ChatResponse, controller) {
-          // Emit stream-start with warnings on first chunk
-          if (!streamStartEmitted) {
-            controller.enqueue({
-              type: 'stream-start',
-              warnings,
-            });
-            streamStartEmitted = true;
-          }
-          // Validate chunk
-          if (!chunk || typeof chunk !== 'object') {
-            return; // Skip invalid chunks
-          }
-
-          // Regular chunk with content
-          if (chunk.done) {
-            // Close any open reasoning stream before finishing
-            if (reasoningStreamStarted && currentReasoningId) {
-              controller.enqueue({
-                type: 'reasoning-end',
-                id: currentReasoningId,
-              });
-              reasoningStreamStarted = false;
-              currentReasoningId = null;
-            }
-
-            // If the final chunk carries residual content, emit it before finish
-            if (
-              chunk.message &&
-              typeof chunk.message.content === 'string' &&
-              chunk.message.content.length > 0
-            ) {
-              // Start text streaming if not already started
-              if (!textStreamStarted) {
-                currentTextId = crypto.randomUUID();
-                controller.enqueue({
-                  type: 'text-start',
-                  id: currentTextId,
-                });
-                textStreamStarted = true;
-              }
-
-              controller.enqueue({
-                type: 'text-delta',
-                id: currentTextId!,
-                delta: chunk.message.content,
-              });
-            }
-
-            // End text streaming if it was started
-            if (textStreamStarted && currentTextId) {
-              controller.enqueue({
-                type: 'text-end',
-                id: currentTextId,
-              });
-            }
-
-            // Check for tool_calls in final chunk (some models send them here)
-            if (
-              chunk.message &&
-              chunk.message.tool_calls &&
-              chunk.message.tool_calls.length > 0
-            ) {
-              hasToolCalls = true;
-              for (const toolCall of chunk.message.tool_calls) {
-                const toolInput = toolCall.function.arguments || {};
-                controller.enqueue({
-                  type: 'tool-call',
-                  toolCallId: crypto.randomUUID(),
-                  toolName: toolCall.function.name,
-                  input: JSON.stringify(toolInput),
-                });
-              }
-            }
-
-            // Final chunk with metadata
-            usage = createUsage(
-              chunk.prompt_eval_count ?? undefined,
-              chunk.eval_count ?? undefined,
-            );
-            finishReason = mapOllamaFinishReason(
-              chunk.done_reason,
-              hasToolCalls,
-            );
-
-            controller.enqueue({
-              type: 'finish',
-              finishReason,
-              usage,
-            });
-          } else {
-            // Handle reasoning in streaming
-            if (chunk.message.thinking && reasoningEnabled) {
-              if (!reasoningStreamStarted) {
-                currentReasoningId = crypto.randomUUID();
-                controller.enqueue({
-                  type: 'reasoning-start',
-                  id: currentReasoningId,
-                });
-                reasoningStreamStarted = true;
-              }
-              controller.enqueue({
-                type: 'reasoning-delta',
-                id: currentReasoningId!,
-                delta: chunk.message.thinking,
-              });
-            }
-
-            // Handle tool calls in streaming
-            if (
-              chunk.message.tool_calls &&
-              chunk.message.tool_calls.length > 0
-            ) {
-              hasToolCalls = true; // Track that we've seen tool calls
-              for (const toolCall of chunk.message.tool_calls) {
-                const toolInput = toolCall.function.arguments || {};
-
-                controller.enqueue({
-                  type: 'tool-call',
-                  toolCallId: crypto.randomUUID(), // Ollama doesn't provide IDs
-                  toolName: toolCall.function.name,
-                  input: JSON.stringify(toolInput),
-                });
-              }
-            }
-
-            if (
-              chunk.message.content &&
-              typeof chunk.message.content === 'string' &&
-              chunk.message.content.length > 0
-            ) {
-              // Close reasoning stream when text content starts
-              if (reasoningStreamStarted && currentReasoningId) {
-                controller.enqueue({
-                  type: 'reasoning-end',
-                  id: currentReasoningId,
-                });
-                currentReasoningId = null;
-                reasoningStreamStarted = false;
-              }
-
-              // Start text streaming if not already started
-              if (!textStreamStarted) {
-                currentTextId = crypto.randomUUID();
-                controller.enqueue({
-                  type: 'text-start',
-                  id: currentTextId,
-                });
-                textStreamStarted = true;
-              }
-
-              controller.enqueue({
-                type: 'text-delta',
-                id: currentTextId!,
-                delta: chunk.message.content,
-              });
-            }
-          }
-        },
+      const transformStream = createChunkTransformer({
+        warnings,
+        reasoningEnabled: Boolean(think),
+        includeRawChunks: options.includeRawChunks,
       });
 
       // Create a readable stream from the async generator

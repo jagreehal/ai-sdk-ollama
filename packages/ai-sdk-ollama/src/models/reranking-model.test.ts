@@ -1,6 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { OllamaRerankingModel } from './reranking-model';
 
+// Real `Response` objects: provider-utils reads `response.body` (with a size
+// limit), so a hand-rolled `{ text() }` stub decodes to an empty string.
+function jsonResponse(body: unknown, headers: Record<string, string> = {}) {
+  return Response.json(body, {
+    status: 200,
+    headers: { 'content-type': 'application/json', ...headers },
+  });
+}
+
 describe('OllamaRerankingModel', () => {
   const mockFetch = vi.fn();
 
@@ -70,13 +79,7 @@ describe('OllamaRerankingModel', () => {
         ],
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => mockResponse,
-        text: async () => JSON.stringify(mockResponse),
-      });
+      mockFetch.mockResolvedValueOnce(jsonResponse(mockResponse));
 
       await model.doRerank({
         documents: {
@@ -110,13 +113,7 @@ describe('OllamaRerankingModel', () => {
         ],
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => mockResponse,
-        text: async () => JSON.stringify(mockResponse),
-      });
+      mockFetch.mockResolvedValueOnce(jsonResponse(mockResponse));
 
       const result = await model.doRerank({
         documents: { type: 'text', values: ['doc0', 'doc1'] },
@@ -136,13 +133,7 @@ describe('OllamaRerankingModel', () => {
         results: [{ index: 0, document: 'doc', relevance_score: 0.9 }],
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => mockResponse,
-        text: async () => JSON.stringify(mockResponse),
-      });
+      mockFetch.mockResolvedValueOnce(jsonResponse(mockResponse));
 
       await model.doRerank({
         documents: { type: 'text', values: ['doc1', 'doc2', 'doc3'] },
@@ -163,13 +154,7 @@ describe('OllamaRerankingModel', () => {
         results: [{ index: 0, document: 'doc', relevance_score: 0.9 }],
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => mockResponse,
-        text: async () => JSON.stringify(mockResponse),
-      });
+      mockFetch.mockResolvedValueOnce(jsonResponse(mockResponse));
 
       await model.doRerank({
         documents: { type: 'text', values: ['doc'] },
@@ -189,13 +174,7 @@ describe('OllamaRerankingModel', () => {
         ],
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => mockResponse,
-        text: async () => JSON.stringify(mockResponse),
-      });
+      mockFetch.mockResolvedValueOnce(jsonResponse(mockResponse));
 
       const result = await model.doRerank({
         documents: {
@@ -227,16 +206,9 @@ describe('OllamaRerankingModel', () => {
         results: [{ index: 0, document: 'doc', relevance_score: 0.9 }],
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({
-          'content-type': 'application/json',
-          'x-request-id': '12345',
-        }),
-        json: async () => mockResponse,
-        text: async () => JSON.stringify(mockResponse),
-      });
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse(mockResponse, { 'x-request-id': '12345' }),
+      );
 
       const result = await model.doRerank({
         documents: { type: 'text', values: ['doc'] },
@@ -256,13 +228,7 @@ describe('OllamaRerankingModel', () => {
         results: [{ index: 0, document: 'doc', relevance_score: 0.9 }],
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => mockResponse,
-        text: async () => JSON.stringify(mockResponse),
-      });
+      mockFetch.mockResolvedValueOnce(jsonResponse(mockResponse));
 
       await model.doRerank({
         documents: { type: 'text', values: ['doc'] },

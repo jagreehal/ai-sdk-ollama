@@ -42,6 +42,10 @@ export default tseslint.config(
       'unicorn/prefer-ternary': 'off',
       'unicorn/class-reference-in-static-methods': 'off',
       'unicorn/prefer-smaller-scope': 'off',
+      // Introduced by the eslint-plugin-unicorn 72 upgrade. Reordering `&&`/`||`
+      // operands changes short-circuit behaviour, so we leave the guards as written.
+      'unicorn/prefer-simple-condition-first': 'off',
+      'unicorn/prefer-simplified-conditions': 'off',
     },
   },
 );

@@ -309,16 +309,14 @@ export function extractToolResultsFromMessages(
     // Handle different message content formats
     if (Array.isArray(message.content)) {
       for (const part of message.content) {
-        if (
-          !(
-            part &&
-            typeof part === 'object' &&
-            'type' in part &&
-            part.type === 'tool-result' &&
-            'toolName' in part &&
-            'output' in part
-          )
-        ) {
+        if (!(
+          part &&
+          typeof part === 'object' &&
+          'type' in part &&
+          part.type === 'tool-result' &&
+          'toolName' in part &&
+          'output' in part
+        )) {
           continue;
         }
 
@@ -410,12 +408,9 @@ export function normalizeToolParameters(
   // Apply parameter mappings
   for (const [standardName, variations] of Object.entries(mappings)) {
     for (const variation of variations) {
-      if (
-        !(
-          recordInput[variation] !== undefined &&
-          recordInput[variation] !== null
-        )
-      ) {
+      if (!(
+        recordInput[variation] !== undefined && recordInput[variation] !== null
+      )) {
         continue;
       }
 
