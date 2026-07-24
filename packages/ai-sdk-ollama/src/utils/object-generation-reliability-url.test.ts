@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { enhancedRepairText } from './object-generation-reliability';
+import { enhancedRepairText } from './json-text-repair';
 
 describe('Enhanced JSON Repair - URL Handling', () => {
   it('should preserve URLs with // inside single-quoted strings', async () => {

@@ -4,7 +4,7 @@ import {
   cascadeRepairText,
   getRepairFunction,
   parseJSONWithRepair,
-} from './object-generation-reliability';
+} from './json-text-repair';
 
 describe('Enhanced JSON Repair', () => {
   describe('enhancedRepairText', () => {

@@ -47,15 +47,14 @@ export type {
   ToolDefinition,
 } from './utils/tool-calling-reliability';
 
-export type {
-  ObjectGenerationOptions,
-  RepairTextFunction,
-} from './utils/object-generation-reliability';
+export type { ObjectGenerationOptions } from './utils/object-generation-reliability';
+
+export type { RepairTextFunction } from './utils/json-text-repair';
 
 export {
   cascadeRepairText,
   enhancedRepairText,
-} from './utils/object-generation-reliability';
+} from './utils/json-text-repair';
 
 // Enhanced wrapper functions for better Ollama tool calling reliability
 export {
