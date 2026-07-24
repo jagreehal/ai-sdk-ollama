@@ -29,7 +29,7 @@
     "eslint": "^10.7.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-unicorn": "^72.0.0",
-    "prettier": "^3.9.5",
+    "prettier": "^3.9.6",
     "turbo": "^2.10.5",
     "typescript-eslint": "^8.64.0"
   },
