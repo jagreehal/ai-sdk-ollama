@@ -91,7 +91,9 @@ export function buildContent(
   return content;
 }
 
-/** Ollama's own counters and nanosecond timings, surfaced on `usage.raw`. */
+/**
+ * Ollama's own counters and nanosecond timings, surfaced on `usage.raw`.
+ */
 const OLLAMA_USAGE_FIELDS = [
   'prompt_eval_count',
   'eval_count',
@@ -101,7 +103,9 @@ const OLLAMA_USAGE_FIELDS = [
   'eval_duration',
 ] as const;
 
-/** Per-call timings Ollama reports; the counters above belong on `usage.raw`. */
+/**
+ * Per-call timings Ollama reports; the counters above belong on `usage.raw`.
+ */
 const OLLAMA_DURATION_FIELDS = [
   'total_duration',
   'load_duration',

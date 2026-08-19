@@ -58,28 +58,32 @@ This directory contains comprehensive examples demonstrating the enhanced Ollama
     - Model Context Protocol tools example
     - Run: `npx tsx src/mcp-tools-example.ts`
 
-13. **`image-handling-example.ts`** - Image Handling Example
+13. **`mcp-apps-example.ts`** - MCP Apps Host Flow
+    - MCP Apps host: capabilities, split tools, read ui:// resource, proxy allow/deny
+    - Run: `npx tsx src/mcp-apps-example.ts`
+
+14. **`image-handling-example.ts`** - Image Handling Example
     - Image processing with Ollama
     - Run: `npx tsx src/image-handling-example.ts`
 
-14. **`image-generation-example.ts`** - Image Generation (Experimental)
+15. **`image-generation-example.ts`** - Image Generation (Experimental)
     - AI SDK `generateImage()` with `ollama.imageModel()` (e.g. x/z-image-turbo)
     - Run: `npx tsx src/image-generation-example.ts [prompt]`
 
-15. **`reasoning-example.ts`** - Reasoning Example
+16. **`reasoning-example.ts`** - Reasoning Example
     - Advanced reasoning capabilities
     - Run: `npx tsx src/reasoning-example.ts`
 
-16. **`reasoning-example-simple.ts`** - Simple Reasoning Example
+17. **`reasoning-example-simple.ts`** - Simple Reasoning Example
     - Basic reasoning example
     - Run: `npx tsx src/reasoning-example-simple.ts`
 
-17. **`quoted-json-example.ts`** - Quoted JSON Fix Example
+18. **`quoted-json-example.ts`** - Quoted JSON Fix Example
     - Demonstrates the fix for JSON wrapped in quotes or markdown
     - Shows how string values are preserved during JSON repair
     - Run: `npx tsx src/quoted-json-example.ts`
 
-18. **`raw-chunks-and-usage-example.ts`** - Raw Chunks and Raw Usage (v7)
+19. **`raw-chunks-and-usage-example.ts`** - Raw Chunks and Raw Usage (v7)
     - `include: { rawChunks: true }` surfaces the unmodified Ollama stream chunks
     - `usage.raw` exposes Ollama's token counts and nanosecond timings
     - Run: `npx tsx src/raw-chunks-and-usage-example.ts`

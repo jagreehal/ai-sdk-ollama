@@ -17,7 +17,9 @@ export function createModel(
   });
 }
 
-/** Mock a streaming chat response (consistent with AI SDK provider patterns). */
+/**
+ * Mock a streaming chat response (consistent with AI SDK provider patterns).
+ */
 export function mockChatStream(data: ChatResponse[]): void {
   const stream = convertArrayToAsyncIterable(data);
   (mockOllamaClient.chat as ReturnType<typeof vi.fn>).mockResolvedValueOnce(

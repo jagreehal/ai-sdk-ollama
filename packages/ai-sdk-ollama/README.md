@@ -1029,6 +1029,8 @@ For detailed testing information, see [Integration Tests Documentation](./src/in
 
 🔗 **[MCP Tools Example](../../examples/node/src/mcp-tools-example.ts)** - Model Context Protocol integration
 
+🧩 **[MCP Apps Example](../../examples/node/src/mcp-apps-example.ts)** - MCP Apps host flow (ui:// resources, split tools, iframe proxy)
+
 🔧 **[JSON repair example](../../examples/node/src/json-repair-example.ts)** - Object generation with repair options and custom repair
 
 🔀 **[Cascade repair example](../../examples/node/src/test-cascade-repair.ts)** - `cascadeRepairText` and `enhancedRepairText` (jsonrepair + Ollama-specific)

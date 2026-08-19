@@ -12,57 +12,57 @@ export {
   type OllamaChatProviderOptions,
   type OllamaEmbeddingProviderOptions,
   type Options,
-} from './provider';
+} from './provider.js';
 
 export {
   OllamaRerankingModel,
   ollamaRerankingProviderOptionsSchema,
   type OllamaRerankingSettings,
   type OllamaRerankingProviderOptions,
-} from './models/reranking-model';
+} from './models/reranking-model.js';
 
 export {
   OllamaEmbeddingRerankingModel,
   type OllamaEmbeddingRerankingSettings,
-} from './models/embedding-reranking-model';
+} from './models/embedding-reranking-model.js';
 
-export { OllamaImageModel } from './models/image-model';
+export { OllamaImageModel } from './models/image-model.js';
 
-export { OllamaError } from './utils/ollama-error';
-export type { OllamaErrorData } from './utils/ollama-error';
+export { OllamaError } from './utils/ollama-error.js';
+export type { OllamaErrorData } from './utils/ollama-error.js';
 
 // Utility exports
-export { cosineSimilarity } from './utils/cosine-similarity';
+export { cosineSimilarity } from './utils/cosine-similarity.js';
 
 // Re-export tool calling reliability utilities for advanced users
 export {
   parseToolArguments,
   resolveToolCallingOptions,
-} from './utils/tool-calling-reliability';
+} from './utils/tool-calling-reliability.js';
 export type {
   ToolCallingOptions,
   ResolvedToolCallingOptions,
   ToolCallResult,
   ReliableToolCallResult,
   ToolDefinition,
-} from './utils/tool-calling-reliability';
+} from './utils/tool-calling-reliability.js';
 
-export type { ObjectGenerationOptions } from './utils/object-generation-reliability';
+export type { ObjectGenerationOptions } from './utils/object-generation-reliability.js';
 
-export type { RepairTextFunction } from './utils/json-text-repair';
+export type { RepairTextFunction } from './utils/json-text-repair.js';
 
 export {
   cascadeRepairText,
   enhancedRepairText,
-} from './utils/json-text-repair';
+} from './utils/json-text-repair.js';
 
 // Enhanced wrapper functions for better Ollama tool calling reliability
 export {
   generateText,
   type GenerateTextOptions,
-} from './functions/generate-text';
+} from './functions/generate-text.js';
 
-export { streamText, type StreamTextOptions } from './functions/stream-text';
+export { streamText, type StreamTextOptions } from './functions/stream-text.js';
 
 // ============================================================================
 // Stream Utilities

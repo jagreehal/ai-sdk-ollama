@@ -668,7 +668,9 @@ export async function enhancedRepairText(options: {
   return null;
 }
 
-/** Tries jsonrepair first, then enhancedRepairText for Ollama-specific edge cases. */
+/**
+ * Tries jsonrepair first, then enhancedRepairText for Ollama-specific edge cases.
+ */
 export async function cascadeRepairText(options: {
   text: string;
   error: Error;

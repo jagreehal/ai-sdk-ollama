@@ -32,6 +32,17 @@ npx tsx examples/[example-name].ts
 
 These examples showcase new functions introduced in AI SDK v7, running against Ollama.
 
+### **mcp-apps-example.ts** - MCP Apps Host Flow
+
+Demonstrates the MCP Apps host pattern: connect with `mcpAppClientCapabilities`,
+split tools by visibility (`splitMCPAppTools`), pass only model-visible tools to
+`generateText`, read a `ui://` HTML resource, fingerprint it, and simulate the
+iframe proxy (allow app-visible tool, deny others).
+
+```bash
+npx tsx src/mcp-apps-example.ts
+```
+
 ### **agent-tool-loop-example.ts** - ToolLoopAgent + isStepCount
 
 The new `ToolLoopAgent` class bundles a model, instructions, tools, and a stop

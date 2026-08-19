@@ -5,7 +5,7 @@ export default defineConfig([
   {
     entry: ['src/index.ts'],
     format: ['cjs', 'esm'],
-    dts: true,
+    dts: false,
     sourcemap: true,
     outDir: 'dist',
     clean: true,
@@ -16,13 +16,12 @@ export default defineConfig([
       'index.browser': 'src/index.browser.ts',
     },
     format: ['cjs', 'esm'],
-    dts: true,
+    dts: false,
     sourcemap: true,
     outDir: 'dist',
     clean: false,
     platform: 'browser',
     target: 'es2020',
-    // External to avoid bundling
     external: ['ollama/browser', '@ai-sdk/provider', '@ai-sdk/provider-utils'],
   },
 ]);
