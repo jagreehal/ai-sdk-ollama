@@ -358,6 +358,8 @@ npm install @ai-sdk/mcp
 
 See the [MCP Tools documentation](https://ai-sdk.dev/cookbook/next/mcp-tools#mcp-tools) for OAuth, resources, prompts, and elicitation support.
 
+**MCP Apps**: The provider also works with [MCP Apps](https://ai-sdk.dev/docs/ai-sdk-core/mcp-apps) — tools that declare `ui://` HTML resources rendered in a sandboxed iframe. See [`examples/node/src/mcp-apps-example.ts`](./examples/node/src/mcp-apps-example.ts) for the host flow and the [browser example](./examples/browser) for an interactive demo with `experimental_MCPAppRenderer`.
+
 ### Browser Usage
 
 ```typescript
@@ -546,6 +548,7 @@ npx tsx examples/node/src/basic-chat.ts
 npx tsx examples/node/src/dual-parameter-example.ts
 npx tsx examples/node/src/simple-tool-test.ts
 npx tsx examples/node/src/mcp-tools-example.ts         # Model Context Protocol integration
+npx tsx examples/node/src/mcp-apps-example.ts          # MCP Apps host flow (ui:// resources)
 npx tsx examples/node/src/embedding-example.ts         # Vector embeddings
 npx tsx examples/node/src/streaming-simple-test.ts
 npx tsx examples/node/src/web-search-ai-sdk-ollama.ts        # Web search and fetch tools

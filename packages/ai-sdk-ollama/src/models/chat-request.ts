@@ -181,7 +181,9 @@ export function getCallOptions(
   };
 }
 
-/** The most recent user turn, as already-converted Ollama messages. */
+/**
+ * The most recent user turn, as already-converted Ollama messages.
+ */
 export function getLatestUserMessage(messages: OllamaMessage[]): string {
   for (let index = messages.length - 1; index >= 0; index--) {
     const message = messages[index];
@@ -193,7 +195,9 @@ export function getLatestUserMessage(messages: OllamaMessage[]): string {
   return '';
 }
 
-/** The most recent user turn, read from the original AI SDK prompt. */
+/**
+ * The most recent user turn, read from the original AI SDK prompt.
+ */
 export function getLatestUserPromptText(
   prompt: LanguageModelV4Prompt | undefined,
 ): string {

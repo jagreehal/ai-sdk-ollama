@@ -8,6 +8,7 @@ A modern React-based browser example demonstrating the ai-sdk-ollama provider wi
 - ✅ **Real-time Streaming**: Live text streaming with proper UI message handling
 - ✅ **Model Management**: Dynamic model loading and selection
 - ✅ **TypeScript**: Full type safety and IntelliSense support
+- ✅ **MCP Apps**: Interactive `ui://` resources rendered via `experimental_MCPAppRenderer` in a sandboxed iframe
 
 ## 📋 Prerequisites
 
@@ -51,6 +52,20 @@ pnpm dev
 ```
 
 The example will be available at **http://localhost:3000/** (port may vary if 3000 is in use).
+
+## 🧩 MCP Apps
+
+The browser example includes an MCP Apps host. When the model calls a tool that
+declares a `ui://` resource (e.g. `showDashboard`), the response is rendered as
+an interactive HTML app inside a sandboxed iframe using `experimental_MCPAppRenderer`.
+
+- A shared stdio MCP server (`../node/src/mcp-apps-server.mjs`) provides the
+  demo dashboard resource and tools.
+- The Vite dev server proxies `read-resource` and `call-tool` requests and
+  enforces app-visible tool access.
+- Try it: click **"Show me a dashboard"** in the chat.
+
+See the [AI SDK MCP Apps docs](https://ai-sdk.dev/docs/ai-sdk-core/mcp-apps) for details.
 
 ## 💻 How It Works
 

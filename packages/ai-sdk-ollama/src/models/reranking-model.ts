@@ -64,7 +64,10 @@ export interface OllamaRerankingSettings {
  * Schema for validating Ollama reranking provider options
  */
 export const ollamaRerankingProviderOptionsSchema = z.object({
-  /** Custom instruction for this specific reranking call. Overrides the instruction set in model settings. */
+  /**
+   * Custom instruction for this specific reranking call.
+   * Overrides the instruction set in model settings.
+   */
   instruction: z.string().optional(),
 });
 

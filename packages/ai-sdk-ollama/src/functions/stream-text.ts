@@ -40,13 +40,21 @@ type StreamPart = {
 
 export type StreamTextOptions = AIStreamTextOptions & {
   enhancedOptions?: {
-    /** @default true */
+    /**
+     * @default true
+     */
     enableToolLogging?: boolean;
-    /** @default true */
+    /**
+     * @default true
+     */
     enableStreamingSynthesis?: boolean;
-    /** @default 10 */
+    /**
+     * @default 10
+     */
     minStreamLength?: number;
-    /** @default 3000 */
+    /**
+     * @default 3000
+     */
     synthesisTimeout?: number;
   };
 };

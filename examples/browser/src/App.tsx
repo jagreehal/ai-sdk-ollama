@@ -1,5 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useChat } from '@ai-sdk/react';
+import {
+  useChat,
+  experimental_MCPAppRenderer as MCPAppRenderer,
+  type MCPAppBridgeHandlers,
+  type MCPAppMetadata,
+  type MCPAppResource,
+  type MCPAppSandboxConfig,
+} from '@ai-sdk/react';
+import { isToolUIPart } from 'ai';
 import { Message, MessageContent } from './components/ai-elements/message';
 import { Response } from './components/ai-elements/response';
 import { Conversation, ConversationContent } from './components/ai-elements/conversation';
@@ -8,6 +16,36 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const mcpAppSandbox: MCPAppSandboxConfig = {
+  url: '/mcp-app-sandbox',
+  className: 'h-80 w-full rounded-lg border',
+  style: { border: 0 },
+};
+
+async function loadMCPAppResource(app: MCPAppMetadata): Promise<MCPAppResource> {
+  const response = await fetch('/api/mcp-app-host/read-resource', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ uri: app.resourceUri }),
+  });
+  if (!response.ok) throw new Error('Failed to load MCP App resource');
+  return response.json();
+}
+
+const mcpAppHandlers: MCPAppBridgeHandlers = {
+  allowedTools: ['refreshDashboardData'],
+  callTool: (params) =>
+    fetch('/api/mcp-app-host/call-tool', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    }).then((r) => r.json()),
+  openLink: ({ url }) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+    return {};
+  },
+};
 
 interface OllamaModel {
   name: string;
@@ -194,6 +232,22 @@ export default function App() {
                     if (part.type === 'text') {
                       return <Response key={`${message.id}-${i}`}>{part.text}</Response>;
                     }
+                    if (isToolUIPart(part)) {
+                      return (
+                        <MCPAppRenderer
+                          key={part.toolCallId}
+                          part={part}
+                          loadResource={loadMCPAppResource}
+                          handlers={mcpAppHandlers}
+                          sandbox={mcpAppSandbox}
+                          fallback={
+                            <div className="text-sm text-muted-foreground p-2 border rounded">
+                              Tool: {'toolName' in part ? part.toolName : part.type} ({part.state})
+                            </div>
+                          }
+                        />
+                      );
+                    }
                     return null;
                   }) || (
                     <Response>No content</Response>
@@ -213,6 +267,20 @@ export default function App() {
             )}
           </ConversationContent>
         </Conversation>
+
+        {messages.length === 0 && (
+          <div className="flex gap-2 px-4 py-2 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setInput('Show me a dashboard about server usage');
+              }}
+            >
+              Show me a dashboard
+            </Button>
+          </div>
+        )}
 
         <PromptInput onSubmit={handleSubmit} className="border-t">
           <PromptInputTextarea
