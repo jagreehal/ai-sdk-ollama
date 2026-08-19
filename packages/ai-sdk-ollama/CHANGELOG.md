@@ -1,5 +1,15 @@
 # Changelog
 
+## 4.2.0
+
+### Minor Changes
+
+- a48c0e1: Add MCP Apps examples demonstrating the host flow for ui:// resources
+
+  - Node example: connect with mcpAppClientCapabilities, split tools by visibility, generateText with model-visible tools, read and fingerprint ui:// HTML resource, simulate iframe proxy allow/deny
+  - Browser example: Vite dev server hosts MCP Apps sandbox, proxies read-resource and call-tool requests, renders interactive dashboard via experimental_MCPAppRenderer
+  - Shared stdio MCP server with dashboard resource, model+app tool, and app-only refresh tool
+
 ## 4.1.0
 
 ### Minor Changes
