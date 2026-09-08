@@ -41,7 +41,7 @@ export function createExpectedUsage(inputTokens: number, outputTokens: number) {
     },
     outputTokens: {
       total: outputTokens,
-      text: outputTokens,
+      text: undefined,
       reasoning: undefined,
     },
     raw: expect.any(Object),

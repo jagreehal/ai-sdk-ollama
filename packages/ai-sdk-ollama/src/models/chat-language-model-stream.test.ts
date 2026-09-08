@@ -428,7 +428,7 @@ describe('OllamaChatLanguageModel: doStream', () => {
       expect(finish?.finishReason).toEqual({ unified: 'stop', raw: 'stop' });
     });
 
-    it('should not emit reasoning stream parts when think is disabled', async () => {
+    it('should preserve returned reasoning stream parts when think is disabled', async () => {
       const mockStreamData: ChatResponse[] = [
         {
           model: 'llama3.2',
@@ -469,7 +469,7 @@ describe('OllamaChatLanguageModel: doStream', () => {
       const { stream } = await modelWithoutReasoning.doStream(options);
       const chunks: LanguageModelV4StreamPart[] = await Array.fromAsync(stream);
 
-      // Check that reasoning stream parts are NOT emitted
+      // The request setting controls generation, not returned content.
       const reasoningStart = chunks.find(
         (part) => part.type === 'reasoning-start',
       );
@@ -480,9 +480,11 @@ describe('OllamaChatLanguageModel: doStream', () => {
       const textDelta = chunks.find((part) => part.type === 'text-delta');
       const finish = chunks.find((part) => part.type === 'finish');
 
-      expect(reasoningStart).toBeUndefined();
-      expect(reasoningDelta).toBeUndefined();
-      expect(reasoningEnd).toBeUndefined();
+      expect(reasoningStart).toBeDefined();
+      expect(reasoningDelta?.delta).toBe(
+        'Let me think about this step by step.',
+      );
+      expect(reasoningEnd).toBeDefined();
       // Final text may be emitted on the done chunk; accept either behavior
       if (textDelta) {
         expect(textDelta).toEqual({

@@ -15,11 +15,9 @@ type Controller = TransformStreamDefaultController<LanguageModelV4StreamPart>;
  */
 export function createChunkTransformer({
   warnings,
-  reasoningEnabled,
   includeRawChunks,
 }: {
   warnings: SharedV4Warning[];
-  reasoningEnabled: boolean;
   includeRawChunks?: boolean;
 }): TransformStream<ChatResponse, LanguageModelV4StreamPart> {
   let streamStarted = false;
@@ -96,6 +94,12 @@ export function createChunkTransformer({
       const content = chunk.message?.content;
       const hasContent = typeof content === 'string' && content.length > 0;
 
+      // Preserve returned thinking, including on the terminal chunk.
+      const thinking = chunk.message?.thinking;
+      if (thinking) {
+        emitReasoning(controller, thinking);
+      }
+
       if (chunk.done) {
         endReasoning(controller);
         if (hasContent) {
@@ -112,11 +116,6 @@ export function createChunkTransformer({
           providerMetadata: { ollama: ollamaResponseDetails(chunk) },
         });
         return;
-      }
-
-      const thinking = chunk.message?.thinking;
-      if (thinking && reasoningEnabled) {
-        emitReasoning(controller, thinking);
       }
 
       emitToolCalls(controller, chunk.message?.tool_calls);

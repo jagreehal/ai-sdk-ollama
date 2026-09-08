@@ -918,38 +918,37 @@ const { output: custom } = await generateText({
 
 ### Reasoning Support
 
-Some models like DeepSeek-R1 support reasoning (chain-of-thought) output. Enable this feature to see the model's thinking process:
+Use `think` to request reasoning generation from models that support it. Returned `message.thinking` is exposed as AI SDK reasoning, separately from final text, in both generation results and streams (including terminal chunks).
 
 ```typescript
 import { ollama } from 'ai-sdk-ollama';
 import { generateText } from 'ai';
 
 // Enable reasoning for models that support it (e.g., deepseek-r1:7b)
-const model = ollama('deepseek-r1:7b', { reasoning: true });
+const model = ollama('deepseek-r1:7b', { think: true });
 
 // Generate text with reasoning
-const { text } = await generateText({
+const { text, reasoningText } = await generateText({
   model,
   prompt:
     'Solve: If I have 3 boxes, each with 4 smaller boxes, and each smaller box has 5 items, how many items total?',
 });
 
 console.log('Answer:', text);
-// DeepSeek-R1 includes reasoning in the output with <think> tags:
-// <think>
-// First, I'll calculate the number of smaller boxes: 3 × 4 = 12
-// Then, the total items: 12 × 5 = 60
-// </think>
-// You have 60 items in total.
+console.log('Reasoning:', reasoningText);
 
 // Compare with reasoning disabled
-const modelNoReasoning = ollama('deepseek-r1:7b', { reasoning: false });
+const modelNoReasoning = ollama('deepseek-r1:7b', { think: false });
 const { text: noReasoningText } = await generateText({
   model: modelNoReasoning,
   prompt: 'Calculate 3 × 4 × 5',
 });
-// Output: 60 (without showing the thinking process)
+console.log('Answer:', noReasoningText);
 ```
+
+`think` controls the request, not filtering of the response. If the server returns thinking with `think` omitted or `false`, the adapter still preserves it as reasoning; it does not turn it into final text. If no thinking is returned, no reasoning content is added.
+
+Ollama supplies a combined output token count. The adapter preserves that total and the raw counters, but leaves the text/reasoning token breakdown unknown instead of attributing all output tokens to text.
 
 **Recommended Reasoning Models**:
 
