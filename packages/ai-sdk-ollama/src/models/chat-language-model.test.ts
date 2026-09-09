@@ -88,6 +88,29 @@ describe('OllamaChatLanguageModel: doGenerate', () => {
       });
     });
 
+    it('passes the abort signal to non-streaming generation', async () => {
+      const abortController = new AbortController();
+      vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce({
+        model: 'llama3.2',
+        created_at: new Date(),
+        message: { role: 'assistant', content: 'Hello' },
+        done: true,
+        done_reason: 'stop',
+        eval_count: 1,
+        prompt_eval_count: 1,
+      } as unknown as ChatResponse);
+
+      await model.doGenerate({
+        prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
+        abortSignal: abortController.signal,
+      });
+
+      expect(mockOllamaClient.chat).toHaveBeenCalledWith(
+        expect.objectContaining({ stream: false }),
+        { signal: abortController.signal },
+      );
+    });
+
     it('should expose Ollama token counts and timings on usage.raw', async () => {
       vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce({
         model: 'llama3.2',

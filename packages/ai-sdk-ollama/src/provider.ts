@@ -12,6 +12,7 @@ import {
   type Config,
 } from 'ollama';
 import { z } from 'zod';
+import type { OllamaClient } from './ollama-client';
 import { OllamaChatLanguageModel } from './models/chat-language-model';
 import { OllamaEmbeddingModel } from './models/embedding-model';
 import {
@@ -74,7 +75,7 @@ export interface OllamaProviderSettings extends Pick<
    * Existing Ollama client instance to use instead of creating a new one.
    * When provided, baseURL, headers, and fetch are ignored.
    */
-  client?: Ollama;
+  client?: OllamaClient;
 }
 
 export interface OllamaProvider extends ProviderV4 {

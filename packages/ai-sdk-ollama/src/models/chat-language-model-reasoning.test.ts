@@ -138,6 +138,32 @@ describe('returned reasoning', () => {
     expect(chunks.at(-1)?.type).toBe('finish');
   });
 
+  it('closes an open text block before opening reasoning', async () => {
+    mockChatStream([
+      response('Answer: ', '', false),
+      response('', 'Second thought.'),
+    ]);
+    const { stream } = await createModel().doStream(options);
+    const chunks = await Array.fromAsync(stream);
+    const textStart = chunks.find((part) => part.type === 'text-start');
+    const reasoningStart = chunks.find(
+      (part) => part.type === 'reasoning-start',
+    );
+    expect(chunks.slice(1, -1)).toEqual([
+      { type: 'text-start', id: expect.any(String) },
+      { type: 'text-delta', id: textStart?.id, delta: 'Answer: ' },
+      { type: 'text-end', id: textStart?.id },
+      { type: 'reasoning-start', id: expect.any(String) },
+      {
+        type: 'reasoning-delta',
+        id: reasoningStart?.id,
+        delta: 'Second thought.',
+      },
+      { type: 'reasoning-end', id: reasoningStart?.id },
+    ]);
+    expect(chunks.at(-1)?.type).toBe('finish');
+  });
+
   it.each([undefined, 0, 10])(
     'keeps output total %s without inventing a split',
     (total) => {

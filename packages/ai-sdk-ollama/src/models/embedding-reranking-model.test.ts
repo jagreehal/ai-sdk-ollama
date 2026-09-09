@@ -66,6 +66,23 @@ describe('OllamaEmbeddingRerankingModel', () => {
       });
     });
 
+    it('passes the reranking abort signal to the client adapter', async () => {
+      const model = createModel();
+      const abortController = new AbortController();
+      mockEmbed.mockResolvedValueOnce(createMockEmbeddings([1, 0], [0, 1]));
+
+      await model.doRerank({
+        documents: { type: 'text', values: ['doc1'] },
+        query: 'test query',
+        abortSignal: abortController.signal,
+      });
+
+      expect(mockEmbed).toHaveBeenCalledWith(
+        { model: 'bge-m3', input: ['test query', 'doc1'] },
+        { signal: abortController.signal },
+      );
+    });
+
     it('should rank documents by cosine similarity (descending)', async () => {
       const model = createModel();
 

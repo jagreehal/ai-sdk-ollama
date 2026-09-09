@@ -5,12 +5,13 @@ import {
   SharedV4ProviderOptions,
   SharedV4Warning,
 } from '@ai-sdk/provider';
-import { Ollama, type EmbedResponse } from 'ollama';
+import type { EmbedResponse } from 'ollama';
+import type { OllamaClient } from '../ollama-client';
 import { OllamaEmbeddingSettings } from '../provider';
 import { OllamaError } from '../utils/ollama-error';
 
 export interface OllamaEmbeddingConfig {
-  client: Ollama;
+  client: OllamaClient;
   provider: string;
 }
 
@@ -68,14 +69,17 @@ export class OllamaEmbeddingModel implements EmbeddingModelV4 {
           continue;
         }
 
-        const response: EmbedResponse = await this.config.client.embed({
+        const request = {
           model: this.modelId,
           input: value,
           options: this.settings.options,
           ...(this.settings.dimensions !== undefined && {
             dimensions: this.settings.dimensions,
           }),
-        });
+        };
+        const response: EmbedResponse = abortSignal
+          ? await this.config.client.embed(request, { signal: abortSignal })
+          : await this.config.client.embed(request);
 
         if (!response.embeddings) {
           throw new OllamaError({

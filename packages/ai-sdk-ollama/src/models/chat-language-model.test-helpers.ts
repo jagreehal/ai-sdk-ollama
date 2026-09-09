@@ -1,6 +1,7 @@
 import { expect, vi } from 'vitest';
-import { AbortableAsyncIterator, ChatResponse, Ollama } from 'ollama';
+import { ChatResponse, Ollama } from 'ollama';
 import { convertArrayToAsyncIterable } from '@ai-sdk/provider-utils/test';
+import type { AbortableStream } from '../ollama-client';
 import { OllamaChatSettings } from '../provider';
 import { OllamaChatLanguageModel } from './chat-language-model';
 
@@ -21,9 +22,13 @@ export function createModel(
  * Mock a streaming chat response (consistent with AI SDK provider patterns).
  */
 export function mockChatStream(data: ChatResponse[]): void {
-  const stream = convertArrayToAsyncIterable(data);
+  const stream: AbortableStream<ChatResponse> = {
+    abort() {},
+    [Symbol.asyncIterator]: () =>
+      convertArrayToAsyncIterable(data)[Symbol.asyncIterator](),
+  };
   (mockOllamaClient.chat as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
-    stream as unknown as AbortableAsyncIterator<ChatResponse>,
+    stream,
   );
 }
 

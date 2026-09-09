@@ -11,7 +11,7 @@ type Controller = TransformStreamDefaultController<LanguageModelV4StreamPart>;
  * Ollama can deliver the same content either in an intermediate chunk or
  * attached to the final `done` chunk, so both paths drive the same emitters
  * rather than repeating the text/reasoning/tool-call bookkeeping. Text and
- * reasoning are mutually exclusive: any text closes an open reasoning block.
+ * reasoning are mutually exclusive: either one closes an open block of the other.
  */
 export function createChunkTransformer({
   warnings,
@@ -35,6 +35,7 @@ export function createChunkTransformer({
 
   function emitReasoning(controller: Controller, delta: string) {
     if (reasoningId === undefined) {
+      endText(controller);
       reasoningId = crypto.randomUUID();
       controller.enqueue({ type: 'reasoning-start', id: reasoningId });
     }

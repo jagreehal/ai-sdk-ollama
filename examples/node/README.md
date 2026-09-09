@@ -84,6 +84,17 @@ changing the model's `think` setting. Needs a reasoning model (e.g. `qwen3.5`).
 npx tsx src/reasoning-effort-example.ts
 ```
 
+### **reasoning-returned-thinking-example.ts** - Returned thinking
+
+Some models return `message.thinking` even when `think` is not set. This example
+compares `think` omitted, `true`, and `false` on `granite4.2:3b`, showing that
+returned thinking is surfaced as reasoning while `think` still controls
+generation. Needs `ollama pull granite4.2:3b`.
+
+```bash
+npx tsx src/reasoning-returned-thinking-example.ts
+```
+
 ## 🎯 **Essential Examples (Start Here)**
 
 ### **basic-chat.ts** - Quick Start

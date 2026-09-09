@@ -19,6 +19,11 @@ export {
 
 export { OllamaError } from './utils/ollama-error.js';
 export type { OllamaErrorData } from './utils/ollama-error.js';
+export type {
+  AbortableStream,
+  OllamaClient,
+  OllamaRequestOptions,
+} from './ollama-client.js';
 
 // Utility exports
 export { cosineSimilarity } from './utils/cosine-similarity.js';

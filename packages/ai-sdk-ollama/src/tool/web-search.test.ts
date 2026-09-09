@@ -74,7 +74,7 @@ describe('webSearch', () => {
     });
   });
 
-  it('limits maxResults to 20', async () => {
+  it('limits maxResults to the Ollama maximum of 10', async () => {
     mockWebSearch.mockResolvedValue({ results: [] });
 
     const tool = webSearch({ client: mockClient });
@@ -85,7 +85,7 @@ describe('webSearch', () => {
 
     expect(mockWebSearch).toHaveBeenCalledWith({
       query: 'test query',
-      maxResults: 20,
+      maxResults: 10,
     });
   });
 
@@ -207,6 +207,30 @@ describe('webSearch', () => {
     expect(() => schema.parse({ query: '' })).toThrow(); // Empty query
     expect(() => schema.parse({ query: 'a'.repeat(501) })).toThrow(); // Too long
     expect(() => schema.parse({ query: 'valid', maxResults: 0 })).toThrow(); // Invalid max results
-    expect(() => schema.parse({ query: 'valid', maxResults: 21 })).toThrow(); // Too many results
+    expect(() => schema.parse({ query: 'valid', maxResults: 11 })).toThrow(); // Too many results
+  });
+
+  it('passes the tool abort signal to the client adapter', async () => {
+    const abortController = new AbortController();
+    mockWebSearch.mockRejectedValueOnce(new Error('Request aborted'));
+
+    const tool = webSearch({ client: mockClient });
+
+    await expect(
+      tool.execute!(
+        { query: 'test query' },
+        {
+          toolCallId: 'test',
+          messages: [],
+          abortSignal: abortController.signal,
+          context: {},
+        },
+      ),
+    ).rejects.toThrow(OllamaError);
+
+    expect(mockWebSearch).toHaveBeenCalledWith(
+      { query: 'test query', maxResults: 5 },
+      { signal: abortController.signal },
+    );
   });
 });
