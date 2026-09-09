@@ -641,7 +641,7 @@ describe('OllamaChatLanguageModel: doGenerate', () => {
       expect(result.usage).toEqual(createExpectedUsage(8, 15));
     });
 
-    it('should not include reasoning when think is disabled', async () => {
+    it('should preserve returned reasoning when think is disabled', async () => {
       const mockResponse = {
         model: 'llama3.2',
         created_at: new Date(),
@@ -680,6 +680,7 @@ describe('OllamaChatLanguageModel: doGenerate', () => {
       const result = await modelWithoutReasoning.doGenerate(options);
 
       expect(result.content).toEqual([
+        { type: 'reasoning', text: 'Let me think about this step by step.' },
         { type: 'text', text: 'The answer is 42.' },
       ]);
       expect(result.finishReason).toEqual({ unified: 'stop', raw: 'stop' });

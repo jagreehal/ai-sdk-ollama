@@ -65,13 +65,12 @@ export function parseOllamaToolCalls(
 
 export function buildContent(
   reasoning: string | undefined,
-  includeReasoning: boolean,
   text: string | undefined,
   toolCalls: ParsedToolCall[],
 ): LanguageModelV4Content[] {
   const content: LanguageModelV4Content[] = [];
 
-  if (reasoning && includeReasoning) {
+  if (reasoning) {
     content.push({ type: 'reasoning', text: reasoning });
   }
 
@@ -153,7 +152,8 @@ export function createUsage(
     },
     outputTokens: {
       total: outputTokenCount,
-      text: outputTokenCount,
+      // Ollama reports a combined count, not a text/reasoning breakdown.
+      text: undefined,
       reasoning: undefined,
     },
     raw,
@@ -227,7 +227,6 @@ export function buildGenerationResult(parameters: {
   reliable: boolean;
   finalTextOverride?: string;
   keep_alive?: string | number;
-  think?: boolean | 'low' | 'medium' | 'high';
 }): GenerateResult {
   const {
     modelId,
@@ -246,14 +245,12 @@ export function buildGenerationResult(parameters: {
     reliable,
     finalTextOverride,
     keep_alive,
-    think,
   } = parameters;
 
   const finalText = finalTextOverride ?? response.message.content ?? '';
 
   const content = buildContent(
     response.message.thinking,
-    Boolean(think),
     finalText,
     parsedToolCalls,
   );

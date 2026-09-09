@@ -192,7 +192,6 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
         errors: [],
         reliable: false,
         keep_alive,
-        think,
       });
     } catch (error) {
       throw new OllamaError({
@@ -358,7 +357,6 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
           errors,
           reliable: true,
           keep_alive,
-          think,
         });
       }
 
@@ -440,7 +438,6 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
               reliable: true,
               finalTextOverride: followUpData.text,
               keep_alive,
-              think,
             });
           }
 
@@ -481,7 +478,6 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
         errors,
         reliable: true,
         keep_alive,
-        think,
       });
     }
 
@@ -667,7 +663,6 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
 
       const transformStream = createChunkTransformer({
         warnings,
-        reasoningEnabled: Boolean(think),
         includeRawChunks: options.includeRawChunks,
       });
 
