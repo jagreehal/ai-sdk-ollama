@@ -1,6 +1,6 @@
 // Browser-specific provider that uses ollama/browser
 import { Ollama as OllamaBrowser } from 'ollama/browser';
-import type { Ollama } from 'ollama';
+import type { OllamaClient } from './ollama-client';
 import { OllamaChatLanguageModel } from './models/chat-language-model';
 import { OllamaEmbeddingModel } from './models/embedding-model';
 import {
@@ -101,14 +101,17 @@ export function createOllama(
     normalizedHeaders.Authorization = `Bearer ${options.apiKey}`;
   }
 
-  // Create browser-compatible Ollama client
-  // Cast to Ollama type for compatibility with shared model code
-  const client = new OllamaBrowser({
-    host: options.baseURL,
-    fetch: options.fetch,
-    headers:
-      Object.keys(normalizedHeaders).length > 0 ? normalizedHeaders : undefined,
-  }) as Ollama;
+  // Use an injected adapter or create the browser-compatible official client.
+  const client: OllamaClient =
+    options.client ??
+    new OllamaBrowser({
+      host: options.baseURL,
+      fetch: options.fetch,
+      headers:
+        Object.keys(normalizedHeaders).length > 0
+          ? normalizedHeaders
+          : undefined,
+    });
 
   const createChatModel = (
     modelId: string,

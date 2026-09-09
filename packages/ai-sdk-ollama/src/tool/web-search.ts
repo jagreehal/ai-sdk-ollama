@@ -1,10 +1,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import type { Ollama } from 'ollama';
+import type { OllamaClient } from '../ollama-client';
 import { OllamaError } from '../utils/ollama-error';
-
-// Use the actual Ollama type which includes web search methods (available in v0.6.0+)
-type OllamaWithWebSearch = Ollama;
 
 /**
  * Configuration options for the web search tool
@@ -20,7 +17,7 @@ export interface WebSearchToolOptions {
    * Ollama client instance to use for web search
    * If not provided, will need to be injected at runtime
    */
-  client?: OllamaWithWebSearch;
+  client?: Pick<OllamaClient, 'webSearch'>;
 }
 
 /**
@@ -35,9 +32,9 @@ export const webSearchInputSchema = z.object({
   maxResults: z
     .number()
     .min(1, 'Must return at least 1 result')
-    .max(20, 'Cannot return more than 20 results')
+    .max(10, 'Cannot return more than 10 results')
     .optional()
-    .describe('Maximum number of search results to return (1-20)'),
+    .describe('Maximum number of search results to return (1-10)'),
 });
 
 // Convert Zod schema to JSON schema for better compatibility
@@ -53,8 +50,8 @@ export const webSearchInputJsonSchema = {
     maxResults: {
       type: 'integer',
       minimum: 1,
-      maximum: 20,
-      description: 'Maximum number of search results to return (1-20)',
+      maximum: 10,
+      description: 'Maximum number of search results to return (1-10)',
     },
   },
   required: ['query'],
@@ -130,7 +127,7 @@ export function webSearch(options: WebSearchToolOptions = {}) {
       }
 
       try {
-        const maxResults = Math.min(input.maxResults ?? 5, 20);
+        const maxResults = Math.min(input.maxResults ?? 5, 10);
 
         // Use Ollama's web search capability (v0.6.0+)
         if (!hasWebSearch(client)) {
@@ -141,12 +138,15 @@ export function webSearch(options: WebSearchToolOptions = {}) {
           });
         }
 
-        const searchResponse = await client.webSearch({
+        const request = {
           query: input.query,
           maxResults,
           // Add timeout support if available in the client
           ...(options.timeout && { timeout: options.timeout }),
-        });
+        };
+        const searchResponse = abortSignal
+          ? await client.webSearch(request, { signal: abortSignal })
+          : await client.webSearch(request);
 
         // Extract results from the response
         const searchResults =

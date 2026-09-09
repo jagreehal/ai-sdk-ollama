@@ -173,6 +173,11 @@ describe('OllamaEmbeddingModel', () => {
           abortSignal: abortController.signal,
         }),
       ).rejects.toThrow('Aborted');
+
+      expect(mockOllamaClient.embed).toHaveBeenCalledWith(
+        expect.objectContaining({ input: 'Hello' }),
+        { signal: abortController.signal },
+      );
     });
 
     it('should handle errors from Ollama client', async () => {

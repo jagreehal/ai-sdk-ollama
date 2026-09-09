@@ -740,7 +740,10 @@ const ollama = createOllama({ apiKey: process.env.OLLAMA_API_KEY });
 
 ### Using Existing Ollama Client
 
-You can also pass an existing Ollama client instance to reuse your configuration:
+You can also pass an existing Ollama client instance to reuse your configuration.
+The provider accepts the exported structural `OllamaClient` interface, so the
+official client, the maintained compatibility fork, or a custom adapter can be
+injected in Node.js and browser builds.
 
 ```typescript
 import { Ollama } from 'ollama';
@@ -756,12 +759,35 @@ const existingClient = new Ollama({
 const ollamaSdk = createOllama({ client: existingClient });
 
 // Use both clients as needed
-await ollamaRaw.list(); // Direct Ollama operations
+await existingClient.list(); // Direct Ollama operations
 const { text } = await generateText({
   model: ollamaSdk('llama3.2'),
   prompt: 'Hello!',
 });
 ```
+
+#### Custom client adapters
+
+`OllamaClient` is structural, so any object with the right shape works — no
+`Ollama` instance required. Streaming methods return an `AbortableStream`, an
+async iterable with an `abort()`:
+
+```typescript
+import type { AbortableStream, OllamaClient } from 'ai-sdk-ollama';
+import { createOllama } from 'ai-sdk-ollama';
+
+const client: OllamaClient = {
+  chat: myChat, // returns a ChatResponse, or an AbortableStream of them
+  embed: myEmbed,
+  webSearch: myWebSearch,
+  webFetch: myWebFetch,
+};
+
+const ollama = createOllama({ client });
+```
+
+Per-request cancellation is forwarded to the client as an `AbortSignal`, and an
+aborted request rejects rather than resolving with a retried or fallback result.
 
 ### Structured Output
 

@@ -4,7 +4,8 @@ import {
   LanguageModelV4CallOptions,
   LanguageModelV4StreamPart,
 } from '@ai-sdk/provider';
-import { AbortableAsyncIterator, ChatResponse } from 'ollama';
+import { ChatResponse } from 'ollama';
+import type { AbortableStream } from '../ollama-client';
 import {
   createExpectedUsage,
   createModel,
@@ -298,7 +299,8 @@ describe('OllamaChatLanguageModel: doStream', () => {
 
     it('should handle abort signal in streaming', async () => {
       const abortController = new AbortController();
-      const mockAsyncIterable = {
+      const mockAsyncIterable: AbortableStream<ChatResponse> = {
+        abort: vi.fn(),
         [Symbol.asyncIterator]: vi.fn().mockReturnValue({
           next: vi.fn().mockImplementation(async () => {
             abortController.abort();
@@ -309,9 +311,7 @@ describe('OllamaChatLanguageModel: doStream', () => {
 
       (
         mockOllamaClient.chat as unknown as ReturnType<typeof vi.fn>
-      ).mockResolvedValueOnce(
-        mockAsyncIterable as unknown as AbortableAsyncIterator<ChatResponse>,
-      );
+      ).mockResolvedValueOnce(mockAsyncIterable);
 
       const options: LanguageModelV4CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
@@ -319,6 +319,11 @@ describe('OllamaChatLanguageModel: doStream', () => {
       };
 
       const { stream } = await model.doStream(options);
+
+      expect(mockOllamaClient.chat).toHaveBeenCalledWith(
+        expect.objectContaining({ stream: true }),
+        { signal: abortController.signal },
+      );
 
       await expect(async () => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars

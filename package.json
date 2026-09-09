@@ -22,16 +22,9 @@
     "quality": "turbo quality"
   },
   "devDependencies": {
-    "@changesets/cli": "^3.0.0",
-    "@eslint/js": "^10.0.1",
-    "@typescript-eslint/eslint-plugin": "^8.67.0",
-    "@typescript-eslint/parser": "^8.67.0",
-    "eslint": "^10.8.1",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-unicorn": "^73.0.0",
+    "@changesets/cli": "^3.0.2",
     "prettier": "^3.9.6",
-    "turbo": "^2.10.10",
-    "typescript-eslint": "^8.67.0"
+    "turbo": "^2.10.12"
   },
   "engines": {
     "node": ">=22",
@@ -47,10 +40,6 @@
   "main": "index.js",
   "directories": {
     "example": "examples"
-  },
-  "dependencies": {
-    "eslint-scope": "^9.1.2",
-    "eslint-visitor-keys": "^5.0.1"
   },
   "keywords": [],
   "bugs": {

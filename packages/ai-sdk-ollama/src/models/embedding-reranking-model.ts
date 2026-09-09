@@ -3,14 +3,14 @@ import {
   RerankingModelV4CallOptions,
   SharedV4Warning,
 } from '@ai-sdk/provider';
-import { Ollama } from 'ollama';
+import type { OllamaClient } from '../ollama-client';
 import { cosineSimilarity } from '../utils/cosine-similarity';
 
 /**
  * Configuration for the Ollama embedding-based reranking model
  */
 export interface OllamaEmbeddingRerankingConfig {
-  client: Ollama;
+  client: OllamaClient;
   provider: string;
 }
 
@@ -116,17 +116,23 @@ export class OllamaEmbeddingRerankingModel implements RerankingModelV4 {
    * Embed a batch of texts while keeping their order aligned with the
    * embeddings that are returned.
    */
-  private async embedBatch(texts: string[]): Promise<number[][]> {
+  private async embedBatch(
+    texts: string[],
+    abortSignal?: AbortSignal,
+  ): Promise<number[][]> {
     const model = this.embeddingModelId;
     const batchSize = this.embeddingBatchSize;
     const embeddings: number[][] = [];
 
     for (let index = 0; index < texts.length; index += batchSize) {
       const batch = texts.slice(index, index + batchSize);
-      const response = await this.config.client.embed({
+      const request = {
         model,
         input: batch,
-      });
+      };
+      const response = abortSignal
+        ? await this.config.client.embed(request, { signal: abortSignal })
+        : await this.config.client.embed(request);
 
       if (response.embeddings.length !== batch.length) {
         throw new Error(
@@ -150,6 +156,7 @@ export class OllamaEmbeddingRerankingModel implements RerankingModelV4 {
     documents,
     query,
     topN,
+    abortSignal,
   }: RerankingModelV4CallOptions): Promise<
     Awaited<ReturnType<RerankingModelV4['doRerank']>>
   > {
@@ -180,10 +187,10 @@ export class OllamaEmbeddingRerankingModel implements RerankingModelV4 {
       };
     }
 
-    const [queryEmbedding, ...documentEmbeddings] = await this.embedBatch([
-      query,
-      ...documentValues,
-    ]);
+    const [queryEmbedding, ...documentEmbeddings] = await this.embedBatch(
+      [query, ...documentValues],
+      abortSignal,
+    );
 
     if (!queryEmbedding) {
       throw new Error('Query embedding was not returned.');

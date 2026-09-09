@@ -206,6 +206,10 @@ describe('webFetch', () => {
     );
 
     expect((result as any).error).toBe('Web fetch request was cancelled.');
+    expect(mockWebFetch).toHaveBeenCalledWith(
+      { url: 'https://example.com' },
+      { signal: abortController.signal },
+    );
   });
 
   it('validates input schema', () => {

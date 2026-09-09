@@ -1,10 +1,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import type { Ollama } from 'ollama';
+import type { OllamaClient } from '../ollama-client';
 import { OllamaError } from '../utils/ollama-error';
-
-// Use the actual Ollama type which includes web fetch methods (available in v0.6.0+)
-type OllamaWithWebFetch = Ollama;
 
 /**
  * Configuration options for the web fetch tool
@@ -26,7 +23,7 @@ export interface WebFetchToolOptions {
    * Ollama client instance to use for web fetch
    * If not provided, will need to be injected at runtime
    */
-  client?: OllamaWithWebFetch;
+  client?: Pick<OllamaClient, 'webFetch'>;
 }
 
 /**
@@ -119,11 +116,14 @@ export function webFetch(options: WebFetchToolOptions = {}) {
           });
         }
 
-        const fetchResponse = await client.webFetch({
+        const request = {
           url: input.url,
           // Add timeout support if available in the client
           ...(options.timeout && { timeout: options.timeout }),
-        });
+        };
+        const fetchResponse = abortSignal
+          ? await client.webFetch(request, { signal: abortSignal })
+          : await client.webFetch(request);
 
         // Extract content from the response
         const fetchResult =

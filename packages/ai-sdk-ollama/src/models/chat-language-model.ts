@@ -7,7 +7,13 @@ import {
   JSONSchema7,
   SharedV4Warning,
 } from '@ai-sdk/provider';
-import { Ollama, Message as OllamaMessage, ChatResponse, Tool } from 'ollama';
+import {
+  ChatRequest,
+  Message as OllamaMessage,
+  ChatResponse,
+  Tool,
+} from 'ollama';
+import type { AbortableStream, OllamaClient } from '../ollama-client';
 import { OllamaChatSettings } from '../provider';
 import { OllamaError } from '../utils/ollama-error';
 import {
@@ -42,8 +48,24 @@ import {
 import { createChunkTransformer } from './chat-stream';
 
 export interface OllamaChatConfig {
-  client: Ollama;
+  client: OllamaClient;
   provider: string;
+}
+
+/**
+ * Cancellation is not a retryable failure: rethrow so the reliability paths
+ * neither retry nor fall back on an aborted request. Call with no `error` at
+ * the top of a retry attempt, and with the caught error from a catch that
+ * would otherwise recover.
+ */
+function rethrowIfAborted(
+  signal: AbortSignal | undefined,
+  error?: unknown,
+): void {
+  if (error instanceof Error && error.name === 'AbortError') {
+    throw error;
+  }
+  signal?.throwIfAborted();
 }
 
 export class OllamaChatLanguageModel implements LanguageModelV4 {
@@ -70,6 +92,26 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
 
   get supportsStructuredOutputs(): boolean {
     return this.settings.structuredOutputs ?? false;
+  }
+
+  private chat(
+    request: ChatRequest & { stream: true },
+    abortSignal?: AbortSignal,
+  ): Promise<AbortableStream<ChatResponse>>;
+  private chat(
+    request: ChatRequest & { stream?: false },
+    abortSignal?: AbortSignal,
+  ): Promise<ChatResponse>;
+  private chat(
+    request: ChatRequest,
+    abortSignal?: AbortSignal,
+  ): Promise<ChatResponse | AbortableStream<ChatResponse>> {
+    const chat = this.config.client.chat.bind(this.config.client) as (
+      request: ChatRequest,
+      options?: { signal?: AbortSignal },
+    ) => Promise<ChatResponse | AbortableStream<ChatResponse>>;
+
+    return abortSignal ? chat(request, { signal: abortSignal }) : chat(request);
   }
 
   async doGenerate(
@@ -115,6 +157,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
           keep_alive,
         });
       } catch (error) {
+        rethrowIfAborted(options.abortSignal, error);
         if (this.settings.reliableToolCalling === true) {
           console.warn(
             'Reliable tool calling skipped:',
@@ -154,6 +197,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
           keep_alive,
         });
       } catch (error) {
+        rethrowIfAborted(options.abortSignal, error);
         if (this.settings.reliableObjectGeneration === true) {
           console.warn(
             'Reliable object generation skipped:',
@@ -165,18 +209,21 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
 
     // Regular tool calling (original implementation)
     try {
-      const response = (await this.config.client.chat({
-        ...buildChatRequest({
-          modelId: this.modelId,
-          messages,
-          options: ollamaOptions,
-          format,
-          tools,
-          keep_alive,
-          think,
-        }),
-        stream: false,
-      })) as ChatResponse;
+      const response = await this.chat(
+        {
+          ...buildChatRequest({
+            modelId: this.modelId,
+            messages,
+            options: ollamaOptions,
+            format,
+            tools,
+            keep_alive,
+            think,
+          }),
+          stream: false,
+        },
+        options.abortSignal,
+      );
 
       return buildGenerationResult({
         modelId: this.modelId,
@@ -236,17 +283,20 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
           },
         ];
 
-        followUpResponse = (await this.config.client.chat({
-          ...buildChatRequest({
-            modelId: this.modelId,
-            messages: followUpMessages,
-            options: ollamaOptions,
-            format,
-            keep_alive,
-            think,
-          }),
-          stream: false,
-        })) as ChatResponse;
+        followUpResponse = await this.chat(
+          {
+            ...buildChatRequest({
+              modelId: this.modelId,
+              messages: followUpMessages,
+              options: ollamaOptions,
+              format,
+              keep_alive,
+              think,
+            }),
+            stream: false,
+          },
+          callOptions.abortSignal ?? originalOptions.abortSignal,
+        );
 
         const followUpText = followUpResponse.message.content ?? '';
 
@@ -323,18 +373,23 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
       attempt <= (reliabilityOptions.maxRetries ?? 3);
       attempt++
     ) {
-      const response = (await this.config.client.chat({
-        ...buildChatRequest({
-          modelId: this.modelId,
-          messages,
-          options: ollamaOptions,
-          format,
-          tools: ollamaTools,
-          keep_alive,
-          think,
-        }),
-        stream: false,
-      })) as ChatResponse;
+      rethrowIfAborted(originalOptions.abortSignal);
+
+      const response = await this.chat(
+        {
+          ...buildChatRequest({
+            modelId: this.modelId,
+            messages,
+            options: ollamaOptions,
+            format,
+            tools: ollamaTools,
+            keep_alive,
+            think,
+          }),
+          stream: false,
+        },
+        originalOptions.abortSignal,
+      );
 
       lastResponse = response;
 
@@ -445,6 +500,7 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
             `Attempt ${attempt}: forced completion returned no final response`,
           );
         } catch (error) {
+          rethrowIfAborted(originalOptions.abortSignal, error);
           errors.push(
             `Attempt ${attempt}: ${
               error instanceof Error ? error.message : String(error)
@@ -525,19 +581,24 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
     let lastResponse: ChatResponse | undefined;
 
     for (let attempt = 1; attempt <= objectOptions.maxRetries; attempt++) {
+      rethrowIfAborted(originalOptions.abortSignal);
+
       try {
-        const response = (await this.config.client.chat({
-          ...buildChatRequest({
-            modelId: this.modelId,
-            messages,
-            options: ollamaOptions,
-            format,
-            tools,
-            keep_alive,
-            think,
-          }),
-          stream: false,
-        })) as ChatResponse;
+        const response = await this.chat(
+          {
+            ...buildChatRequest({
+              modelId: this.modelId,
+              messages,
+              options: ollamaOptions,
+              format,
+              tools,
+              keep_alive,
+              think,
+            }),
+            stream: false,
+          },
+          originalOptions.abortSignal,
+        );
 
         lastResponse = response;
         const text = response.message.content ?? '';
@@ -587,11 +648,14 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
           );
         }
       } catch (error) {
+        rethrowIfAborted(originalOptions.abortSignal, error);
         errors.push(
           `Attempt ${attempt}: generation failed - ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     }
+
+    rethrowIfAborted(originalOptions.abortSignal);
 
     // If all attempts failed, try fallback values if enabled
     if (objectOptions.useFallbacks) {
@@ -648,18 +712,21 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
     const think = resolveThink(this.settings, options);
 
     try {
-      const stream = await this.config.client.chat({
-        ...buildChatRequest({
-          modelId: this.modelId,
-          messages,
-          options: ollamaOptions,
-          format,
-          tools,
-          keep_alive,
-          think,
-        }),
-        stream: true,
-      });
+      const stream = await this.chat(
+        {
+          ...buildChatRequest({
+            modelId: this.modelId,
+            messages,
+            options: ollamaOptions,
+            format,
+            tools,
+            keep_alive,
+            think,
+          }),
+          stream: true,
+        },
+        options.abortSignal,
+      );
 
       const transformStream = createChunkTransformer({
         warnings,
