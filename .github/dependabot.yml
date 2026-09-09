@@ -9,6 +9,9 @@ updates:
     allow:
       - dependency-type: all
     labels: [dependencies, automerge]
+    groups:
+      all-deps:
+        patterns: ['*']
 
   - package-ecosystem: npm
     directory: '/packages/ai-sdk-ollama'
@@ -19,3 +22,6 @@ updates:
     allow:
       - dependency-type: all
     labels: [dependencies, automerge]
+    groups:
+      all-deps:
+        patterns: ['*']
