@@ -154,6 +154,7 @@ export OLLAMA_API_KEY="your_api_key_here"
     - [Combining Tools with Structured Output](#combining-tools-with-structured-output)
     - [Simple and Predictable](#simple-and-predictable)
   - [Reranking](#reranking)
+  - [Decision Models](#decision-models)
   - [Streaming Utilities](#streaming-utilities)
     - [Smooth Stream](#smooth-stream)
     - [Partial JSON Parsing](#partial-json-parsing)
@@ -481,6 +482,46 @@ ranking.forEach((item, i) => {
 
 **Recommended Models**: `embeddinggemma` (best score separation), `nomic-embed-text`, `bge-m3`
 
+## Decision Models
+
+Ollama 0.35 serves decision models (`nimble`, `tev1`, `tev1:0.8b`) on `/v1/systemone`. You ask typed questions about some state and get each answer with its probabilities in one local call. Use them for triage, routing and moderation through the AI SDK's `experimental_evaluate`:
+
+```typescript
+import { experimental_evaluate as evaluate } from 'ai';
+import { ollama } from 'ai-sdk-ollama';
+
+const { answers } = await evaluate({
+  model: ollama.evaluationModel('nimble'),
+  state: { ticket: 'I was charged twice. Please refund the extra payment.' },
+  questions: {
+    team: {
+      type: 'choice',
+      instructions: 'Which team should handle this ticket?',
+      criteria: {
+        billing: 'Payments and refunds',
+        technical: null,
+        other: null,
+      },
+    },
+    refund: {
+      type: 'boolean',
+      instructions: 'Does the customer ask for a refund?',
+    },
+    urgency: {
+      type: 'score',
+      instructions: 'How urgent is this ticket?',
+      criteria: ['Routine', 'Soon', 'Urgent'],
+    },
+  },
+});
+
+answers.team.choice; // 'billing'
+answers.refund.probability; // P(true), e.g. 0.99
+answers.urgency.score; // 0 to 2, e.g. 0.8
+```
+
+Ollama names boolean questions `noul`, and the provider maps them for you. Ollama's per-question `confidence` lands in `providerMetadata.ollama.confidence`. Pull a model first with `ollama pull nimble`.
+
 ## Streaming Utilities
 
 ### Smooth Stream
@@ -741,9 +782,8 @@ const ollama = createOllama({ apiKey: process.env.OLLAMA_API_KEY });
 ### Using Existing Ollama Client
 
 You can also pass an existing Ollama client instance to reuse your configuration.
-The provider accepts the exported structural `OllamaClient` interface, so the
-official client, the maintained compatibility fork, or a custom adapter can be
-injected in Node.js and browser builds.
+The provider accepts the exported structural `OllamaClient` interface, so you
+can inject the official client or a custom adapter in Node.js and browser builds.
 
 ```typescript
 import { Ollama } from 'ollama';

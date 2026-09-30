@@ -106,7 +106,7 @@ describe('Think Integration Tests', { timeout: 120_000 }, () => {
 
   it('should stream text with think enabled', async () => {
     try {
-      const { textStream } = await streamText({
+      const { textStream } = streamText({
         model: ollama('deepseek-r1:7b', { think: true }),
         prompt: 'What is 5 + 3?',
         maxOutputTokens: 150,

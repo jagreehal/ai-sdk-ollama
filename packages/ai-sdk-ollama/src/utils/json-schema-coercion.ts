@@ -44,7 +44,7 @@ function isZodObject(schema: unknown): schema is ZodObject {
  * Generate fallback values for a JSON schema or Zod schema
  */
 export function generateFallbackValues(
-  schema: JSONSchema7 | unknown,
+  schema: unknown,
 ): Record<string, unknown> {
   const fallbacks: Record<string, unknown> = {};
 
@@ -220,7 +220,7 @@ function attemptZodTypeCoercion(value: unknown, schema: ZodSchema): unknown {
  */
 export function fixTypeMismatches(
   object: Record<string, unknown>,
-  schema: JSONSchema7 | unknown,
+  schema: unknown,
 ): Record<string, unknown> {
   const fixed: Record<string, unknown> = {};
 
@@ -250,7 +250,13 @@ export function fixTypeMismatches(
 
         switch (field.type) {
           case 'string': {
-            fixed[key] = String(value ?? '');
+            // Serialise non-string JSON values (numbers, objects, arrays).
+            fixed[key] =
+              value == null
+                ? ''
+                : typeof value === 'string'
+                  ? value
+                  : JSON.stringify(value);
 
             break;
           }
@@ -314,7 +320,7 @@ export function fixTypeMismatches(
  */
 export function coerceToSchemaType(
   parsedObject: unknown,
-  schema: JSONSchema7 | unknown,
+  schema: unknown,
 ): { coerced: unknown; wasCoerced: boolean } {
   if (typeof schema !== 'object' || schema === null) {
     return { coerced: parsedObject, wasCoerced: false };

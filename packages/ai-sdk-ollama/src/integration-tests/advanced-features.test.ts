@@ -181,7 +181,7 @@ describe('Advanced Features Integration Tests', () => {
   });
 
   it('should support streaming with advanced parameters', async () => {
-    const result = await streamText({
+    const result = streamText({
       model: ollama('llama3.2', {
         options: {
           temperature: 0.3,
@@ -258,7 +258,7 @@ describe('Advanced Features Integration Tests', () => {
   it('should support abort signal in streaming', async () => {
     const controller = new AbortController();
 
-    const result = await streamText({
+    const result = streamText({
       model: ollama('llama3.2'),
       prompt: 'Write a long story',
       maxOutputTokens: 1000,

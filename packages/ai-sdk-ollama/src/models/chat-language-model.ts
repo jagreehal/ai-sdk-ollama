@@ -15,7 +15,7 @@ import {
 } from 'ollama';
 import type { AbortableStream, OllamaClient } from '../ollama-client';
 import { OllamaChatSettings } from '../provider';
-import { OllamaError } from '../utils/ollama-error';
+import { OllamaError, rethrowIfAborted } from '../utils/ollama-error';
 import {
   createToolDefinitionMap,
   executeReliableToolCalls,
@@ -58,16 +58,6 @@ export interface OllamaChatConfig {
  * the top of a retry attempt, and with the caught error from a catch that
  * would otherwise recover.
  */
-function rethrowIfAborted(
-  signal: AbortSignal | undefined,
-  error?: unknown,
-): void {
-  if (error instanceof Error && error.name === 'AbortError') {
-    throw error;
-  }
-  signal?.throwIfAborted();
-}
-
 export class OllamaChatLanguageModel implements LanguageModelV4 {
   readonly specificationVersion = 'v4' as const;
 

@@ -28,6 +28,8 @@ export {
 
 export { OllamaImageModel } from './models/image-model.js';
 
+export { OllamaEvaluationModel } from './models/evaluation-model.js';
+
 export { OllamaError } from './utils/ollama-error.js';
 export type { OllamaErrorData } from './utils/ollama-error.js';
 export type {

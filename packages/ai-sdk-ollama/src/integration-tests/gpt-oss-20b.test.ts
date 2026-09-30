@@ -16,7 +16,7 @@ describe('GPT-OSS:20B Model Integration Tests', () => {
 
     // 2) Try streaming fallback
     try {
-      const streamResult = await streamText(parameters);
+      const streamResult = streamText(parameters);
       const chunks: string[] = await Array.fromAsync(streamResult.textStream);
       const text = chunks.join('');
       if (text.trim().length > 0) return text;
@@ -66,7 +66,7 @@ describe('GPT-OSS:20B Model Integration Tests', () => {
   });
 
   it('should handle streaming with gpt-oss:20b model', async () => {
-    const result = await streamText({
+    const result = streamText({
       model: ollama(modelName),
       prompt: 'Count from 1 to 5, include all numbers.',
       maxOutputTokens: 200,
@@ -130,10 +130,8 @@ describe('GPT-OSS:20B Model Integration Tests', () => {
 
     const lowText = await getNonEmptyText({
       model: ollama(modelName),
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
+      instructions: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
       maxOutputTokens: 64,
       temperature: 0,
       maxRetries: 2,
@@ -141,10 +139,8 @@ describe('GPT-OSS:20B Model Integration Tests', () => {
 
     const highText = await getNonEmptyText({
       model: ollama(modelName),
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
+      instructions: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
       maxOutputTokens: 64,
       temperature: 0.9,
       maxRetries: 2,
@@ -179,12 +175,9 @@ describe('GPT-OSS:20B Model Integration Tests', () => {
   it('should handle token limits with gpt-oss:20b', async () => {
     const text = await getNonEmptyText({
       model: ollama(modelName),
+      instructions:
+        'You write concise summaries. Keep responses under two sentences.',
       messages: [
-        {
-          role: 'system',
-          content:
-            'You write concise summaries. Keep responses under two sentences.',
-        },
         {
           role: 'user',
           content: 'Give a brief summary of quantum physics for a layperson.',
@@ -203,11 +196,8 @@ describe('GPT-OSS:20B Model Integration Tests', () => {
   it('should handle basic reasoning with gpt-oss:20b', async () => {
     const result = await generateText({
       model: ollama(modelName),
+      instructions: 'You are a calculator. Answer numerically only.',
       messages: [
-        {
-          role: 'system',
-          content: 'You are a calculator. Answer numerically only.',
-        },
         { role: 'user', content: 'What is 3 + 2? Reply with the number only.' },
       ],
       maxOutputTokens: 64,

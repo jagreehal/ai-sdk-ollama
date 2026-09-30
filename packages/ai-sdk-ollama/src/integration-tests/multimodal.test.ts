@@ -62,7 +62,7 @@ describe('Multimodal Integration Tests', { timeout: 120_000 }, () => {
       'base64',
     );
 
-    const result = await streamText({
+    const result = streamText({
       model: ollama('llava'),
       messages: [
         {

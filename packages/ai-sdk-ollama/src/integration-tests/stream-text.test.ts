@@ -5,7 +5,7 @@ import { ollama } from '../index';
 // Integration test for streaming text
 describe('Stream Text Integration Tests', () => {
   it('should stream text responses with multiple chunks', async () => {
-    const result = await streamText({
+    const result = streamText({
       maxOutputTokens: 512,
       maxRetries: 5,
       model: ollama('llama3.2'),
@@ -30,7 +30,7 @@ describe('Stream Text Integration Tests', () => {
     const models = ['llama3.2']; // Only test with llama3.2 for now
 
     for (const modelName of models) {
-      const result = await streamText({
+      const result = streamText({
         model: ollama(modelName),
         prompt: 'Count from 1 to 5',
         maxOutputTokens: 100,
@@ -47,7 +47,7 @@ describe('Stream Text Integration Tests', () => {
   });
 
   it('should respect maxOutputTokens limit in streaming', async () => {
-    const result = await streamText({
+    const result = streamText({
       model: ollama('llama3.2'),
       prompt: 'Write a very long story about space exploration',
       maxOutputTokens: 50,
@@ -62,7 +62,7 @@ describe('Stream Text Integration Tests', () => {
   });
 
   it('should provide usage and finish reason after streaming', async () => {
-    const result = await streamText({
+    const result = streamText({
       model: ollama('llama3.2'),
       prompt: 'Say hello world',
       maxOutputTokens: 100,
@@ -87,14 +87,14 @@ describe('Stream Text Integration Tests', () => {
   });
 
   it('should handle streaming with temperature variations', async () => {
-    const lowTemporaryResult = await streamText({
+    const lowTemporaryResult = streamText({
       model: ollama('llama3.2'),
       prompt: 'Complete this sentence: The weather is',
       maxOutputTokens: 20,
       temperature: 0,
     });
 
-    const highTemporaryResult = await streamText({
+    const highTemporaryResult = streamText({
       model: ollama('llama3.2'),
       prompt: 'Complete this sentence: The weather is',
       maxOutputTokens: 20,
@@ -122,7 +122,7 @@ describe('Stream Text Integration Tests', () => {
   });
 
   it('should handle streaming with structured outputs', async () => {
-    const result = await streamText({
+    const result = streamText({
       model: ollama('llama3.2', { structuredOutputs: true }),
       prompt: 'Generate a JSON object with a message field saying hello',
       maxOutputTokens: 100,

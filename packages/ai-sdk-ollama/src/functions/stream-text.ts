@@ -1,4 +1,5 @@
 import { streamText as _streamText, stepCountIs } from 'ai';
+import { lastUserText } from '../utils/last-user-text';
 
 type AIStreamTextOptions = Parameters<typeof _streamText>[0];
 
@@ -84,7 +85,7 @@ export async function streamText(
     return _streamText(streamTextOptions as Parameters<typeof _streamText>[0]);
   }
 
-  const streamResult = await _streamText({
+  const streamResult = _streamText({
     ...(streamTextOptions as Parameters<typeof _streamText>[0]),
     stopWhen:
       streamTextOptions.stopWhen ?? (hasTools ? stepCountIs(5) : undefined),
@@ -132,10 +133,7 @@ export async function streamText(
           })
           .join('\n') || '';
 
-      const originalPromptText =
-        typeof options.prompt === 'string'
-          ? options.prompt
-          : options.messages?.at(-1)?.content || 'the user question';
+      const originalPromptText = lastUserText(options.prompt, options.messages);
 
       const synthesisPrompt = `Original request: ${originalPromptText}
 
@@ -161,7 +159,7 @@ Based on the tool results above, please provide a comprehensive response to the 
             prompt: synthesisPrompt,
           };
 
-      const synthesisStream = await _streamText(
+      const synthesisStream = _streamText(
         synthesisOptions as Parameters<typeof _streamText>[0],
       );
 
@@ -359,11 +357,10 @@ Based on the tool results above, please provide a comprehensive response to the 
             if (done) {
               state.hasFinished = true;
 
-              const finalResult = await streamResult;
               const [toolCalls, toolResults, text] = await Promise.all([
-                finalResult.toolCalls,
-                finalResult.toolResults,
-                finalResult.text,
+                streamResult.toolCalls,
+                streamResult.toolResults,
+                streamResult.text,
               ]);
 
               state.textContent = text || '';
@@ -411,8 +408,8 @@ Based on the tool results above, please provide a comprehensive response to the 
                 }
               }
 
-              const usage = await finalResult.usage;
-              const finishReason = await finalResult.finishReason;
+              const usage = await streamResult.usage;
+              const finishReason = await streamResult.finishReason;
 
               safeEnqueue({
                 type: 'finish',

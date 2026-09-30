@@ -51,6 +51,7 @@ console.log(text);
 - **Automatic JSON repair** - Cascade repair (jsonrepair + Ollama-specific fallback) for malformed object generation output
 - **Web search integration** - Built-in web search and fetch tools powered by [Ollama's web search API](https://ollama.com/blog/web-search)
 - **Reranking** - Document relevance ranking using embedding-based similarity
+- **Decision models** - Typed choice, boolean and score answers with probabilities via `experimental_evaluate`
 - **Middleware system** - Wrap models with `defaultSettingsMiddleware` and `extractReasoningMiddleware`
 - **ToolLoopAgent** - Autonomous agents that run tool loops with configurable stop conditions
 - **Streaming utilities** - `smoothStream` and `parsePartialJson` for stream handling
@@ -425,6 +426,44 @@ ranking.forEach((item, i) => {
     `${i + 1}. Score: ${item.score.toFixed(3)} - ${rerankedDocuments[i]}`,
   );
 });
+```
+
+### Decision Models
+
+Ollama 0.35 serves decision models such as `nimble` and `tev1`. You ask typed questions about some state and get each answer with its probabilities in one local call. Use them for triage, routing and moderation.
+
+```typescript
+import { experimental_evaluate as evaluate } from 'ai';
+import { ollama } from 'ai-sdk-ollama';
+
+const { answers } = await evaluate({
+  model: ollama.evaluationModel('nimble'),
+  state: { ticket: 'I was charged twice. Please refund the extra payment.' },
+  questions: {
+    team: {
+      type: 'choice',
+      instructions: 'Which team should handle this ticket?',
+      criteria: {
+        billing: 'Payments and refunds',
+        technical: null,
+        other: null,
+      },
+    },
+    refund: {
+      type: 'boolean',
+      instructions: 'Does the customer ask for a refund?',
+    },
+    urgency: {
+      type: 'score',
+      instructions: 'How urgent is this ticket?',
+      criteria: ['Routine', 'Soon', 'Urgent'],
+    },
+  },
+});
+
+answers.team.choice; // 'billing'
+answers.refund.probability; // P(true), e.g. 0.99
+answers.urgency.score; // 0 to 2, e.g. 0.8
 ```
 
 ### Middleware System

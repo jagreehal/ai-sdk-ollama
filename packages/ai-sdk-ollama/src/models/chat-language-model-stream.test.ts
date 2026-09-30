@@ -10,6 +10,7 @@ import {
   createExpectedUsage,
   createModel,
   mockChatStream,
+  mockChat,
   mockOllamaClient,
 } from './chat-language-model.test-helpers';
 
@@ -132,7 +133,7 @@ describe('OllamaChatLanguageModel: doStream', () => {
         eval_duration: 700_000_000,
       });
 
-      expect(mockOllamaClient.chat).toHaveBeenCalledWith({
+      expect(mockChat).toHaveBeenCalledWith({
         model: 'llama3.2',
         messages: [{ role: 'user', content: 'Hello' }],
         stream: true,
@@ -288,7 +289,7 @@ describe('OllamaChatLanguageModel: doStream', () => {
 
     it('should handle streaming errors', async () => {
       const error = new Error('Stream error');
-      vi.mocked(mockOllamaClient.chat).mockRejectedValueOnce(error);
+      vi.mocked(mockChat).mockRejectedValueOnce(error);
 
       const options: LanguageModelV4CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
@@ -309,9 +310,9 @@ describe('OllamaChatLanguageModel: doStream', () => {
         }),
       };
 
-      (
-        mockOllamaClient.chat as unknown as ReturnType<typeof vi.fn>
-      ).mockResolvedValueOnce(mockAsyncIterable);
+      (mockChat as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        mockAsyncIterable,
+      );
 
       const options: LanguageModelV4CallOptions = {
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
@@ -320,7 +321,7 @@ describe('OllamaChatLanguageModel: doStream', () => {
 
       const { stream } = await model.doStream(options);
 
-      expect(mockOllamaClient.chat).toHaveBeenCalledWith(
+      expect(mockChat).toHaveBeenCalledWith(
         expect.objectContaining({ stream: true }),
         { signal: abortController.signal },
       );

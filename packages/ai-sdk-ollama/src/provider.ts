@@ -24,19 +24,13 @@ import {
   OllamaEmbeddingRerankingSettings,
 } from './models/embedding-reranking-model';
 import { OllamaImageModel } from './models/image-model';
+import { OllamaEvaluationModel } from './models/evaluation-model';
 import { ollamaTools } from './ollama-tools';
 import type { WebSearchToolOptions } from './tool/web-search';
 import type { WebFetchToolOptions } from './tool/web-fetch';
 import type { ObjectGenerationOptions } from './utils/object-generation-reliability';
 
-// Extend Ollama Options to include missing parameters
-export interface Options extends OllamaOptions {
-  /**
-   * Minimum probability threshold for token selection
-   * This parameter is supported by Ollama API but missing from ollama-js TypeScript definitions
-   */
-  min_p?: number;
-}
+export type Options = OllamaOptions;
 
 // Re-export ollama-js types for convenience
 export type {
@@ -166,6 +160,12 @@ export interface OllamaProvider extends ProviderV4 {
   ): RerankingModelV4;
 
   /**
+   * Create a decision model (e.g. `nimble`, `tev1`) for the AI SDK's
+   * `experimental_evaluate`. Requires Ollama 0.35+.
+   */
+  evaluationModel(modelId: string): OllamaEvaluationModel;
+
+  /**
    * Ollama-specific tools that leverage web search capabilities
    */
   tools: {
@@ -183,7 +183,7 @@ export interface OllamaChatSettings extends Pick<
   'keep_alive' | 'format' | 'tools' | 'think'
 > {
   /**
-   * Additional model parameters - uses extended Options type that includes min_p
+   * Additional Ollama model parameters
    * This automatically includes ALL Ollama parameters including new ones like 'dimensions'
    */
   options?: Partial<Options>;
@@ -462,6 +462,11 @@ export function createOllama(
       fetch: options.fetch,
     });
   provider.imageModel = createImageModel;
+  provider.evaluationModel = (modelId: string) =>
+    new OllamaEvaluationModel(modelId, {
+      client,
+      provider: 'ollama.evaluation',
+    });
 
   // Create tools with the Ollama client injected - following AI SDK pattern
   const toolsWithClient = {
