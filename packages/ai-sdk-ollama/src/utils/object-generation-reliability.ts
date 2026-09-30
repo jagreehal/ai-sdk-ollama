@@ -108,7 +108,7 @@ export function resolveObjectGenerationOptions(
  */
 export async function attemptSchemaRecovery(
   rawObject: unknown,
-  schema: JSONSchema7 | unknown,
+  schema: unknown,
   options: ObjectGenerationOptions = {},
 ): Promise<{
   success: boolean;
@@ -368,7 +368,7 @@ export function createReliableObjectGeneration<T>(
   generateObjectFunction: (
     options: Record<string, unknown>,
   ) => Promise<{ object: T }>,
-  schema: JSONSchema7 | unknown,
+  schema: unknown,
   options: ObjectGenerationOptions = {},
 ) {
   const resolvedOptions = resolveObjectGenerationOptions(options);
@@ -449,7 +449,7 @@ export async function reliableGenerateObject<T>(
     options: Record<string, unknown>,
   ) => Promise<{ object: T }>,
   options: Record<string, unknown>,
-  schema: JSONSchema7 | unknown,
+  schema: unknown,
   reliabilityOptions: ObjectGenerationOptions = {},
 ): Promise<ReliableObjectGenerationResult<T>> {
   const reliableGenerator = createReliableObjectGeneration(

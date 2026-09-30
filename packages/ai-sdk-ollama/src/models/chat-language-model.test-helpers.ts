@@ -1,12 +1,14 @@
-import { expect, vi } from 'vitest';
+import { expect, vi, type Mock } from 'vitest';
 import { ChatResponse, Ollama } from 'ollama';
 import { convertArrayToAsyncIterable } from '@ai-sdk/provider-utils/test';
 import type { AbortableStream } from '../ollama-client';
 import { OllamaChatSettings } from '../provider';
 import { OllamaChatLanguageModel } from './chat-language-model';
 
+export const mockChat: Mock = vi.fn();
+
 export const mockOllamaClient = {
-  chat: vi.fn(),
+  chat: mockChat,
 } as unknown as Ollama;
 
 export function createModel(
@@ -27,9 +29,7 @@ export function mockChatStream(data: ChatResponse[]): void {
     [Symbol.asyncIterator]: () =>
       convertArrayToAsyncIterable(data)[Symbol.asyncIterator](),
   };
-  (mockOllamaClient.chat as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
-    stream,
-  );
+  (mockChat as ReturnType<typeof vi.fn>).mockResolvedValueOnce(stream);
 }
 
 /**

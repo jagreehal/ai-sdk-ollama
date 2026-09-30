@@ -3,6 +3,8 @@ import type {
   ChatResponse,
   EmbedRequest,
   EmbedResponse,
+  SystemOneRequest,
+  SystemOneResponse,
   WebFetchRequest,
   WebFetchResponse,
   WebSearchRequest,
@@ -30,9 +32,9 @@ export interface OllamaRequestOptions {
 /**
  * The subset of the Ollama client used by this provider.
  *
- * Keeping this interface structural lets callers use the official client, a
- * maintained fork, or their own adapter without coupling the provider models
- * to a concrete Ollama class.
+ * Keeping this interface structural lets callers use the official client or
+ * their own adapter without coupling the provider models to a concrete Ollama
+ * class.
  */
 export interface OllamaClient {
   chat(
@@ -55,4 +57,9 @@ export interface OllamaClient {
     request: WebFetchRequest & { timeout?: number },
     options?: OllamaRequestOptions,
   ): Promise<WebFetchResponse>;
+  /** Decision models (`/v1/systemone`). Only needed for `evaluationModel()`. */
+  systemone?(
+    request: SystemOneRequest,
+    options?: OllamaRequestOptions,
+  ): Promise<SystemOneResponse>;
 }

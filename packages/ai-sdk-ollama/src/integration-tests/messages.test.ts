@@ -29,8 +29,8 @@ describe(
     it('should handle multiple message roles', async () => {
       const result = await generateText({
         model: ollama('llama3.2'),
+        instructions: 'You are a helpful math tutor.',
         messages: [
-          { role: 'system', content: 'You are a helpful math tutor.' },
           { role: 'user', content: 'What is 2 + 2?' },
           { role: 'assistant', content: '2 + 2 equals 4.' },
           { role: 'user', content: 'And what is 4 + 4?' },
@@ -56,7 +56,7 @@ describe(
     });
 
     it('should stream with system message', async () => {
-      const result = await streamText({
+      const result = streamText({
         model: ollama('llama3.2'),
         system: 'You are a pirate. Always respond as a pirate would.',
         prompt: 'Hello there!',

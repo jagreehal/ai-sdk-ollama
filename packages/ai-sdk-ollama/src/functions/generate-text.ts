@@ -6,6 +6,7 @@
  */
 
 import { generateText as _generateText, stepCountIs } from 'ai';
+import { lastUserText } from '../utils/last-user-text';
 
 /**
  * Create a new object that inherits from `base` (preserving its getters/prototype)
@@ -240,10 +241,7 @@ export async function generateText(
           .map((tc) => `${tc.toolName}: ${JSON.stringify(tc.result)}`)
           .join('\n') || '';
 
-      const originalPrompt =
-        typeof options.prompt === 'string'
-          ? options.prompt
-          : options.messages?.at(-1)?.content || 'the user question';
+      const originalPrompt = lastUserText(options.prompt, options.messages);
 
       const fullSynthesisPrompt = `Original request: ${originalPrompt}
 

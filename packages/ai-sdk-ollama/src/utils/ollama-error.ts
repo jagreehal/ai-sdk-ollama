@@ -27,3 +27,14 @@ export class OllamaError extends Error {
     return error instanceof OllamaError;
   }
 }
+
+/** Rethrow cancellations unchanged so callers can tell them from failures. */
+export function rethrowIfAborted(
+  signal: AbortSignal | undefined,
+  error?: unknown,
+): void {
+  if (error instanceof Error && error.name === 'AbortError') {
+    throw error;
+  }
+  signal?.throwIfAborted();
+}

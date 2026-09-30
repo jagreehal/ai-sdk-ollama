@@ -5,7 +5,7 @@ import { createUsage } from './chat-result';
 import {
   createModel,
   mockChatStream,
-  mockOllamaClient,
+  mockChat,
 } from './chat-language-model.test-helpers';
 
 const options: LanguageModelV4CallOptions = {
@@ -41,7 +41,7 @@ describe('returned reasoning', () => {
     it.each(['', '4'])(
       'preserves generated reasoning with text=%j',
       async (text) => {
-        vi.mocked(mockOllamaClient.chat).mockResolvedValueOnce(
+        vi.mocked(mockChat).mockResolvedValueOnce(
           response(text, 'Adding two and two.'),
         );
 
@@ -58,9 +58,7 @@ describe('returned reasoning', () => {
         });
         expect(result.usage.raw).toMatchObject({ eval_count: 10 });
         // Generation controls must still reach the server unchanged.
-        expect(vi.mocked(mockOllamaClient.chat).mock.calls[0]?.[0].think).toBe(
-          think,
-        );
+        expect(vi.mocked(mockChat).mock.calls[0]?.[0].think).toBe(think);
       },
     );
 
@@ -113,9 +111,7 @@ describe('returned reasoning', () => {
               }),
             }),
           ]);
-          expect(
-            vi.mocked(mockOllamaClient.chat).mock.calls[0]?.[0].think,
-          ).toBe(think);
+          expect(vi.mocked(mockChat).mock.calls[0]?.[0].think).toBe(think);
         },
       );
     });

@@ -4,10 +4,7 @@ import {
   LanguageModelV4FunctionTool,
 } from '@ai-sdk/provider';
 import { ChatResponse } from 'ollama';
-import {
-  createModel,
-  mockOllamaClient,
-} from './chat-language-model.test-helpers';
+import { createModel, mockChat } from './chat-language-model.test-helpers';
 
 const emptyResponse = {
   model: 'llama3.2',
@@ -25,7 +22,7 @@ const prompt: LanguageModelV4CallOptions['prompt'] = [
 
 /** Answers once with an empty response, cancelling the request as it does. */
 function respondEmptyThenAbort(controller: AbortController) {
-  vi.mocked(mockOllamaClient.chat).mockImplementation((async () => {
+  vi.mocked(mockChat).mockImplementation((async () => {
     controller.abort();
     return emptyResponse;
   }) as never);
@@ -55,7 +52,7 @@ describe('cancellation during reliability retries', () => {
     ).rejects.toThrow();
 
     // A retry or a fallback object would have resolved instead.
-    expect(mockOllamaClient.chat).toHaveBeenCalledTimes(1);
+    expect(mockChat).toHaveBeenCalledTimes(1);
   });
 
   it('does not retry after the signal aborts (reliable tool calling)', async () => {
@@ -79,6 +76,6 @@ describe('cancellation during reliability retries', () => {
       }),
     ).rejects.toThrow();
 
-    expect(mockOllamaClient.chat).toHaveBeenCalledTimes(1);
+    expect(mockChat).toHaveBeenCalledTimes(1);
   });
 });

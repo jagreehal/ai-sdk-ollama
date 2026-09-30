@@ -9,6 +9,7 @@ This directory contains comprehensive integration tests for the Ollama AI SDK. T
    - `llama3.2` - For text generation, object generation, and tool calling
    - `llava` - For multimodal (image) testing
    - `nomic-embed-text` - For embedding and batch embedding tests
+   - `nimble` - For decision model (`experimental_evaluate`) tests
 
 ## Running the Tests
 

@@ -47,8 +47,10 @@ describe('createOllama', () => {
 
     expect(provider).toBeDefined();
     expect(typeof provider).toBe('function');
-    expect(provider.chat).toBeDefined();
-    expect(provider.embedding).toBeDefined();
+    expect(provider.chat('llama3.2').modelId).toBe('llama3.2');
+    expect(provider.embedding('nomic-embed-text').modelId).toBe(
+      'nomic-embed-text',
+    );
   });
 
   it('should use existing Ollama client when provided', () => {
@@ -62,8 +64,10 @@ describe('createOllama', () => {
 
     expect(provider).toBeDefined();
     expect(typeof provider).toBe('function');
-    expect(provider.chat).toBeDefined();
-    expect(provider.embedding).toBeDefined();
+    expect(provider.chat('llama3.2').modelId).toBe('llama3.2');
+    expect(provider.embedding('nomic-embed-text').modelId).toBe(
+      'nomic-embed-text',
+    );
   });
 
   it('should ignore other options when existing client is provided', () => {
@@ -87,8 +91,10 @@ describe('createOllama', () => {
 
     expect(provider).toBeDefined();
     expect(typeof provider).toBe('function');
-    expect(provider.chat).toBeDefined();
-    expect(provider.embedding).toBeDefined();
+    expect(provider.chat('llama3.2').modelId).toBe('llama3.2');
+    expect(provider.embedding('nomic-embed-text').modelId).toBe(
+      'nomic-embed-text',
+    );
   });
 
   it('should create chat model with existing client', () => {

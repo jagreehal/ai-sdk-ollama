@@ -8,7 +8,6 @@
  * one of them is careful to leave string contents alone.
  */
 
-import type { JSONSchema7 } from '@ai-sdk/provider';
 import { safeParseJSON } from '@ai-sdk/provider-utils';
 import { jsonrepair } from 'jsonrepair';
 
@@ -44,7 +43,8 @@ const SMART_SINGLE_QUOTE_CHARS = new Set([
 export type RepairTextFunction = (options: {
   text: string;
   error: Error;
-  schema?: JSONSchema7 | unknown;
+  /** JSON Schema or Zod schema describing the expected output. */
+  schema?: unknown;
 }) => Promise<string | null>;
 
 /**
@@ -391,7 +391,8 @@ function replaceSmartQuotesOutsideStrings(text: string): string {
 export async function enhancedRepairText(options: {
   text: string;
   error: Error;
-  schema?: JSONSchema7 | unknown;
+  /** JSON Schema or Zod schema describing the expected output. */
+  schema?: unknown;
 }): Promise<string | null> {
   const { text } = options;
   let repaired = text.trim();
@@ -674,7 +675,8 @@ export async function enhancedRepairText(options: {
 export async function cascadeRepairText(options: {
   text: string;
   error: Error;
-  schema?: JSONSchema7 | unknown;
+  /** JSON Schema or Zod schema describing the expected output. */
+  schema?: unknown;
 }): Promise<string | null> {
   const { text } = options;
   try {
@@ -697,7 +699,8 @@ export async function cascadeRepairText(options: {
 export async function builtInRepairText(options: {
   text: string;
   error: Error;
-  schema?: JSONSchema7 | unknown;
+  /** JSON Schema or Zod schema describing the expected output. */
+  schema?: unknown;
 }): Promise<string | null> {
   const { text } = options;
   let repaired = text.trim();
@@ -792,7 +795,7 @@ export function getRepairFunction(
 export async function parseJSONWithRepair(
   text: string,
   repairFunction?: RepairTextFunction,
-  schema?: JSONSchema7 | unknown,
+  schema?: unknown,
 ): Promise<{
   success: boolean;
   data?: unknown;
