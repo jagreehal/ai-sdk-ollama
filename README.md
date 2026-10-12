@@ -135,7 +135,7 @@ import { ollama } from 'ai-sdk-ollama';
 
 // 🔍 Web search for current information
 const { text } = await generateText({
-  model: ollama('qwen3-coder:480b-cloud'), // Cloud models recommended for web search
+  model: ollama('deepseek-v4.1-flash:cloud'), // Cloud models recommended for web search
   prompt: 'What are the latest developments in AI this week?',
   tools: {
     webSearch: ollama.tools.webSearch({ maxResults: 5 }),
@@ -166,7 +166,7 @@ const { text: research } = await generateText({
 
 1. **Ollama API Key**: Set `OLLAMA_API_KEY` environment variable
 2. **Cloud Models**: Use cloud models for optimal web search performance:
-   - `qwen3-coder:480b-cloud` - Best for general web search
+   - `deepseek-v4.1-flash:cloud` - Best for general web search
    - `gpt-oss:120b-cloud` - Best for complex reasoning with web data
 
 ```bash
@@ -639,7 +639,7 @@ Compatible with any model in your Ollama installation:
 - **Vision**: `llava`, `bakllava`, `llama3.2-vision`, `minicpm-v`
 - **Embeddings**: `nomic-embed-text`, `all-minilm`, `mxbai-embed-large`
 - **Reasoning**: `deepseek-r1:7b`, `deepseek-r1:1.5b`, `deepseek-r1:8b`
-- **Cloud Models** (for web search): `qwen3-coder:480b-cloud`, `gpt-oss:120b-cloud`
+- **Cloud Models** (for web search): `deepseek-v4.1-flash:cloud`, `gpt-oss:120b-cloud`
 
 ## Development & Contributing
 
