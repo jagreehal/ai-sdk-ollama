@@ -64,7 +64,7 @@ export class OllamaEmbeddingModel implements EmbeddingModelV4 {
       // Ollama's embed API currently only supports single prompts
       // So we need to make multiple requests
       for (const value of values) {
-        // Skip undefined values (AI SDK interface issue workaround)
+        // Skip empty values
         if (value === undefined || value === null) {
           continue;
         }

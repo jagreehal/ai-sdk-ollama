@@ -24,7 +24,7 @@ import {
   OllamaEmbeddingRerankingSettings,
 } from './models/embedding-reranking-model';
 import { OllamaImageModel } from './models/image-model';
-import { OllamaEvaluationModel } from './models/evaluation-model';
+import { OllamaDecisionModel } from './models/decision-model';
 import { ollamaTools } from './ollama-tools';
 import type { WebSearchToolOptions } from './tool/web-search';
 import type { WebFetchToolOptions } from './tool/web-fetch';
@@ -161,9 +161,12 @@ export interface OllamaProvider extends ProviderV4 {
 
   /**
    * Create a decision model (e.g. `nimble`, `tev1`) for the AI SDK's
-   * `experimental_evaluate`. Requires Ollama 0.35+.
+   * `experimental_decide`. Requires Ollama 0.35+.
    */
-  evaluationModel(modelId: string): OllamaEvaluationModel;
+  decisionModel(modelId: string): OllamaDecisionModel;
+
+  /** @deprecated Use `decisionModel`. */
+  evaluationModel(modelId: string): OllamaDecisionModel;
 
   /**
    * Ollama-specific tools that leverage web search capabilities
@@ -462,11 +465,12 @@ export function createOllama(
       fetch: options.fetch,
     });
   provider.imageModel = createImageModel;
-  provider.evaluationModel = (modelId: string) =>
-    new OllamaEvaluationModel(modelId, {
+  provider.decisionModel = (modelId: string) =>
+    new OllamaDecisionModel(modelId, {
       client,
-      provider: 'ollama.evaluation',
+      provider: 'ollama.decision',
     });
+  provider.evaluationModel = provider.decisionModel;
 
   // Create tools with the Ollama client injected - following AI SDK pattern
   const toolsWithClient = {

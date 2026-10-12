@@ -16,7 +16,7 @@ import { generateText, streamText } from 'ai';
 import { MODELS, GRANITE_4_MODEL as model } from './model';
 
 // Use a thinking model for reasoning extraction examples
-// Cloud models (gpt-oss, deepseek-v3.1) support thinking mode
+// Cloud models like gpt-oss support thinking mode
 // Note: Cloud models require OLLAMA_API_KEY environment variable
 const THINKING_MODEL: string = process.env.OLLAMA_API_KEY
   ? MODELS.GPT_OSS_120B_CLOUD  // Use gpt-oss (supports thinking mode)
@@ -29,9 +29,6 @@ async function main() {
   // Note about thinking models
   if (THINKING_MODEL === MODELS.GPT_OSS_120B_CLOUD) {
     console.log('ℹ️  Using cloud thinking model: gpt-oss:120b-cloud');
-    console.log('   (Supports thinking mode with <think> tags)\n');
-  } else if (THINKING_MODEL === MODELS.DEEPSEEK_V3_1_CLOUD) {
-    console.log('ℹ️  Using cloud thinking model: deepseek-v3.1:671b-cloud');
     console.log('   (Supports thinking mode with <think> tags)\n');
   } else if (THINKING_MODEL === MODELS.DEEPSEEK_R1_7B) {
     console.log('ℹ️  Using local thinking model (deepseek-r1:7b)');
@@ -90,7 +87,7 @@ What is 15% of 80?`,
     if (errorMsg.includes('not found') && process.env.OLLAMA_API_KEY) {
       console.log('⚠️  Cloud thinking model not available.');
       console.log('   Skipping reasoning extraction example.');
-      console.log('   Note: Reasoning extraction requires a thinking model like gpt-oss or deepseek-v3.1\n');
+      console.log('   Note: Reasoning extraction requires a thinking model like gpt-oss or deepseek-r1\n');
     } else {
       console.log('⚠️  Error:', errorMsg);
       console.log('   Skipping reasoning extraction example.\n');

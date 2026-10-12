@@ -57,7 +57,7 @@ export interface OllamaClient {
     request: WebFetchRequest & { timeout?: number },
     options?: OllamaRequestOptions,
   ): Promise<WebFetchResponse>;
-  /** Decision models (`/v1/systemone`). Only needed for `evaluationModel()`. */
+  /** Decision models (`/v1/systemone`). Only needed for `decisionModel()`. */
   systemone?(
     request: SystemOneRequest,
     options?: OllamaRequestOptions,

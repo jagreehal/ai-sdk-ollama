@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { OllamaClient } from '../ollama-client';
 import { OllamaError } from '../utils/ollama-error';
-import { OllamaEvaluationModel } from './evaluation-model';
+import { OllamaDecisionModel } from './decision-model';
 
 const response = {
   model: 'nimble',
@@ -25,18 +25,20 @@ const response = {
 };
 
 const modelWith = (systemone: OllamaClient['systemone']) =>
-  new OllamaEvaluationModel('nimble', {
+  new OllamaDecisionModel('nimble', {
     client: { systemone } as OllamaClient,
-    provider: 'ollama.evaluation',
+    provider: 'ollama.decision',
   });
 
-describe('OllamaEvaluationModel', () => {
+describe('OllamaDecisionModel', () => {
   it('maps questions to System One and answers back to the AI SDK shape', async () => {
     const systemone = vi.fn().mockResolvedValue(response);
     const signal = new AbortController().signal;
 
-    const result = await modelWith(systemone).doEvaluate({
-      state: { ticket: 'Charged twice, refund please' },
+    const result = await modelWith(systemone).doDecide({
+      state: [
+        { type: 'json', value: { ticket: 'Charged twice, refund please' } },
+      ],
       questions: {
         team: {
           type: 'choice',
@@ -101,13 +103,42 @@ describe('OllamaEvaluationModel', () => {
     });
   });
 
+  it('sends multi-part state as a list', async () => {
+    const systemone = vi.fn().mockResolvedValue({ ...response, answers: {} });
+    await modelWith(systemone).doDecide({
+      state: [
+        { type: 'text', text: 'Ticket:' },
+        { type: 'json', value: { id: 42 } },
+      ],
+      questions: { q: { type: 'boolean', instructions: '?' } },
+    });
+    expect(systemone.mock.calls[0]?.[0].state).toEqual(['Ticket:', { id: 42 }]);
+  });
+
+  it('rejects file parts in state', async () => {
+    const systemone = vi.fn();
+    await expect(
+      modelWith(systemone).doDecide({
+        state: [
+          {
+            type: 'file',
+            mediaType: 'image/png',
+            data: { type: 'data', data: new Uint8Array([1]) },
+          },
+        ],
+        questions: { q: { type: 'boolean', instructions: '?' } },
+      }),
+    ).rejects.toThrow(/file parts in decision state/);
+    expect(systemone).not.toHaveBeenCalled();
+  });
+
   it('wraps client errors in OllamaError', async () => {
     const systemone = vi
       .fn()
       .mockRejectedValue(new Error('model "nope" not found'));
     await expect(
-      modelWith(systemone).doEvaluate({
-        state: 'x',
+      modelWith(systemone).doDecide({
+        state: [{ type: 'text', text: 'x' }],
         questions: { q: { type: 'boolean', instructions: '?' } },
       }),
     ).rejects.toThrow(OllamaError);
@@ -117,8 +148,8 @@ describe('OllamaEvaluationModel', () => {
     const abort = new DOMException('The operation was aborted.', 'AbortError');
     const systemone = vi.fn().mockRejectedValue(abort);
     await expect(
-      modelWith(systemone).doEvaluate({
-        state: 'x',
+      modelWith(systemone).doDecide({
+        state: [{ type: 'text', text: 'x' }],
         questions: { q: { type: 'boolean', instructions: '?' } },
       }),
     ).rejects.toBe(abort);
@@ -126,8 +157,8 @@ describe('OllamaEvaluationModel', () => {
 
   it('throws a clear error when the client has no systemone()', async () => {
     await expect(
-      modelWith(undefined).doEvaluate({
-        state: 'x',
+      modelWith(undefined).doDecide({
+        state: [{ type: 'text', text: 'x' }],
         questions: { q: { type: 'boolean', instructions: '?' } },
       }),
     ).rejects.toThrow(/does not implement systemone/);

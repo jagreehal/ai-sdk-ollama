@@ -16,7 +16,7 @@ describe('Web Search Tools Integration', () => {
     'should perform basic web search with cloud model',
     async () => {
       const result = await generateText({
-        model: ollama('qwen3:480b-cloud'),
+        model: ollama('deepseek-v4.1-flash:cloud'),
         prompt:
           'Search for recent news about artificial intelligence and provide a brief summary.',
         tools: {
@@ -62,7 +62,7 @@ describe('Web Search Tools Integration', () => {
     'should combine web search and fetch with cloud model',
     async () => {
       const result = await generateText({
-        model: ollama('deepseek-v3.1-cloud'),
+        model: ollama('deepseek-v4.1-flash:cloud'),
         prompt:
           'Search for recent articles about TypeScript, then fetch and summarize the most relevant one.',
         tools: {
@@ -87,7 +87,7 @@ describe('Web Search Tools Integration', () => {
     'should handle web fetch errors gracefully',
     async () => {
       const result = await generateText({
-        model: ollama('qwen3:480b-cloud'),
+        model: ollama('deepseek-v4.1-flash:cloud'),
         prompt:
           'Try to fetch content from https://this-domain-definitely-does-not-exist-123456.com and explain what happened.',
         tools: {
@@ -109,11 +109,7 @@ describe('Web Search Tools Integration', () => {
   it.skipIf(!process.env.OLLAMA_API_KEY)(
     'should work with different cloud models',
     async () => {
-      const models = [
-        'qwen3:480b-cloud',
-        'gpt-oss:120b-cloud',
-        'deepseek-v3.1-cloud',
-      ];
+      const models = ['deepseek-v4.1-flash:cloud', 'gpt-oss:120b-cloud'];
 
       for (const modelId of models) {
         const result = await generateText({

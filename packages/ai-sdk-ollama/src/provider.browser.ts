@@ -12,7 +12,7 @@ import {
   OllamaEmbeddingRerankingSettings,
 } from './models/embedding-reranking-model';
 import { OllamaImageModel } from './models/image-model';
-import { OllamaEvaluationModel } from './models/evaluation-model';
+import { OllamaDecisionModel } from './models/decision-model';
 import { ollamaTools } from './ollama-tools';
 
 // Re-export all the types
@@ -187,11 +187,12 @@ export function createOllama(
       fetch: options.fetch,
     });
   provider.imageModel = createImageModel;
-  provider.evaluationModel = (modelId: string) =>
-    new OllamaEvaluationModel(modelId, {
+  provider.decisionModel = (modelId: string) =>
+    new OllamaDecisionModel(modelId, {
       client,
-      provider: 'ollama.evaluation',
+      provider: 'ollama.decision',
     });
+  provider.evaluationModel = provider.decisionModel;
 
   // Create tools with the Ollama client injected
   const toolsWithClient = {

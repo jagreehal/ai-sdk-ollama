@@ -1,15 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import { experimental_evaluate as evaluate } from 'ai';
+import { experimental_decide as decide } from 'ai';
 import { ollama } from '../index';
 
 // Requires Ollama 0.35+ and `ollama pull nimble`.
 describe(
-  'Evaluate (decision models) Integration Tests',
+  'Decide (decision models) Integration Tests',
   { timeout: 120_000 },
   () => {
     it('answers choice, boolean and score questions in one call', async () => {
-      const { answers, usage } = await evaluate({
-        model: ollama.evaluationModel('nimble'),
+      const { answers, usage } = await decide({
+        model: ollama.decisionModel('nimble'),
         state: {
           ticket: 'I was charged twice. Please refund the extra payment.',
         },

@@ -6,7 +6,7 @@
  *
  * Prerequisites:
  * - OLLAMA_API_KEY environment variable must be set
- * - Cloud models recommended (gpt-oss:120b-cloud, qwen3:480b-cloud)
+ * - Cloud models recommended (gpt-oss:120b-cloud, deepseek-v4.1-flash:cloud)
  *
  * Usage:
  * npx tsx src/web-search-example.ts [basic|fetch|combined|streaming|error]

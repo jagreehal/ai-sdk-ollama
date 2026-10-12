@@ -1,11 +1,14 @@
-import type {
-  Experimental_EvaluationModelV4 as EvaluationModelV4,
-  Experimental_EvaluationModelV4Answer as EvaluationModelV4Answer,
-  Experimental_EvaluationModelV4CallOptions as EvaluationModelV4CallOptions,
-  Experimental_EvaluationModelV4Input as EvaluationModelV4Input,
-  Experimental_EvaluationModelV4Question as EvaluationModelV4Question,
-  Experimental_EvaluationModelV4Result as EvaluationModelV4Result,
-  JSONValue,
+import {
+  UnsupportedFunctionalityError,
+  type Experimental_DecisionModelV4 as DecisionModelV4,
+  type Experimental_DecisionModelV4Answer as DecisionModelV4Answer,
+  type Experimental_DecisionModelV4CallOptions as DecisionModelV4CallOptions,
+  type Experimental_DecisionModelV4Input as DecisionModelV4Input,
+  type Experimental_DecisionModelV4Question as DecisionModelV4Question,
+  type Experimental_DecisionModelV4Result as DecisionModelV4Result,
+  type Experimental_DecisionModelV4State as DecisionModelV4State,
+  type Experimental_DecisionModelV4StatePart as DecisionModelV4StatePart,
+  type JSONValue,
 } from '@ai-sdk/provider';
 import type {
   SystemOneContent,
@@ -15,12 +18,12 @@ import type {
 import type { OllamaClient } from '../ollama-client';
 import { OllamaError, rethrowIfAborted } from '../utils/ollama-error';
 
-export interface OllamaEvaluationConfig {
+export interface OllamaDecisionConfig {
   client: OllamaClient;
   provider: string;
 }
 
-type Input = EvaluationModelV4Input;
+type Input = DecisionModelV4Input;
 
 // `Array.isArray` does not narrow readonly arrays out of a union.
 const isList = (input: Input): input is readonly JSONValue[] =>
@@ -37,8 +40,39 @@ const describe = (input: Input): string =>
 const describeOptional = (input: Input | null | undefined) =>
   input == null ? undefined : describe(input);
 
+function toStateValue(part: DecisionModelV4StatePart): JSONValue {
+  switch (part.type) {
+    case 'text': {
+      return part.text;
+    }
+    case 'json': {
+      return part.value;
+    }
+    case 'file': {
+      throw new UnsupportedFunctionalityError({
+        functionality: 'file parts in decision state',
+      });
+    }
+  }
+}
+
+// A single string or object part goes on the wire as-is; anything else is sent as a list.
+function toState(state: DecisionModelV4State): SystemOneContent {
+  const values = state.map(toStateValue);
+  const [only] = values;
+  if (
+    values.length === 1 &&
+    only != null &&
+    typeof only !== 'number' &&
+    typeof only !== 'boolean'
+  ) {
+    return toContent(only);
+  }
+  return values;
+}
+
 function toSystemOneQuestion(
-  question: EvaluationModelV4Question,
+  question: DecisionModelV4Question,
 ): SystemOneQuestion {
   const instructions = toContent(question.instructions);
   switch (question.type) {
@@ -78,38 +112,38 @@ function toSystemOneQuestion(
 
 /**
  * Decision ("System One") model served by Ollama's /v1/systemone endpoint,
- * e.g. `nimble` or `tev1`. Use with the AI SDK's `experimental_evaluate`.
+ * e.g. `nimble` or `tev1`. Use with the AI SDK's `experimental_decide`.
  * Requires Ollama 0.35+.
  */
-export class OllamaEvaluationModel implements EvaluationModelV4 {
+export class OllamaDecisionModel implements DecisionModelV4 {
   readonly specificationVersion = 'v4' as const;
   readonly supportedQuestionTypes = ['choice', 'score', 'boolean'] as const;
 
   constructor(
     readonly modelId: string,
-    private readonly config: OllamaEvaluationConfig,
+    private readonly config: OllamaDecisionConfig,
   ) {}
 
   get provider(): string {
     return this.config.provider;
   }
 
-  async doEvaluate({
+  async doDecide({
     state,
     questions,
     abortSignal,
-  }: EvaluationModelV4CallOptions): Promise<EvaluationModelV4Result> {
+  }: DecisionModelV4CallOptions): Promise<DecisionModelV4Result> {
     const { client } = this.config;
     if (!client.systemone) {
       throw new OllamaError({
         message:
-          'The configured Ollama client does not implement systemone(); evaluation models need ollama >= 0.6.4 or an adapter that provides it.',
+          'The configured Ollama client does not implement systemone(); decision models need ollama >= 0.6.4 or an adapter that provides it.',
       });
     }
 
     const request: SystemOneRequest = {
       model: this.modelId,
-      state: toContent(state),
+      state: toState(state),
       questions: Object.fromEntries(
         Object.entries(questions).map(([id, question]) => [
           id,
@@ -128,7 +162,7 @@ export class OllamaEvaluationModel implements EvaluationModelV4 {
         });
       });
 
-    const answers: Record<string, EvaluationModelV4Answer> = {};
+    const answers: Record<string, DecisionModelV4Answer> = {};
     const confidence: Record<string, number> = {};
     for (const [id, answer] of Object.entries(response.answers)) {
       switch (answer.type) {
@@ -169,3 +203,8 @@ export class OllamaEvaluationModel implements EvaluationModelV4 {
     };
   }
 }
+
+/** @deprecated Use `OllamaDecisionModel`. */
+export const OllamaEvaluationModel = OllamaDecisionModel;
+/** @deprecated Use `OllamaDecisionModel`. */
+export type OllamaEvaluationModel = OllamaDecisionModel;
