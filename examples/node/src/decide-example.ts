@@ -1,14 +1,14 @@
 /**
- * AI SDK v7: `experimental_evaluate` with an Ollama decision model
+ * AI SDK v7: `experimental_decide` with an Ollama decision model
  *
  * Decision models answer typed questions (choice, boolean, score) about some
  * state with probabilities, in one fast local call. Requires Ollama 0.35+.
  *
  * Setup: ollama pull nimble
- * Run: pnpm --filter @examples/node exec tsx src/evaluate-example.ts
+ * Run: pnpm --filter @examples/node exec tsx src/decide-example.ts
  */
 import { ollama } from 'ai-sdk-ollama';
-import { experimental_evaluate as evaluate } from 'ai';
+import { experimental_decide as decide } from 'ai';
 
 async function main() {
   const tickets = [
@@ -18,8 +18,8 @@ async function main() {
   ];
 
   for (const ticket of tickets) {
-    const { answers } = await evaluate({
-      model: ollama.evaluationModel('nimble'),
+    const { answers } = await decide({
+      model: ollama.decisionModel('nimble'),
       state: { ticket },
       questions: {
         team: {

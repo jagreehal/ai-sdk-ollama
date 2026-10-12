@@ -51,7 +51,7 @@ console.log(text);
 - **Automatic JSON repair** - Cascade repair (jsonrepair + Ollama-specific fallback) for malformed object generation output
 - **Web search integration** - Built-in web search and fetch tools powered by [Ollama's web search API](https://ollama.com/blog/web-search)
 - **Reranking** - Document relevance ranking using embedding-based similarity
-- **Decision models** - Typed choice, boolean and score answers with probabilities via `experimental_evaluate`
+- **Decision models** - Typed choice, boolean and score answers with probabilities via `experimental_decide`
 - **Middleware system** - Wrap models with `defaultSettingsMiddleware` and `extractReasoningMiddleware`
 - **ToolLoopAgent** - Autonomous agents that run tool loops with configurable stop conditions
 - **Streaming utilities** - `smoothStream` and `parsePartialJson` for stream handling
@@ -433,11 +433,11 @@ ranking.forEach((item, i) => {
 Ollama 0.35 serves decision models such as `nimble` and `tev1`. You ask typed questions about some state and get each answer with its probabilities in one local call. Use them for triage, routing and moderation.
 
 ```typescript
-import { experimental_evaluate as evaluate } from 'ai';
+import { experimental_decide as decide } from 'ai';
 import { ollama } from 'ai-sdk-ollama';
 
-const { answers } = await evaluate({
-  model: ollama.evaluationModel('nimble'),
+const { answers } = await decide({
+  model: ollama.decisionModel('nimble'),
   state: { ticket: 'I was charged twice. Please refund the extra payment.' },
   questions: {
     team: {

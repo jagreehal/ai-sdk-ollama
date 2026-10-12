@@ -17,7 +17,10 @@ export {
   type OllamaRerankingProviderOptions,
 } from './models/reranking-model.js';
 
-export { OllamaEvaluationModel } from './models/evaluation-model.js';
+export {
+  OllamaDecisionModel,
+  OllamaEvaluationModel,
+} from './models/decision-model.js';
 
 export { OllamaError } from './utils/ollama-error.js';
 export type { OllamaErrorData } from './utils/ollama-error.js';

@@ -73,14 +73,14 @@ Uses `ollama.embeddingReranking(...)` as the `RerankingModel`.
 npx tsx src/rerank-example.ts
 ```
 
-### **evaluate-example.ts** - Decision models
+### **decide-example.ts** - Decision models
 
-Routes support tickets with `experimental_evaluate` and a local decision model.
-Uses `ollama.evaluationModel('nimble')` and needs Ollama 0.35 or later.
+Routes support tickets with `experimental_decide` and a local decision model.
+Uses `ollama.decisionModel('nimble')` and needs Ollama 0.35 or later.
 
 ```bash
 ollama pull nimble
-npx tsx src/evaluate-example.ts
+npx tsx src/decide-example.ts
 ```
 
 ### **reasoning-effort-example.ts** - Per-call reasoning effort
