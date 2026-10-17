@@ -11,7 +11,7 @@ export function mapOllamaFinishReason(
   reason?: string | null,
   hasToolCalls = false,
 ): LanguageModelV4FinishReason {
-  if (hasToolCalls) {
+  if (hasToolCalls && reason !== 'length') {
     return {
       unified: 'tool-calls',
       raw: reason || undefined,

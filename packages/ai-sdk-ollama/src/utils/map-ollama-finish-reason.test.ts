@@ -18,6 +18,11 @@ describe('mapOllamaFinishReason', () => {
       expect(result).toEqual({ unified: 'tool-calls', raw: 'stop' });
     });
 
+    it('should keep "length" when a truncated response has tool calls', () => {
+      const result = mapOllamaFinishReason('length', true);
+      expect(result).toEqual({ unified: 'length', raw: 'length' });
+    });
+
     it('should omit raw reason for tool-call responses without a done reason', () => {
       const result = mapOllamaFinishReason(null, true);
       expect(result).toEqual({ unified: 'tool-calls', raw: undefined });
