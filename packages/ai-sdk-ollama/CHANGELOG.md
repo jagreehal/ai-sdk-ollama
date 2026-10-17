@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.5.1
+
+### Patch Changes
+
+- cc1d4f7: Report `finishReason: 'length'` when Ollama truncates a response that contains tool calls. Before this fix the provider reported `tool-calls`, so the AI SDK ran tools from a cut-off turn (#1092).
+
 ## 4.5.0
 
 ### Minor Changes
