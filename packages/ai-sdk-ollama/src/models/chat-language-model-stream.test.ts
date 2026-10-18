@@ -298,6 +298,41 @@ describe('OllamaChatLanguageModel: doStream', () => {
       await expect(model.doStream(options)).rejects.toThrow('Stream error');
     });
 
+    it('aborts the Ollama request when the stream is cancelled', async () => {
+      const abort = vi.fn();
+      let release: () => void = () => {};
+      const aborted = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      abort.mockImplementation(() => release());
+      const mockStream: AbortableStream<ChatResponse> = {
+        abort,
+        async *[Symbol.asyncIterator]() {
+          yield {
+            model: 'llama3.2',
+            created_at: new Date(),
+            message: { role: 'assistant', content: 'Hello' },
+            done: false,
+          } as ChatResponse;
+          // Ollama keeps generating until the request is aborted.
+          await aborted;
+        },
+      };
+      (mockChat as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        mockStream,
+      );
+
+      const { stream } = await model.doStream({
+        prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
+      });
+      const reader = stream.getReader();
+      await reader.read(); // stream-start
+      await reader.read(); // text-start
+      await reader.cancel();
+
+      expect(abort).toHaveBeenCalledTimes(1);
+    });
+
     it('should handle abort signal in streaming', async () => {
       const abortController = new AbortController();
       const mockAsyncIterable: AbortableStream<ChatResponse> = {
