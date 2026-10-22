@@ -1,4 +1,8 @@
-import { LanguageModelV4StreamPart, SharedV4Warning } from '@ai-sdk/provider';
+import {
+  InvalidResponseDataError,
+  LanguageModelV4StreamPart,
+  SharedV4Warning,
+} from '@ai-sdk/provider';
 import { ChatResponse, ToolCall } from 'ollama';
 import { mapOllamaFinishReason } from '../utils/map-ollama-finish-reason';
 import { aggregateUsage, ollamaResponseDetails } from './chat-result';
@@ -24,6 +28,7 @@ export function createChunkTransformer({
   let textId: string | undefined;
   let reasoningId: string | undefined;
   let hasToolCalls = false;
+  let finished = false;
 
   function endReasoning(controller: Controller) {
     if (reasoningId === undefined) {
@@ -102,6 +107,7 @@ export function createChunkTransformer({
       }
 
       if (chunk.done) {
+        finished = true;
         endReasoning(controller);
         if (hasContent) {
           emitText(controller, content);
@@ -124,6 +130,33 @@ export function createChunkTransformer({
       if (hasContent) {
         emitText(controller, content);
       }
+    },
+
+    // The connection can end (cut, server killed) before Ollama sends its
+    // `done` chunk. Close what is open, report the cut as an error and still
+    // end the stream with a finish part, so consumers do not wait on a part
+    // that never comes.
+    flush(controller) {
+      if (finished) {
+        return;
+      }
+      if (!streamStarted) {
+        controller.enqueue({ type: 'stream-start', warnings });
+      }
+      endReasoning(controller);
+      endText(controller);
+      controller.enqueue({
+        type: 'error',
+        error: new InvalidResponseDataError({
+          data: undefined,
+          message: 'Ollama stream ended without a done chunk.',
+        }),
+      });
+      controller.enqueue({
+        type: 'finish',
+        finishReason: { unified: 'error', raw: undefined },
+        usage: aggregateUsage(),
+      });
     },
   });
 }
