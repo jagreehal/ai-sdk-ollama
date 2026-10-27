@@ -22,6 +22,11 @@ export {
   OllamaEvaluationModel,
 } from './models/decision-model.js';
 
+export {
+  OllamaSpeechModel,
+  type OllamaSpeechModelConfig,
+} from './models/speech-model.js';
+
 export { OllamaError } from './utils/ollama-error.js';
 export type { OllamaErrorData } from './utils/ollama-error.js';
 export type {

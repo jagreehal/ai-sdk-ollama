@@ -12,6 +12,7 @@ import {
   OllamaEmbeddingRerankingSettings,
 } from './models/embedding-reranking-model';
 import { OllamaImageModel } from './models/image-model';
+import { OllamaSpeechModel } from './models/speech-model';
 import { OllamaDecisionModel } from './models/decision-model';
 import { ollamaTools } from './ollama-tools';
 
@@ -193,6 +194,14 @@ export function createOllama(
       provider: 'ollama.decision',
     });
   provider.evaluationModel = provider.decisionModel;
+  provider.speechModel = (modelId: string) =>
+    new OllamaSpeechModel(modelId, {
+      provider: 'ollama.speech',
+      baseURL,
+      headers: () => normalizedHeaders,
+      fetch: options.fetch,
+    });
+  provider.speech = provider.speechModel;
 
   // Create tools with the Ollama client injected
   const toolsWithClient = {

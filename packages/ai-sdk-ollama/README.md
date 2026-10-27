@@ -155,6 +155,7 @@ export OLLAMA_API_KEY="your_api_key_here"
     - [Simple and Predictable](#simple-and-predictable)
   - [Reranking](#reranking)
   - [Decision Models](#decision-models)
+  - [Speech](#speech)
   - [Streaming Utilities](#streaming-utilities)
     - [Smooth Stream](#smooth-stream)
     - [Partial JSON Parsing](#partial-json-parsing)
@@ -521,6 +522,26 @@ answers.urgency.score; // 0 to 2, e.g. 0.8
 ```
 
 Ollama names boolean questions `noul`, and the provider maps them for you. Ollama's per-question `confidence` lands in `providerMetadata.ollama.confidence`. Pull a model first with `ollama pull nimble`.
+
+## Speech
+
+Ollama 0.40.9 serves text-to-speech models such as [Phonon](https://ollama.com/library/phonon) on `/v1/audio/speech`. Use them with the AI SDK's `generateSpeech`:
+
+```typescript
+import { writeFile } from 'node:fs/promises';
+import { generateSpeech } from 'ai';
+import { ollama } from 'ai-sdk-ollama';
+
+const { audio } = await generateSpeech({
+  model: ollama.speech('phonon:40m-multilingual'),
+  text: 'Bonjour, voici votre résumé du matin.',
+  voice: 'Lucien',
+});
+
+await writeFile('morning.wav', audio.uint8Array); // 24 kHz mono WAV
+```
+
+`voice` defaults to `default`. Voice names match in any case and with or without accents, and `ollama show phonon` lists them. An unknown voice fails with Ollama's list of available voices. `text` can be up to 4,096 characters per call, so split longer text at sentence breaks. `outputFormat` can be `wav` (default) or `pcm`, which is raw 16-bit little-endian samples with no header. Ollama writes the WAV header before it knows the length, so its size fields hold the maximum value. Players handle that, but use `pcm` if you need exact sizes. Phonon does not support `speed`, `instructions` or `language`, so the provider leaves them out of the request and returns a warning. Choose the language with the model tag and voice. Phonon needs Apple Silicon. Pull a model first with `ollama pull phonon`. The `phonon` (31M English) checkpoint is Apache 2.0, and the 40M checkpoints are CC BY-NC 4.0.
 
 ## Streaming Utilities
 

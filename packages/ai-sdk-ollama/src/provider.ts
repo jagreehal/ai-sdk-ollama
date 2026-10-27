@@ -25,6 +25,7 @@ import {
 } from './models/embedding-reranking-model';
 import { OllamaImageModel } from './models/image-model';
 import { OllamaDecisionModel } from './models/decision-model';
+import { OllamaSpeechModel } from './models/speech-model';
 import { ollamaTools } from './ollama-tools';
 import type { WebSearchToolOptions } from './tool/web-search';
 import type { WebFetchToolOptions } from './tool/web-fetch';
@@ -167,6 +168,18 @@ export interface OllamaProvider extends ProviderV4 {
 
   /** @deprecated Use `decisionModel`. */
   evaluationModel(modelId: string): OllamaDecisionModel;
+
+  /**
+   * Create a text-to-speech model (e.g. `phonon`) for the AI SDK's
+   * `generateSpeech`. Requires Ollama 0.40.9+ on Apple Silicon.
+   */
+  speech(modelId: string): OllamaSpeechModel;
+
+  /**
+   * Create a text-to-speech model (e.g. `phonon`) for the AI SDK's
+   * `generateSpeech`. Requires Ollama 0.40.9+ on Apple Silicon.
+   */
+  speechModel(modelId: string): OllamaSpeechModel;
 
   /**
    * Ollama-specific tools that leverage web search capabilities
@@ -471,6 +484,14 @@ export function createOllama(
       provider: 'ollama.decision',
     });
   provider.evaluationModel = provider.decisionModel;
+  provider.speechModel = (modelId: string) =>
+    new OllamaSpeechModel(modelId, {
+      provider: 'ollama.speech',
+      baseURL,
+      headers: () => normalizedHeaders,
+      fetch: options.fetch,
+    });
+  provider.speech = provider.speechModel;
 
   // Create tools with the Ollama client injected - following AI SDK pattern
   const toolsWithClient = {
