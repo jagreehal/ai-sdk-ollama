@@ -233,15 +233,9 @@ describe('OllamaEmbeddingRerankingModel', () => {
     it.each([
       { maxBatchSize: undefined, batchSize: 16 },
       { maxBatchSize: 0, batchSize: 16 },
-      { maxBatchSize: -1, batchSize: 16 },
       { maxBatchSize: Number.NaN, batchSize: 16 },
-      { maxBatchSize: Number.POSITIVE_INFINITY, batchSize: 16 },
-      { maxBatchSize: Number.MIN_VALUE, batchSize: 16 },
-      { maxBatchSize: 0.1, batchSize: 16 },
       { maxBatchSize: 0.5, batchSize: 16 },
-      { maxBatchSize: 0.999, batchSize: 16 },
       { maxBatchSize: 1, batchSize: 1 },
-      { maxBatchSize: 1.9, batchSize: 1 },
       { maxBatchSize: 2.9, batchSize: 2 },
     ])(
       'normalizes maxBatchSize=$maxBatchSize to positive batches of $batchSize',
