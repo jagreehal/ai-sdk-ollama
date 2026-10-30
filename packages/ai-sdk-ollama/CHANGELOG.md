@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.6.1
+
+### Patch Changes
+
+- f472ffd: Abort the Ollama request when the stream returned by `doStream` is cancelled, so the server stops generating once the consumer stops reading.
+- 1645fac: Fall back to the default embedding reranking batch size when a supplied value would round down to zero, preventing repeated empty embedding requests.
+
 ## 4.6.0
 
 ### Minor Changes
