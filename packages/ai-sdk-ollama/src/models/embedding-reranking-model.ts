@@ -104,7 +104,7 @@ export class OllamaEmbeddingRerankingModel implements RerankingModelV4 {
     if (
       typeof maxBatchSize === 'number' &&
       Number.isFinite(maxBatchSize) &&
-      maxBatchSize > 0
+      maxBatchSize >= 1
     ) {
       return Math.floor(maxBatchSize);
     }

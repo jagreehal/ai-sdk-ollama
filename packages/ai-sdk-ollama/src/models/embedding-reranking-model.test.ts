@@ -230,6 +230,56 @@ describe('OllamaEmbeddingRerankingModel', () => {
       expect(ranking[0]?.index).toBe(0);
     });
 
+    it.each([
+      { maxBatchSize: undefined, batchSize: 16 },
+      { maxBatchSize: 0, batchSize: 16 },
+      { maxBatchSize: -1, batchSize: 16 },
+      { maxBatchSize: Number.NaN, batchSize: 16 },
+      { maxBatchSize: Number.POSITIVE_INFINITY, batchSize: 16 },
+      { maxBatchSize: Number.MIN_VALUE, batchSize: 16 },
+      { maxBatchSize: 0.1, batchSize: 16 },
+      { maxBatchSize: 0.5, batchSize: 16 },
+      { maxBatchSize: 0.999, batchSize: 16 },
+      { maxBatchSize: 1, batchSize: 1 },
+      { maxBatchSize: 1.9, batchSize: 1 },
+      { maxBatchSize: 2.9, batchSize: 2 },
+    ])(
+      'normalizes maxBatchSize=$maxBatchSize to positive batches of $batchSize',
+      async ({ maxBatchSize, batchSize }) => {
+        const model = createModel('bge-m3', { maxBatchSize });
+        const documents = Array.from(
+          { length: 19 },
+          (_, index) => `doc${index}`,
+        );
+        const inputs: string[][] = [];
+        mockEmbed.mockImplementation(async ({ input }: { input: string[] }) => {
+          // Bound the regression: a zero step must fail without looping forever.
+          if (input.length === 0) throw new Error('Unexpected empty batch');
+          inputs.push(input);
+          return createMockEmbeddings(
+            ...input.map((text) =>
+              text === 'query' || text === 'doc18' ? [1, 0] : [0, 1],
+            ),
+          );
+        });
+
+        const result = await model.doRerank({
+          query: 'query',
+          documents: { type: 'text', values: documents },
+        });
+
+        expect(inputs).toHaveLength(Math.ceil(20 / batchSize));
+        expect(inputs.flat()).toEqual(['query', ...documents]);
+        expect(
+          inputs.every(
+            (input) => input.length > 0 && input.length <= batchSize,
+          ),
+        ).toBe(true);
+        expect(result.ranking).toHaveLength(documents.length);
+        expect(result.ranking?.[0]).toEqual({ index: 18, relevanceScore: 1 });
+      },
+    );
+
     it('should split embedding requests based on maxBatchSize', async () => {
       const model = createModel('bge-m3', { maxBatchSize: 2 });
 
