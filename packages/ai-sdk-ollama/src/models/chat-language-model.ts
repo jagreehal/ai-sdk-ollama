@@ -738,6 +738,10 @@ export class OllamaChatLanguageModel implements LanguageModelV4 {
             controller.error(error);
           }
         },
+        cancel() {
+          // Stop the server-side generation when the consumer stops reading.
+          stream.abort();
+        },
       });
 
       return {
