@@ -132,10 +132,11 @@ export function createChunkTransformer({
       }
     },
 
-    // The connection can end (cut, server killed) before Ollama sends its
-    // `done` chunk. Close what is open, report the cut as an error and still
-    // end the stream with a finish part, so consumers do not wait on a part
-    // that never comes.
+    // Hardening for clients whose iterator ends cleanly without Ollama's
+    // `done` chunk (a custom `OllamaClient` adapter). The default client throws
+    // in that case, so the stream errors and this never runs. Close what is
+    // open, report the early end as an error and still end the stream with a
+    // finish part, so consumers do not wait on a part that never comes.
     flush(controller) {
       if (finished) {
         return;

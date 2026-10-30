@@ -335,7 +335,7 @@ describe('OllamaChatLanguageModel: doStream', () => {
     });
   });
 
-  describe('doStream when the connection ends before done', () => {
+  describe('doStream when the stream ends before done', () => {
     const options: LanguageModelV4CallOptions = {
       prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
     };
@@ -412,6 +412,43 @@ describe('OllamaChatLanguageModel: doStream', () => {
         'error',
         'finish',
       ]);
+    });
+
+    it('should error the stream, without a synthetic finish, when the iterator throws after a chunk (default client path)', async () => {
+      const cut = new Error(
+        'Did not receive done or success response in stream.',
+      );
+      const stream: AbortableStream<ChatResponse> = {
+        abort() {},
+        [Symbol.asyncIterator]: async function* () {
+          yield {
+            model: 'llama3.2',
+            created_at: new Date(),
+            message: { role: 'assistant', content: 'Hello' },
+            done: false,
+          } as ChatResponse;
+          throw cut;
+        },
+      };
+      vi.mocked(mockChat).mockResolvedValueOnce(stream);
+
+      const { stream: result } = await model.doStream(options);
+      const reader = result.getReader();
+      const chunks: LanguageModelV4StreamPart[] = [];
+      let thrown: unknown;
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+        }
+      } catch (error) {
+        thrown = error;
+      }
+
+      expect(thrown).toBe(cut);
+      expect(chunks.some((chunk) => chunk.type === 'finish')).toBe(false);
+      expect(chunks.some((chunk) => chunk.type === 'error')).toBe(false);
     });
 
     it('should not add a second finish after a done chunk', async () => {
