@@ -370,6 +370,141 @@ describe('OllamaChatLanguageModel: doStream', () => {
     });
   });
 
+  describe('doStream when the stream ends before done', () => {
+    const options: LanguageModelV4CallOptions = {
+      prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }],
+    };
+
+    it('should close the open text block, report an error and finish when no done chunk arrives', async () => {
+      mockChatStream([
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: { role: 'assistant', content: 'Hello' },
+          done: false,
+        },
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: { role: 'assistant', content: ' wor' },
+          done: false,
+        },
+      ] as ChatResponse[]);
+
+      const { stream } = await model.doStream(options);
+      const chunks = await Array.fromAsync(stream);
+
+      expect(chunks.map((chunk) => chunk.type)).toEqual([
+        'stream-start',
+        'text-start',
+        'text-delta',
+        'text-delta',
+        'text-end',
+        'error',
+        'finish',
+      ]);
+      expect(chunks.at(-2)).toMatchObject({
+        type: 'error',
+        error: { message: 'Ollama stream ended without a done chunk.' },
+      });
+      expect(chunks.at(-1)).toMatchObject({
+        type: 'finish',
+        finishReason: { unified: 'error', raw: undefined },
+      });
+    });
+
+    it('should close an open reasoning block when no done chunk arrives', async () => {
+      mockChatStream([
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: { role: 'assistant', content: '', thinking: 'Let me see' },
+          done: false,
+        },
+      ] as ChatResponse[]);
+
+      const { stream } = await model.doStream(options);
+      const chunks = await Array.fromAsync(stream);
+
+      expect(chunks.map((chunk) => chunk.type)).toEqual([
+        'stream-start',
+        'reasoning-start',
+        'reasoning-delta',
+        'reasoning-end',
+        'error',
+        'finish',
+      ]);
+    });
+
+    it('should still report an error and finish when the stream ends without any chunk', async () => {
+      mockChatStream([]);
+
+      const { stream } = await model.doStream(options);
+      const chunks = await Array.fromAsync(stream);
+
+      expect(chunks.map((chunk) => chunk.type)).toEqual([
+        'stream-start',
+        'error',
+        'finish',
+      ]);
+    });
+
+    it('should error the stream, without a synthetic finish, when the iterator throws after a chunk (default client path)', async () => {
+      const cut = new Error(
+        'Did not receive done or success response in stream.',
+      );
+      const stream: AbortableStream<ChatResponse> = {
+        abort() {},
+        [Symbol.asyncIterator]: async function* () {
+          yield {
+            model: 'llama3.2',
+            created_at: new Date(),
+            message: { role: 'assistant', content: 'Hello' },
+            done: false,
+          } as ChatResponse;
+          throw cut;
+        },
+      };
+      vi.mocked(mockChat).mockResolvedValueOnce(stream);
+
+      const { stream: result } = await model.doStream(options);
+      const reader = result.getReader();
+      const chunks: LanguageModelV4StreamPart[] = [];
+      let thrown: unknown;
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+        }
+      } catch (error) {
+        thrown = error;
+      }
+
+      expect(thrown).toBe(cut);
+      expect(chunks.some((chunk) => chunk.type === 'finish')).toBe(false);
+      expect(chunks.some((chunk) => chunk.type === 'error')).toBe(false);
+    });
+
+    it('should not add a second finish after a done chunk', async () => {
+      mockChatStream([
+        {
+          model: 'llama3.2',
+          created_at: new Date(),
+          message: { role: 'assistant', content: 'Hi' },
+          done: true,
+          done_reason: 'stop',
+        },
+      ] as ChatResponse[]);
+
+      const { stream } = await model.doStream(options);
+      const chunks = await Array.fromAsync(stream);
+
+      expect(chunks.filter((chunk) => chunk.type === 'finish')).toHaveLength(1);
+      expect(chunks.some((chunk) => chunk.type === 'error')).toBe(false);
+    });
+  });
+
   describe('doStream with think', () => {
     it('should handle streaming with reasoning', async () => {
       const mockStreamData: ChatResponse[] = [
