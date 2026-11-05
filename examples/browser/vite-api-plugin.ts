@@ -1,6 +1,6 @@
 import { Plugin } from 'vite';
-import { createOllama } from 'ai-sdk-ollama';
-import { streamText, convertToModelMessages } from 'ai';
+import { createOllama, streamText } from 'ai-sdk-ollama';
+import { convertToModelMessages } from 'ai';
 import {
   createMCPClient,
   mcpAppClientCapabilities,
@@ -196,7 +196,7 @@ export function apiPlugin(): Plugin {
 
             const result = await streamText({
               model: ollama(model),
-              messages: convertToModelMessages(messages),
+              messages: await convertToModelMessages(messages),
               tools: mcpTools as Parameters<typeof streamText>[0]['tools'],
               system:
                 'You are a helpful assistant. When the user asks for a dashboard, use the showDashboard tool.',

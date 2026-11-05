@@ -48,7 +48,7 @@ async function main() {
       result2 = await generateText({
         model: ollama('llama3.2'),
         prompt:
-          'Get the weather for San Francisco and provide a structured summary',
+          'Use the getWeather tool for San Francisco, then provide a structured summary',
         tools: {
           getWeather: weatherTool as any, // Type assertion needed due to AI SDK ToolSet type restrictions
         },
@@ -80,7 +80,7 @@ async function main() {
     const result3 = await generateText({
       model: ollama('llama3.2'),
       prompt:
-        'Get the weather for San Francisco and provide a structured summary',
+        'Use the getWeather tool for San Francisco, then provide a structured summary',
       tools: {
         getWeather: weatherTool as any, // Type assertion needed due to AI SDK ToolSet type restrictions
       },
@@ -102,7 +102,6 @@ async function main() {
       console.log('   Tool results:', toolResults);
     } else {
       console.log('Tool calls array is empty or missing after awaiting');
-      console.log('   ai-sdk-ollama synthesis is not preserving tool metadata');
     }
 
     console.log('\n' + '='.repeat(70));

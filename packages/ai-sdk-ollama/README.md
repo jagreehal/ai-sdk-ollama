@@ -368,6 +368,14 @@ const result = await generateText({
 console.log(result.text); // "15 + 27 equals 42. Using the math tool, I calculated..."
 ```
 
+When a run ends on tool results with no answer, the wrapper makes one more model call, without tools, to write it:
+
+- `usage`, `totalUsage` and `text` include that call, as do the `finish` part and `onEnd`/`onFinish` of `streamText`.
+- `streamText` runs it once, when you read `textStream`, `stream`, `fullStream` or `text`. `toUIMessageStream`, `toUIMessageStreamResponse`, `toTextStreamResponse` and the `pipe` methods carry the answer too. Reading `usage` or calling `consumeStream` alone doesn't start it.
+- With the default `stopWhen`, `toolChoice: 'required'` or a named tool applies to the first step, and later steps use `auto` so the model can answer in text.
+
+`streamText` takes `enhancedOptions: { enableStreamingSynthesis, minStreamLength }`, which default to `true` and `10`.
+
 ### Combining Tools with Structured Output
 
 The `enableToolsWithStructuredOutput` option allows you to use both tool calling and structured output together:

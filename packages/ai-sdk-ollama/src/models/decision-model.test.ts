@@ -132,6 +132,26 @@ describe('OllamaDecisionModel', () => {
     expect(systemone).not.toHaveBeenCalled();
   });
 
+  it('rejects questions Ollama cannot express', async () => {
+    const systemone = vi.fn();
+    const decide = (
+      question: Parameters<
+        OllamaDecisionModel['doDecide']
+      >[0]['questions'][string],
+    ) =>
+      modelWith(systemone).doDecide({
+        state: [{ type: 'text', text: 'Ticket' }],
+        questions: { q: question },
+      });
+    await expect(
+      decide({ type: 'box', instructions: 'Name the team' }),
+    ).rejects.toThrow(/box questions/);
+    await expect(
+      decide({ type: 'choice', criteria: { billing: null } }),
+    ).rejects.toThrow(/without instructions/);
+    expect(systemone).not.toHaveBeenCalled();
+  });
+
   it('wraps client errors in OllamaError', async () => {
     const systemone = vi
       .fn()
