@@ -24,7 +24,7 @@ async function main() {
     },
   });
 
-  const prompt = 'Get the weather for San Francisco and provide a structured summary';
+  const prompt = 'Use the getWeather tool for San Francisco, then provide a structured summary';
   const tools = { getWeather: weatherTool as any }; // Type assertion needed due to AI SDK ToolSet type restrictions
   const experimentalOutput = Output.object({
     schema: z.object({
@@ -37,21 +37,30 @@ async function main() {
     }),
   });
 
-  // Test 1: Standard AI SDK behavior (tools are bypassed)
+  // Test 1: Standard AI SDK behavior. With JSON output the model tends to skip
+  // the tool, and the AI SDK throws when a required tool call does not arrive.
   console.log('\n📌 Test 1: Standard behavior (no enhancement)');
   console.log('toolChoice: "required" + output');
-  const result1 = await generateText({
-    model: ollama('llama3.2'),
-    prompt,
-    tools,
-    output: experimentalOutput,
-    toolChoice: 'required',
-    // NO enhancedOptions - uses official AI SDK behavior
-  });
+  let standardToolCalls = 0;
+  let standardTemperature: number | undefined;
+  try {
+    const result1 = await generateText({
+      model: ollama('llama3.2'),
+      prompt,
+      tools,
+      output: experimentalOutput,
+      toolChoice: 'required',
+      // NO enhancedOptions - uses official AI SDK behavior
+    });
 
-  console.log('✅ Tool calls:', result1.toolCalls?.length || 0);
-  console.log('✅ Has actual weather data:', result1.output.temperature === actualTemperature);
-  console.log('   Result:', JSON.stringify(result1.output, null, 2));
+    standardToolCalls = result1.toolCalls?.length || 0;
+    standardTemperature = result1.output.temperature;
+    console.log('✅ Tool calls:', standardToolCalls);
+    console.log('✅ Has actual weather data:', standardTemperature === actualTemperature);
+    console.log('   Result:', JSON.stringify(result1.output, null, 2));
+  } catch (error) {
+    console.log('⚠️  Standard mode failed:', error instanceof Error ? error.message : error);
+  }
 
   // Test 2: Enhanced behavior (ai-sdk-ollama exclusive!)
   console.log('\n📌 Test 2: ENHANCED behavior (opt-in)');
@@ -74,7 +83,7 @@ async function main() {
 
   console.log('\n' + '='.repeat(70));
   console.log('🎯 Comparison:');
-  console.log(`   Standard: ${result1.toolCalls?.length || 0} tool calls, temp: ${result1.output.temperature}`);
+  console.log(`   Standard: ${standardToolCalls} tool calls, temp: ${standardTemperature ?? 'none'}`);
   console.log(`   Enhanced: ${result2.toolCalls?.length || 0} tool calls, temp: ${result2.output.temperature}`);
   console.log('\n💡 The enhanced mode actually calls the tool and uses real data!');
   console.log('   This is ONLY available in ai-sdk-ollama.');

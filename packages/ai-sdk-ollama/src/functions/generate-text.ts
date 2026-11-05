@@ -1,12 +1,28 @@
 /**
  * generateText - Enhanced generateText with Ollama-specific reliability
  *
- * This wrapper provides response synthesis and enhanced tool calling reliability
- * that addresses the core Ollama limitation: tools execute but no final text is generated.
+ * When a run ends on tool results with no answer, one more model call writes it.
  */
 
-import { generateText as _generateText, stepCountIs } from 'ai';
-import { lastUserText } from '../utils/last-user-text';
+import type { Context } from '@ai-sdk/provider-utils';
+import {
+  generateText as _generateText,
+  stepCountIs,
+  type GenerateTextResult,
+  type LanguageModelUsage,
+  type OutputInterface,
+  type ToolSet,
+} from 'ai';
+import { addUsage } from '../utils/add-usage';
+import {
+  buildSynthesisOptions,
+  DEFAULT_SYNTHESIS_PROMPT,
+  forcesTool,
+  needsSynthesis,
+  prepareStepFor,
+} from './synthesis';
+
+type BaseOptions = Parameters<typeof _generateText>[0];
 
 /**
  * Create a new object that inherits from `base` (preserving its getters/prototype)
@@ -57,12 +73,9 @@ export interface EnhancedOptions {
   /**
    * EXPERIMENTAL: Enable tool calling with structured output (output)
    *
-   * The official AI SDK doesn't support combining toolChoice: 'required' with output.
    * When enabled, this uses a two-phase approach:
    * 1. Execute tools first (without output)
    * 2. Generate structured output with tool results injected as context
-   *
-   * This is NOT standard AI SDK behavior - only enable if you need both features together.
    *
    * @default false
    */
@@ -72,7 +85,11 @@ export interface EnhancedOptions {
 /**
  * Enhanced generateText options that extend the official AI SDK options
  */
-export type GenerateTextOptions = Parameters<typeof _generateText>[0] & {
+export type GenerateTextOptions<
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends Context = Context,
+  OUTPUT extends OutputInterface = OutputInterface,
+> = Parameters<typeof _generateText<TOOLS, RUNTIME_CONTEXT, OUTPUT>>[0] & {
   /**
    * Enhanced options for Ollama-specific reliability features
    */
@@ -87,6 +104,18 @@ export type GenerateTextOptions = Parameters<typeof _generateText>[0] & {
  *
  * Type parameters are inferred from the options, preserving AI SDK's type inference.
  */
+export async function generateText<
+  TOOLS extends ToolSet,
+  RUNTIME_CONTEXT extends Context = Context,
+  OUTPUT extends OutputInterface = OutputInterface<string, string>,
+>(
+  options: GenerateTextOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT>,
+): Promise<GenerateTextResult<ToolSet, RUNTIME_CONTEXT, OUTPUT>>;
+// Without this, options typed broadly, such as `activeTools: string[]`, would
+// stop compiling once `tools` is concrete.
+export async function generateText(
+  options: GenerateTextOptions,
+): Promise<Awaited<ReturnType<typeof _generateText>>>;
 export async function generateText(
   options: GenerateTextOptions,
 ): Promise<Awaited<ReturnType<typeof _generateText>>> {
@@ -94,7 +123,7 @@ export async function generateText(
 
   const {
     enableSynthesis = true,
-    synthesisPrompt = 'Based on the tool results above, please provide a comprehensive response to the original question.',
+    synthesisPrompt = DEFAULT_SYNTHESIS_PROMPT,
     maxSynthesisAttempts = 2,
     minResponseLength = 10,
     enableToolsWithStructuredOutput = false,
@@ -106,11 +135,7 @@ export async function generateText(
 
   // EXPERIMENTAL: Support tools with structured output (opt-in only)
   const hasOutput = 'output' in generateTextOptions;
-  const requiresTools =
-    generateTextOptions.toolChoice === 'required' ||
-    (typeof generateTextOptions.toolChoice === 'object' &&
-      'type' in generateTextOptions.toolChoice &&
-      generateTextOptions.toolChoice.type === 'tool');
+  const requiresTools = forcesTool(generateTextOptions.toolChoice);
 
   if (
     enableToolsWithStructuredOutput &&
@@ -126,9 +151,7 @@ export async function generateText(
       phase1Options as Parameters<typeof _generateText>[0],
     );
 
-    // If tools were called, use their results in Phase 2
     if (toolResult.toolCalls && toolResult.toolCalls.length > 0) {
-      // Build context with tool results
       const toolContext = toolResult.toolResults
         ?.map(
           (tr, index) =>
@@ -138,7 +161,6 @@ export async function generateText(
 
       const toolResultsSuffix = `\n\nTool Results:\n${toolContext}\n\nPlease provide a structured response based on these tool results.`;
 
-      // Inject tool context into either prompt or messages
       const phase2Base = Object.fromEntries(
         Object.entries(generateTextOptions).filter(
           ([key]) => key !== 'tools' && key !== 'toolChoice',
@@ -171,139 +193,68 @@ export async function generateText(
         dynamicToolCalls: toolResult.dynamicToolCalls,
         staticToolResults: toolResult.staticToolResults,
         dynamicToolResults: toolResult.dynamicToolResults,
-        usage: {
-          inputTokens:
-            (toolResult.usage.inputTokens ?? 0) +
-            (structuredResult.usage.inputTokens ?? 0),
-          outputTokens:
-            (toolResult.usage.outputTokens ?? 0) +
-            (structuredResult.usage.outputTokens ?? 0),
-          totalTokens:
-            (toolResult.usage.totalTokens ?? 0) +
-            (structuredResult.usage.totalTokens ?? 0),
-        },
+        usage: addUsage(toolResult.usage, structuredResult.usage),
+        totalUsage: addUsage(
+          toolResult.totalUsage,
+          structuredResult.totalUsage,
+        ),
       } as Partial<typeof structuredResult>);
 
       return enhancedResult;
     }
   }
 
-  // First, try standard generateText with multi-turn tool calling enabled
-  // Automatically forward all AI SDK options, only override stopWhen if needed
+  const baseOptions = generateTextOptions as BaseOptions;
   const result = await _generateText({
-    ...(generateTextOptions as Parameters<typeof _generateText>[0]),
-    // Only set stopWhen default if user didn't provide one and tools are enabled
-    stopWhen: (generateTextOptions.stopWhen ??
-      (hasTools ? stepCountIs(5) : undefined)) as Parameters<
-      typeof _generateText
-    >[0]['stopWhen'],
-  });
+    ...baseOptions,
+    stopWhen: baseOptions.stopWhen ?? (hasTools ? stepCountIs(5) : undefined),
+    prepareStep: prepareStepFor(baseOptions),
+  } as BaseOptions);
 
-  // Check if we need synthesis (tools called but no meaningful text)
-  // Check across all steps to see if any tools were called
-  const toolsWereCalled =
-    result.steps?.some(
-      (step: { toolCalls?: unknown[] }) =>
-        step.toolCalls && step.toolCalls.length > 0,
-    ) ?? false;
-  const hasMinimalText =
-    !result.text || result.text.trim().length < minResponseLength;
-
-  if (!hasTools || !toolsWereCalled || !hasMinimalText || !enableSynthesis) {
+  if (
+    !hasTools ||
+    !enableSynthesis ||
+    !needsSynthesis({
+      steps: result.steps,
+      text: result.text,
+      minLength: minResponseLength,
+      toolChoice: baseOptions.toolChoice,
+    })
+  ) {
     return result;
   }
 
-  // Attempt synthesis with tool results
+  // Every attempt is a paid model call, so each counts, accepted or not.
+  let attemptsUsage: LanguageModelUsage | undefined;
+  const withAttemptsUsage = (overrides: Partial<typeof result>) =>
+    attemptsUsage
+      ? resultWithOverrides(result, {
+          ...overrides,
+          usage: addUsage(result.usage, attemptsUsage),
+          totalUsage: addUsage(result.totalUsage, attemptsUsage),
+        })
+      : result;
+
   for (let attempt = 1; attempt <= maxSynthesisAttempts; attempt++) {
     try {
-      // Build synthesis prompt with tool context from all steps
-      const allToolCalls: Array<{ toolName: string; result: unknown }> = [];
-
-      if (result.steps) {
-        for (const step of result.steps) {
-          if (step.toolCalls && step.toolResults) {
-            for (let index = 0; index < step.toolCalls.length; index++) {
-              const toolCall = step.toolCalls[index];
-              const toolResult = step.toolResults[index];
-              if (toolCall && toolResult) {
-                allToolCalls.push({
-                  toolName: toolCall.toolName,
-                  result: toolResult,
-                });
-              }
-            }
-          }
-        }
-      }
-
-      const toolContext =
-        allToolCalls
-          .map((tc) => `${tc.toolName}: ${JSON.stringify(tc.result)}`)
-          .join('\n') || '';
-
-      const originalPrompt = lastUserText(options.prompt, options.messages);
-
-      const fullSynthesisPrompt = `Original request: ${originalPrompt}
-
-Tool results:
-${toolContext}
-
-${synthesisPrompt}`;
-
-      const generateOptions = generateTextOptions as Parameters<
-        typeof _generateText
-      >[0];
-      const baseOptions = Object.fromEntries(
-        Object.entries(generateOptions).filter(
-          ([key]) => key !== 'tools' && key !== 'prompt' && key !== 'messages',
-        ),
-      );
-
-      // Use messages pattern if original call used messages, otherwise use prompt
-      const synthesisOptions = generateOptions.messages
-        ? {
-            ...baseOptions,
-            messages: [
-              ...(generateOptions.messages || []),
-              { role: 'user' as const, content: fullSynthesisPrompt },
-            ],
-          }
-        : {
-            ...baseOptions,
-            prompt: fullSynthesisPrompt,
-          };
-
-      // Generate synthesis response
       const synthesisResult = await _generateText(
-        synthesisOptions as Parameters<typeof _generateText>[0],
+        buildSynthesisOptions(
+          baseOptions,
+          result.steps,
+          synthesisPrompt,
+        ) as BaseOptions,
       );
+      attemptsUsage = attemptsUsage
+        ? addUsage(attemptsUsage, synthesisResult.usage)
+        : synthesisResult.usage;
 
-      if (
-        synthesisResult.text &&
-        synthesisResult.text.trim().length >= minResponseLength
-      ) {
-        // Merge synthesis text and combined usage into result (without mutating readonly getters)
-        const enhancedResult = resultWithOverrides(result, {
-          text: synthesisResult.text,
-          usage: {
-            inputTokens:
-              (result.usage.inputTokens ?? 0) +
-              (synthesisResult.usage.inputTokens ?? 0),
-            outputTokens:
-              (result.usage.outputTokens ?? 0) +
-              (synthesisResult.usage.outputTokens ?? 0),
-            totalTokens:
-              (result.usage.totalTokens ?? 0) +
-              (synthesisResult.usage.totalTokens ?? 0),
-          },
-        } as Partial<typeof result>);
-
-        return enhancedResult;
+      if (synthesisResult.text.trim().length >= minResponseLength) {
+        return withAttemptsUsage({ text: synthesisResult.text });
       }
     } catch {
-      // Silently continue to next attempt
+      // The next attempt runs, or the loop ends with the result so far.
     }
   }
 
-  return result;
+  return withAttemptsUsage({});
 }

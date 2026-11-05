@@ -74,6 +74,17 @@ function toState(state: DecisionModelV4State): SystemOneContent {
 function toSystemOneQuestion(
   question: DecisionModelV4Question,
 ): SystemOneQuestion {
+  // Ollama has no box question, and every question it does have requires instructions.
+  if (question.type === 'box') {
+    throw new UnsupportedFunctionalityError({
+      functionality: 'box questions',
+    });
+  }
+  if (question.instructions == null) {
+    throw new UnsupportedFunctionalityError({
+      functionality: 'decision questions without instructions',
+    });
+  }
   const instructions = toContent(question.instructions);
   switch (question.type) {
     case 'choice': {

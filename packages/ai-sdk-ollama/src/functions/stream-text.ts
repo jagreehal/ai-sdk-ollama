@@ -1,48 +1,104 @@
-import { streamText as _streamText, stepCountIs } from 'ai';
-import { lastUserText } from '../utils/last-user-text';
+import type { Context } from '@ai-sdk/provider-utils';
+import {
+  streamText as _streamText,
+  stepCountIs,
+  type LanguageModelUsage,
+  type OutputInterface,
+  type StreamTextResult,
+  type TextStreamPart,
+  type ToolSet,
+} from 'ai';
+import { addUsage } from '../utils/add-usage';
+import {
+  buildSynthesisOptions,
+  DEFAULT_SYNTHESIS_PROMPT,
+  needsSynthesis,
+  prepareStepFor,
+} from './synthesis';
 
-type AIStreamTextOptions = Parameters<typeof _streamText>[0];
+type AIStreamTextOptions<
+  TOOLS extends ToolSet,
+  RUNTIME_CONTEXT extends Context,
+  OUTPUT extends OutputInterface,
+> = Parameters<typeof _streamText<TOOLS, RUNTIME_CONTEXT, OUTPUT>>[0];
 
-type SynthesisStreamPart =
-  | { type: 'text-start'; id: string }
-  | { type: 'text-delta'; id: string; text: string; delta?: string }
-  | { type: 'text-end'; id: string }
-  | { type: 'tool-call'; toolCallId: string; toolName: string; input: unknown }
-  | {
-      type: 'tool-result';
-      toolCallId: string;
-      toolName: string;
-      output: unknown;
-    }
-  | {
-      type: 'finish';
-      finishReason: string;
-      totalUsage: {
-        inputTokens: number;
-        outputTokens: number;
-        totalTokens: number;
-      };
-    }
-  | { type: 'start' }
-  | { type: 'start-step'; request: unknown; warnings: unknown[] }
-  | {
-      type: 'finish-step';
-      response: unknown;
-      usage: unknown;
-      finishReason: string;
-      providerMetadata: unknown;
-    }
-  | { type: string; [key: string]: unknown };
+type BaseOptions = Parameters<typeof _streamText>[0];
+type StreamResult = ReturnType<typeof _streamText>;
+type StreamPart = TextStreamPart<ToolSet>;
 
-type StreamPart = {
-  type: string;
-  [key: string]: unknown;
+type Synthesis = {
+  /** Includes the separator from any text already streamed. */
+  text: string;
+  usage: LanguageModelUsage;
+  content: Awaited<StreamResult['content']>;
+  responseMessages: Awaited<StreamResult['response']>['messages'];
 };
 
-export type StreamTextOptions = AIStreamTextOptions & {
+/** Streamed text cannot be retracted, so the answer follows any that exists. */
+function withSynthesis(text: string, synthesis: Synthesis | undefined) {
+  if (!synthesis) return text;
+  return text ? text + synthesis.text : synthesis.text.trimStart();
+}
+
+function inChunks(text: string, size: number) {
+  const chunks: string[] = [];
+  for (let index = 0; index < text.length; index += size) {
+    chunks.push(text.slice(index, index + size));
+  }
+  return chunks;
+}
+
+/**
+ * Like the result's own promises: a getter read but not yet awaited must not
+ * become an unhandled rejection when the stream fails.
+ */
+function markHandled<T>(promise: Promise<T>) {
+  promise.catch(() => {});
+  return promise;
+}
+
+/**
+ * Passes `source` through, skipping chunks `keep` rejects, then adds `atEnd()`.
+ * It reads `source` to the end whatever the consumer does, so a reader that
+ * stops early still gets the run finished and its end callback fired.
+ */
+function appendAtEnd<T>(
+  source: ReadableStream<T>,
+  atEnd: () => Promise<T[]>,
+  keep: (chunk: T) => boolean = () => true,
+  onCancel: () => void = () => {},
+) {
+  let cancelled = false;
+
+  return new ReadableStream<T>({
+    async start(controller) {
+      const reader = source.getReader();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (keep(value) && !cancelled) controller.enqueue(value);
+      }
+
+      const chunks = await atEnd();
+      if (cancelled) return;
+      for (const chunk of chunks) controller.enqueue(chunk);
+      controller.close();
+    },
+    cancel() {
+      cancelled = true;
+      onCancel();
+    },
+  });
+}
+
+export type StreamTextOptions<
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends Context = Context,
+  OUTPUT extends OutputInterface = OutputInterface,
+> = AIStreamTextOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT> & {
   enhancedOptions?: {
     /**
-     * @default true
+     * @deprecated Has no effect.
      */
     enableToolLogging?: boolean;
     /**
@@ -54,470 +110,261 @@ export type StreamTextOptions = AIStreamTextOptions & {
      */
     minStreamLength?: number;
     /**
-     * @default 3000
+     * @deprecated Has no effect: synthesis needs the finished stream.
      */
     synthesisTimeout?: number;
   };
 };
 
-interface StreamState {
-  textContent: string;
-  toolCalls: Array<{ toolCallId: string; toolName: string; input: unknown }>;
-  toolResults: Array<{ toolCallId: string; toolName: string; output: unknown }>;
-  hasFinished: boolean;
-  parts: SynthesisStreamPart[];
-}
-
+export async function streamText<
+  TOOLS extends ToolSet,
+  RUNTIME_CONTEXT extends Context = Context,
+  OUTPUT extends OutputInterface = OutputInterface<string, string, never>,
+>(
+  options: StreamTextOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT>,
+): Promise<StreamTextResult<ToolSet, RUNTIME_CONTEXT, OUTPUT>>;
+// Without this, options typed broadly, such as `activeTools: string[]`, would
+// stop compiling once `tools` is concrete.
+export async function streamText(
+  options: StreamTextOptions,
+): Promise<Awaited<ReturnType<typeof _streamText>>>;
 export async function streamText(
   options: StreamTextOptions,
 ): Promise<Awaited<ReturnType<typeof _streamText>>> {
   const { enhancedOptions = {}, ...streamTextOptions } = options;
-
-  const {
-    enableStreamingSynthesis = true,
-    minStreamLength = 10,
-    synthesisTimeout = 3000,
-  } = enhancedOptions;
+  const { enableStreamingSynthesis = true, minStreamLength = 10 } =
+    enhancedOptions;
 
   const hasTools = options.tools && Object.keys(options.tools).length > 0;
 
   if (!hasTools || !enableStreamingSynthesis) {
-    return _streamText(streamTextOptions as Parameters<typeof _streamText>[0]);
+    return _streamText(streamTextOptions as BaseOptions);
   }
 
-  const streamResult = _streamText({
-    ...(streamTextOptions as Parameters<typeof _streamText>[0]),
-    stopWhen:
-      streamTextOptions.stopWhen ?? (hasTools ? stepCountIs(5) : undefined),
-  });
+  const { onEnd, onFinish, ...baseOptions } = streamTextOptions as BaseOptions;
+  const userOnEnd = onEnd ?? onFinish;
 
-  const state: StreamState = {
-    textContent: '',
-    toolCalls: [],
-    toolResults: [],
-    hasFinished: false,
-    parts: [],
+  let enhancedTextStream: ReadableStream<string> | undefined;
+  let fullStreamRead = false;
+  let readers = 0;
+  let synthesis: Promise<Synthesis | undefined> | undefined;
+  // Set when nobody can see a synthesized answer, so none is paid for.
+  let answerUnread = false;
+
+  // Memoized and keyed off streamResult.steps, which settles on success, error
+  // and abort alike, so every reader gets one run and none can hang.
+  const getSynthesis = () => {
+    synthesis ??= runSynthesis();
+    return synthesis;
   };
 
-  let synthesisApplied = false;
-  let synthesisInProgress = false;
+  // Synthesis is a paid model call, so only a reader of the answer starts it.
+  // Usage and the end callback report it if it ran, and never cause it.
+  const synthesisIfWanted = async () =>
+    (synthesis ?? enhancedTextStream ?? fullStreamRead)
+      ? getSynthesis()
+      : undefined;
 
-  // Generates a synthesis response. Accepts overrides for tool calls/results
-  // since state may not be populated when only textStream is consumed.
-  const generateSynthesis = async (
-    toolCallsOverride?: typeof state.toolCalls,
-    toolResultsOverride?: typeof state.toolResults,
-  ): Promise<string> => {
-    if (synthesisApplied || synthesisInProgress) {
-      return '';
+  const wrappedOnEnd: BaseOptions['onEnd'] = async (event) => {
+    const finished = await synthesisIfWanted();
+    await userOnEnd?.(
+      finished
+        ? {
+            ...event,
+            text: withSynthesis(event.text, finished),
+            content: [...event.content, ...finished.content],
+            responseMessages: [
+              ...event.responseMessages,
+              ...finished.responseMessages,
+            ],
+            usage: addUsage(event.usage, finished.usage),
+            totalUsage: addUsage(event.totalUsage, finished.usage),
+          }
+        : event,
+    );
+  };
+
+  const streamResult = _streamText({
+    ...baseOptions,
+    stopWhen: baseOptions.stopWhen ?? stepCountIs(5),
+    prepareStep: prepareStepFor(baseOptions),
+    onEnd: userOnEnd && wrappedOnEnd,
+  } as BaseOptions);
+
+  const runSynthesis = async (): Promise<Synthesis | undefined> => {
+    if (answerUnread) return undefined;
+
+    let steps: Awaited<typeof streamResult.steps>;
+    try {
+      steps = await streamResult.steps;
+    } catch {
+      // The stream failed; result getters and fullStream report that.
+      return undefined;
     }
 
-    const toolCalls = toolCallsOverride ?? state.toolCalls;
-    const toolResults = toolResultsOverride ?? state.toolResults;
+    const streamedText = steps.map((step) => step.text).join('');
+    const finalText = steps.at(-1)?.text ?? '';
 
-    if (toolCalls.length === 0) {
-      return '';
+    // Reading `text` alone has no stream to fill, so it needs real results.
+    const hasReader = enhancedTextStream ?? fullStreamRead;
+    if (!hasReader && !steps.some((step) => step.toolResults.length > 0)) {
+      return undefined;
     }
 
-    if (state.textContent.length >= minStreamLength) {
-      return '';
+    // An empty final step has no answer, whatever came before the tool results.
+    // Otherwise textStream goes by the length of all it sent, and anything else
+    // takes any text as the answer, because a short answer is still an answer.
+    if (
+      !needsSynthesis({
+        steps,
+        text: enhancedTextStream && finalText ? streamedText : finalText,
+        minLength: enhancedTextStream
+          ? minStreamLength
+          : Math.min(minStreamLength, 1),
+        toolChoice: baseOptions.toolChoice,
+      })
+    ) {
+      return undefined;
     }
-
-    synthesisInProgress = true;
 
     try {
-      const toolContext =
-        toolResults
-          .map((tr) => {
-            return `${tr.toolName}: ${JSON.stringify(tr.output)}`;
-          })
-          .join('\n') || '';
-
-      const originalPromptText = lastUserText(options.prompt, options.messages);
-
-      const synthesisPrompt = `Original request: ${originalPromptText}
-
-Tool results:
-${toolContext}
-
-Based on the tool results above, please provide a comprehensive response to the original question.`;
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { tools, prompt, messages, ...baseOptions } =
-        streamTextOptions as Parameters<typeof _streamText>[0];
-
-      const synthesisOptions = messages
-        ? {
-            ...baseOptions,
-            messages: [
-              ...(messages || []),
-              { role: 'user' as const, content: synthesisPrompt },
-            ],
-          }
-        : {
-            ...baseOptions,
-            prompt: synthesisPrompt,
-          };
-
       const synthesisStream = _streamText(
-        synthesisOptions as Parameters<typeof _streamText>[0],
+        buildSynthesisOptions(
+          baseOptions,
+          steps,
+          DEFAULT_SYNTHESIS_PROMPT,
+        ) as BaseOptions,
       );
-
-      let synthesisText = '';
-      for await (const chunk of synthesisStream.textStream) {
-        synthesisText += chunk;
-      }
-
-      synthesisApplied = true;
-      return synthesisText;
+      const [text, usage, content, response] = await Promise.all([
+        synthesisStream.text,
+        synthesisStream.usage,
+        synthesisStream.content,
+        synthesisStream.response,
+      ]);
+      return {
+        text: streamedText && text ? `\n\n${text}` : text,
+        usage,
+        content,
+        responseMessages: response.messages,
+      };
     } catch (error) {
-      console.warn('🔧 Synthesis failed:', error);
-      return '';
-    } finally {
-      synthesisInProgress = false;
+      if (!baseOptions.abortSignal?.aborted) {
+        console.warn('🔧 Synthesis failed:', error);
+      }
+      return undefined;
     }
   };
 
-  // Uses streamResult.steps (not shared state) to detect tool calls,
-  // since textStream may be consumed without fullStream populating state.
+  const usageWithSynthesis = async () => {
+    const usage = await streamResult.usage;
+    const finished = await synthesisIfWanted();
+    return finished ? addUsage(usage, finished.usage) : usage;
+  };
+
+  const textWithSynthesis = async () => {
+    const [text, finished] = await Promise.all([
+      streamResult.text,
+      getSynthesis(),
+    ]);
+    return withSynthesis(text, finished);
+  };
+
+  // An end callback still reports the answer after the last reader has gone.
+  const onReaderCancel = () => {
+    readers -= 1;
+    answerUnread = readers === 0 && !userOnEnd;
+  };
+
   const createEnhancedTextStream = () => {
-    const originalTextStream = streamResult.textStream;
-
-    return new ReadableStream<string>({
-      async start(controller) {
-        let streamTimeout: ReturnType<typeof setTimeout> | null = null;
-        let streamComplete = false;
-        let controllerClosed = false;
-
-        const safeClose = () => {
-          if (!controllerClosed) {
-            controllerClosed = true;
-            try {
-              controller.close();
-            } catch {
-              // already closed
-            }
-          }
-        };
-
-        const safeEnqueue = (value: string) => {
-          if (!controllerClosed) {
-            try {
-              controller.enqueue(value);
-              return true;
-            } catch {
-              controllerClosed = true;
-              return false;
-            }
-          }
-          return false;
-        };
-
-        const applySynthesisFromSteps = async () => {
-          if (synthesisApplied || controllerClosed) return;
-
-          try {
-            const steps = await streamResult.steps;
-            const allToolCalls: typeof state.toolCalls = [];
-            const allToolResults: typeof state.toolResults = [];
-
-            if (steps) {
-              for (const step of steps) {
-                if (step.toolCalls) {
-                  for (const tc of step.toolCalls) {
-                    allToolCalls.push({
-                      toolCallId: tc.toolCallId,
-                      toolName: tc.toolName,
-                      input: tc.input,
-                    });
-                  }
-                }
-                if (step.toolResults) {
-                  for (const tr of step.toolResults) {
-                    allToolResults.push({
-                      toolCallId: tr.toolCallId,
-                      toolName: tr.toolName,
-                      output: tr.output,
-                    });
-                  }
-                }
-              }
-            }
-
-            if (
-              allToolCalls.length > 0 &&
-              state.textContent.length < minStreamLength
-            ) {
-              const synthesisText = await generateSynthesis(
-                allToolCalls,
-                allToolResults,
-              );
-              if (synthesisText && !controllerClosed) {
-                const chunkSize = 20;
-                for (
-                  let index = 0;
-                  index < synthesisText.length;
-                  index += chunkSize
-                ) {
-                  if (
-                    !safeEnqueue(synthesisText.slice(index, index + chunkSize))
-                  )
-                    break;
-                }
-              }
-            }
-          } catch {
-            // steps not available
-          }
-        };
-
-        const resetTimeout = () => {
-          if (streamTimeout) clearTimeout(streamTimeout);
-          streamTimeout = setTimeout(async () => {
-            if (!streamComplete && !synthesisApplied && !controllerClosed) {
-              await applySynthesisFromSteps();
-            }
-            safeClose();
-          }, synthesisTimeout);
-        };
-
-        try {
-          resetTimeout();
-          const reader = originalTextStream.getReader();
-
-          while (true) {
-            const { done, value } = await reader.read();
-
-            if (done) {
-              streamComplete = true;
-              if (streamTimeout) clearTimeout(streamTimeout);
-              state.hasFinished = true;
-
-              if (!synthesisApplied && !controllerClosed) {
-                await applySynthesisFromSteps();
-              }
-              safeClose();
-              break;
-            }
-
-            if (value) {
-              state.textContent += value;
-              safeEnqueue(value);
-              resetTimeout();
-            }
-          }
-        } catch (error) {
-          if (!controllerClosed) {
-            controller.error(error);
-          }
-        }
+    readers += 1;
+    return appendAtEnd(
+      streamResult.textStream,
+      async () => {
+        const finished = await getSynthesis();
+        return inChunks(finished?.text ?? '', 20);
       },
-    });
+      undefined,
+      onReaderCancel,
+    );
   };
 
   const createEnhancedFullStream = () => {
-    const originalFullStream = streamResult.fullStream;
+    let finishPart: Extract<StreamPart, { type: 'finish' }> | undefined;
+    fullStreamRead = true;
+    readers += 1;
 
-    return new ReadableStream<SynthesisStreamPart>({
-      async start(controller) {
-        let controllerClosed = false;
-        let hasSeenMeaningfulText = false;
-        let currentTextId: string | null = null;
-
-        const safeClose = () => {
-          if (!controllerClosed) {
-            controllerClosed = true;
-            try {
-              controller.close();
-            } catch {
-              // already closed
-            }
-          }
-        };
-
-        const safeEnqueue = (part: SynthesisStreamPart) => {
-          if (!controllerClosed) {
-            try {
-              controller.enqueue(part);
-              return true;
-            } catch {
-              controllerClosed = true;
-              return false;
-            }
-          }
-          return false;
-        };
+    return appendAtEnd(
+      streamResult.fullStream,
+      async () => {
+        const finished = await getSynthesis();
+        const parts: StreamPart[] = [];
+        if (finished?.text) {
+          const id = crypto.randomUUID();
+          parts.push(
+            { type: 'text-start', id },
+            ...inChunks(finished.text, 10).map((text) => ({
+              type: 'text-delta' as const,
+              id,
+              text,
+            })),
+            { type: 'text-end', id },
+          );
+        }
 
         try {
-          const reader = originalFullStream.getReader();
-
-          while (true) {
-            const { done, value } = await reader.read();
-
-            if (done) {
-              state.hasFinished = true;
-
-              const [toolCalls, toolResults, text] = await Promise.all([
-                streamResult.toolCalls,
-                streamResult.toolResults,
-                streamResult.text,
-              ]);
-
-              state.textContent = text || '';
-              if (toolCalls) {
-                state.toolCalls = toolCalls.map((tc) => ({
-                  toolCallId: tc.toolCallId,
-                  toolName: tc.toolName,
-                  input: tc.input,
-                }));
-              }
-              if (toolResults) {
-                state.toolResults = toolResults.map((tr) => ({
-                  toolCallId: tr.toolCallId,
-                  toolName: tr.toolName,
-                  output: tr.output,
-                }));
-              }
-
-              if (
-                state.toolCalls.length > 0 &&
-                state.textContent.length < minStreamLength &&
-                !hasSeenMeaningfulText
-              ) {
-                const synthesisText = await generateSynthesis();
-                if (synthesisText && synthesisText.length > 0) {
-                  // Emit synthesized text
-                  currentTextId = crypto.randomUUID();
-                  safeEnqueue({ type: 'text-start', id: currentTextId });
-
-                  const chunkSize = 10;
-                  for (
-                    let index = 0;
-                    index < synthesisText.length;
-                    index += chunkSize
-                  ) {
-                    const chunk = synthesisText.slice(index, index + chunkSize);
-                    safeEnqueue({
-                      type: 'text-delta',
-                      id: currentTextId,
-                      text: chunk,
-                    });
-                  }
-
-                  safeEnqueue({ type: 'text-end', id: currentTextId });
-                }
-              }
-
-              const usage = await streamResult.usage;
-              const finishReason = await streamResult.finishReason;
-
-              safeEnqueue({
-                type: 'finish',
-                finishReason: finishReason || 'stop',
-                totalUsage: {
-                  inputTokens: usage?.inputTokens || 0,
-                  outputTokens: usage?.outputTokens || 0,
-                  totalTokens: usage?.totalTokens || 0,
-                },
-              });
-
-              safeClose();
-              break;
-            }
-
-            if (value) {
-              const part = value as StreamPart;
-
-              switch (part.type) {
-                case 'text-delta':
-                case 'text-delta-text': {
-                  const delta =
-                    typeof part.delta === 'string' ? part.delta : '';
-                  const text = typeof part.text === 'string' ? part.text : '';
-                  const textDelta = delta || text;
-                  if (textDelta) {
-                    state.textContent += textDelta;
-                    hasSeenMeaningfulText = true;
-                  }
-                  if (!currentTextId && typeof part.id === 'string') {
-                    currentTextId = part.id;
-                  }
-
-                  break;
-                }
-                case 'text-start': {
-                  if (typeof part.id === 'string') {
-                    currentTextId = part.id;
-                  }
-
-                  break;
-                }
-                case 'text-end': {
-                  currentTextId = null;
-
-                  break;
-                }
-              }
-
-              if (part.type === 'tool-call') {
-                state.toolCalls.push({
-                  toolCallId:
-                    typeof part.toolCallId === 'string' ? part.toolCallId : '',
-                  toolName:
-                    typeof part.toolName === 'string' ? part.toolName : '',
-                  input: part.input,
-                });
-              }
-
-              if (part.type === 'tool-result') {
-                state.toolResults.push({
-                  toolCallId:
-                    typeof part.toolCallId === 'string' ? part.toolCallId : '',
-                  toolName:
-                    typeof part.toolName === 'string' ? part.toolName : '',
-                  output: part.output,
-                });
-              }
-
-              safeEnqueue(part as SynthesisStreamPart);
-            }
-          }
-        } catch (error) {
-          if (!controllerClosed) {
-            controller.error(error);
-          }
+          const totalUsage = await usageWithSynthesis();
+          parts.push({
+            ...(finishPart ?? {
+              type: 'finish',
+              finishReason: await streamResult.finishReason,
+              rawFinishReason: undefined,
+            }),
+            totalUsage,
+          });
+        } catch {
+          // A run with no usage has sent its error or abort part, and ends here.
         }
+        return parts;
       },
-    });
+      (part) => {
+        // Held back so the one finish part follows any synthesized text.
+        if (part.type !== 'finish') return true;
+        finishPart = part;
+        return false;
+      },
+      onReaderCancel,
+    );
   };
 
-  let enhancedTextStream: ReadableStream<string> | null = null;
-  let enhancedFullStream: ReadableStream<SynthesisStreamPart> | null = null;
-
-  const enhancedResult = Object.create(
-    Object.getPrototypeOf(streamResult),
-    Object.getOwnPropertyDescriptors(streamResult),
-  ) as typeof streamResult;
-
-  Object.defineProperty(enhancedResult, 'textStream', {
-    get: () => {
-      if (!enhancedTextStream) {
-        enhancedTextStream = createEnhancedTextStream();
+  // The result swaps its internal stream on every tee, and a Proxy reads the
+  // current one where a copy's getters reject with "ReadableStream is locked".
+  return new Proxy(streamResult, {
+    get(target, key) {
+      switch (key) {
+        case 'textStream': {
+          enhancedTextStream ??= createEnhancedTextStream();
+          return enhancedTextStream;
+        }
+        case 'stream':
+        case 'fullStream': {
+          return createEnhancedFullStream();
+        }
+        case 'usage':
+        case 'totalUsage': {
+          return markHandled(usageWithSynthesis());
+        }
+        case 'text': {
+          return markHandled(textWithSynthesis());
+        }
+        default: {
+          // Unbound methods read `stream` and `textStream` through this Proxy,
+          // which gives the UI and response helpers the answer. consumeStream
+          // only drains the run, so it reads the result's own stream.
+          return key === 'consumeStream'
+            ? target.consumeStream.bind(target)
+            : Reflect.get(target, key);
+        }
       }
-      return enhancedTextStream;
     },
-    enumerable: true,
   });
-
-  Object.defineProperty(enhancedResult, 'fullStream', {
-    get: () => {
-      if (!enhancedFullStream) {
-        enhancedFullStream = createEnhancedFullStream();
-      }
-      return enhancedFullStream;
-    },
-    enumerable: true,
-  });
-
-  return enhancedResult;
 }
