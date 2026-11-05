@@ -52,9 +52,9 @@ jobs:
         id: changesets
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
-          publish: pnpm release
-          commit: "chore: release packages"
-          title: "chore: release packages"
+          publish-script: pnpm release
+          commit-message: "chore: release packages"
+          pr-title: "chore: release packages"
           github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
