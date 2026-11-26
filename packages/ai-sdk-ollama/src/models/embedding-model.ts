@@ -76,6 +76,12 @@ export class OllamaEmbeddingModel implements EmbeddingModelV4 {
           ...(this.settings.dimensions !== undefined && {
             dimensions: this.settings.dimensions,
           }),
+          ...(this.settings.truncate !== undefined && {
+            truncate: this.settings.truncate,
+          }),
+          ...(this.settings.keep_alive !== undefined && {
+            keep_alive: this.settings.keep_alive,
+          }),
         };
         const response: EmbedResponse = abortSignal
           ? await this.config.client.embed(request, { signal: abortSignal })

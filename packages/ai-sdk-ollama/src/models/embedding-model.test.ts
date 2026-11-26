@@ -246,6 +246,32 @@ describe('OllamaEmbeddingModel', () => {
       });
     });
 
+    it('should forward truncate and keep_alive settings to the embed request', async () => {
+      const configured = new OllamaEmbeddingModel(
+        'nomic-embed-text',
+        { truncate: false, keep_alive: '10m' },
+        { client: mockOllamaClient, provider: 'ollama' },
+      );
+      vi.mocked(mockEmbed).mockResolvedValueOnce({
+        model: 'nomic-embed-text',
+        embeddings: [[0.1, 0.2]],
+        total_duration: 1,
+        load_duration: 1,
+        prompt_eval_count: 1,
+      });
+
+      await configured.doEmbed({ values: ['Test'] });
+
+      expect(mockEmbed).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          model: 'nomic-embed-text',
+          input: 'Test',
+          truncate: false,
+          keep_alive: '10m',
+        }),
+      );
+    });
+
     it('should handle different embedding dimensions', async () => {
       const mockResponse = {
         model: 'nomic-embed-text',
