@@ -95,6 +95,7 @@ export function buildContent(
  */
 const OLLAMA_USAGE_FIELDS = [
   'prompt_eval_count',
+  'prompt_eval_cached_count',
   'eval_count',
   'total_duration',
   'load_duration',
@@ -142,12 +143,13 @@ export function createUsage(
   inputTokenCount?: number,
   outputTokenCount?: number,
   raw?: JSONObject,
+  cachedInputTokenCount?: number,
 ): LanguageModelV4Usage {
   return {
     inputTokens: {
       total: inputTokenCount,
       noCache: inputTokenCount,
-      cacheRead: undefined,
+      cacheRead: cachedInputTokenCount,
       cacheWrite: undefined,
     },
     outputTokens: {
@@ -172,7 +174,7 @@ export function aggregateUsage(
 
   for (const response of responses) {
     for (const field of OLLAMA_USAGE_FIELDS) {
-      const value = response?.[field];
+      const value = (response as unknown as Record<string, unknown>)?.[field];
       if (typeof value === 'number') {
         raw[field] = (raw[field] ?? 0) + value;
       }
@@ -183,6 +185,7 @@ export function aggregateUsage(
     raw.prompt_eval_count,
     raw.eval_count,
     Object.keys(raw).length > 0 ? raw : undefined,
+    raw.prompt_eval_cached_count,
   );
 }
 
