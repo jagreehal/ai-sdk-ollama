@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.6.4
+
+### Patch Changes
+
+- fed4a15: Add `truncate` and `keep_alive` embedding model settings, forwarded to Ollama's `/api/embed`.
+
 ## 4.6.3
 
 ### Patch Changes
