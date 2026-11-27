@@ -272,7 +272,7 @@ export interface OllamaChatSettings extends Pick<
  */
 export interface OllamaEmbeddingSettings extends Pick<
   EmbedRequest,
-  'dimensions'
+  'dimensions' | 'truncate' | 'keep_alive'
 > {
   /**
    * Additional embedding parameters (temperature, num_ctx, etc.)
