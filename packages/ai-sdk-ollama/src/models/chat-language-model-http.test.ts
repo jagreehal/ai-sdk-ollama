@@ -65,6 +65,53 @@ describe('OllamaChatLanguageModel HTTP-level tests', () => {
       });
     });
 
+    it('should report cached prompt tokens as cacheRead', async () => {
+      server.urls[`${OLLAMA_BASE_URL}/api/chat`].response = {
+        type: 'json-value',
+        body: {
+          model: 'llama3.2',
+          created_at: new Date().toISOString(),
+          message: { role: 'assistant', content: 'Hi' },
+          done: true,
+          done_reason: 'stop',
+          eval_count: 4,
+          prompt_eval_count: 120,
+          prompt_eval_cached_count: 100,
+        },
+      };
+
+      const model = createOllama().chat('llama3.2');
+      const result = await model.doGenerate({
+        prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hi' }] }],
+      });
+
+      expect(result.usage.inputTokens.total).toBe(120);
+      expect(result.usage.inputTokens.cacheRead).toBe(100);
+      expect(result.usage.raw).toMatchObject({ prompt_eval_cached_count: 100 });
+    });
+
+    it('should leave cacheRead undefined when the server does not report it', async () => {
+      server.urls[`${OLLAMA_BASE_URL}/api/chat`].response = {
+        type: 'json-value',
+        body: {
+          model: 'llama3.2',
+          created_at: new Date().toISOString(),
+          message: { role: 'assistant', content: 'Hi' },
+          done: true,
+          done_reason: 'stop',
+          eval_count: 4,
+          prompt_eval_count: 120,
+        },
+      };
+
+      const model = createOllama().chat('llama3.2');
+      const result = await model.doGenerate({
+        prompt: [{ role: 'user', content: [{ type: 'text', text: 'Hi' }] }],
+      });
+
+      expect(result.usage.inputTokens.cacheRead).toBeUndefined();
+    });
+
     it('should include options in HTTP request', async () => {
       server.urls[`${OLLAMA_BASE_URL}/api/chat`].response = {
         type: 'json-value',
